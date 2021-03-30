@@ -7,8 +7,8 @@
     "test": "npx hardhat test",
     "coverage": "npx hardhat coverage",
     "typechain": "npx hardhat typechain",
-    "prettier:check": "npx prettier --check --loglevel error '{contracts,scripts,test}/**/*.{ts,sol}'",
-    "prettier": "npx prettier --write '{contracts,scripts,test}/**/*.{ts,sol}'",
+    "prettier:check": "npx prettier --check --loglevel error '{contracts,scripts,types,test}/**/*.{ts,sol}'",
+    "prettier": "npx prettier --write '{contracts,scripts,types,test}/**/*.{ts,sol}'",
     "lint:sol": "npx solhint -f table contracts/**/*.sol",
     "lint:ts": "npx eslint . -f table --ext .ts",
     "lint": "yarn lint:sol && yarn lint:ts"
