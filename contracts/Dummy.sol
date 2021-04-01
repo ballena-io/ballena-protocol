@@ -9,6 +9,6 @@ contract Dummy {
     }
 
     function setDummyData(uint256 _data) external {
-        dummyData = _data;
+        dummyData = _data - 2;
     }
 }
