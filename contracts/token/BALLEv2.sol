@@ -8,6 +8,10 @@ contract BALLEv2 is ERC20 {
     mapping(address => bool) public minters;
     uint256 public immutable cap;
 
+    event SetGovernance(address indexed addr);
+    event AddMinter(address indexed addr);
+    event RemoveMinter(address indexed addr);
+
     constructor(
         string memory _name,
         string memory _symbol,
@@ -24,6 +28,7 @@ contract BALLEv2 is ERC20 {
     function setGovernance(address _governance) external {
         require(msg.sender == governance, "!governance");
         governance = _governance;
+        emit SetGovernance(_governance);
     }
 
     /**
@@ -32,6 +37,7 @@ contract BALLEv2 is ERC20 {
     function addMinter(address _minter) external {
         require(msg.sender == governance, "!governance");
         minters[_minter] = true;
+        emit AddMinter(_minter);
     }
 
     /**
@@ -40,6 +46,7 @@ contract BALLEv2 is ERC20 {
     function removeMinter(address _minter) external {
         require(msg.sender == governance, "!governance");
         minters[_minter] = false;
+        emit RemoveMinter(_minter);
     }
 
     /**
