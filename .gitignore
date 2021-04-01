@@ -1,8 +1,6 @@
 # Global
 .DS_Store
-node_modules
-dist
-build
+node_modules/
 tmp
 
 # local env files
@@ -20,8 +18,8 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Test
-.nyc_output
-coverage
+coverage/
+coverage.json
 
 #Hardhat directories
 cache/
