@@ -3,6 +3,7 @@
   "version": "1.0.0-beta.01",
   "description": "ballena.io protocol",
   "scripts": {
+    "clean": "rimraf artifacts && rimraf cache && rimraf coverage && rimraf typechain && rimraf coverage.json",
     "compile": "npx hardhat compile",
     "test": "npx hardhat test",
     "coverage": "npx hardhat coverage",
@@ -56,6 +57,7 @@
     "mocha-chai-jest-snapshot": "^1.1.1",
     "prettier": "^2.2.1",
     "prettier-plugin-solidity": "^1.0.0-beta.6",
+    "rimraf": "^3.0.2",
     "solhint": "^3.3.4",
     "solhint-plugin-prettier": "^0.0.5",
     "solidity-coverage": "^0.7.16",
