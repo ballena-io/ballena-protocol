@@ -2,6 +2,7 @@
 artifacts/
 cache/
 contracts/
+coverage/
 node_modules/
 typechain/
 
