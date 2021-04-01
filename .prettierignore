@@ -3,3 +3,5 @@ cache/
 coverage/
 node_modules/
 typechain/
+
+coverage.json
