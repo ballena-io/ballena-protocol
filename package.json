@@ -10,7 +10,7 @@
     "prettier:check": "npx prettier --check --loglevel error .",
     "prettier": "npx prettier --write .",
     "lint:sol": "npx solhint -f table contracts/**/*.sol",
-    "lint:ts": "npx eslint . -f table --ext .ts",
+    "lint:ts": "npx eslint -f table .",
     "lint": "yarn lint:sol && yarn lint:ts"
   },
   "repository": {
