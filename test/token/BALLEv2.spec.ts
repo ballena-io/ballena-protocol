@@ -22,6 +22,16 @@ describe('BALLEv2 Token', () => {
     it('should fail on invalid parameters', async () => {
       await expect(Balle.deploy('BALLEv2', 'BALLE', 0)).to.be.revertedWith('BALLE: cap is 0')
     })
+
+    it('should build a valid BALLE token', async () => {
+      balle = await Balle.deploy('BALLEv2', 'BALLE', 1000)
+      await balle.deployed()
+
+      expect(await balle.name()).to.be.equal('BALLEv2')
+      expect(await balle.symbol()).to.be.equal('BALLE')
+      expect(await balle.decimals()).to.be.equal(18)
+      expect(await balle.totalSupply()).to.be.equal(0)
+    })
   })
 
   describe('Token governance', () => {
