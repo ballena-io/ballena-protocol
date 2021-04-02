@@ -14,6 +14,7 @@ contract BalleMigration {
     constructor(address _balle, address _balleV2) {
         require(_balle != address(0), "BALLE address not valid");
         require(_balleV2 != address(0), "BALLEv2 address not valid");
+        require(_balle != _balleV2, "Invalid address");
 
         balle = IERC20(_balle);
         balleV2 = IMintableERC20(_balleV2);
