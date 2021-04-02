@@ -8,7 +8,7 @@ The minting will be made from a couple of sources, so, there is a mecanism to au
 
 ## Governance
 
-On contract creation, the creator address is asigned as governance address for the token. It will be assigned to the Gnosis Safe after deployment.
+On contract creation, the creator address is established as governance address for the token. It will be assigned to the Gnosis Safe after deployment.
 The governance address can authorize and revoke minters.
 
 ## Minters
