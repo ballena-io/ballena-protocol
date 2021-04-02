@@ -2,6 +2,8 @@ import { Contract, ContractFactory } from '@ethersproject/contracts'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import { ethers } from 'hardhat'
 import { expect } from '../shared/expect'
+import { ZERO_ADDRESS } from '../shared/constants'
+import { expandTo18Decimals } from '../shared/utils'
 
 describe('BALLEv2 Token', () => {
   let Balle: ContractFactory
@@ -9,7 +11,7 @@ describe('BALLEv2 Token', () => {
   let ownerAccount: SignerWithAddress, testAccount: SignerWithAddress, test2Account: SignerWithAddress
 
   async function deployContracts() {
-    balle = await Balle.deploy('BALLEv2', 'BALLE', 1000)
+    balle = await Balle.deploy('BALLEv2', 'BALLE', expandTo18Decimals(1000))
     await balle.deployed()
   }
 
@@ -24,7 +26,7 @@ describe('BALLEv2 Token', () => {
     })
 
     it('should build a valid BALLE token', async () => {
-      balle = await Balle.deploy('BALLEv2', 'BALLE', 1000)
+      balle = await Balle.deploy('BALLEv2', 'BALLE', expandTo18Decimals(1000))
       await balle.deployed()
 
       expect(await balle.name()).to.be.equal('BALLEv2')
@@ -54,9 +56,9 @@ describe('BALLEv2 Token', () => {
     })
 
     it('should allow zero address to be set as governance', async () => {
-      await expect(balle.connect(testAccount).setGovernance('0x0000000000000000000000000000000000000000'))
+      await expect(balle.connect(testAccount).setGovernance(ZERO_ADDRESS))
         .to.emit(balle, 'SetGovernance')
-        .withArgs('0x0000000000000000000000000000000000000000')
+        .withArgs(ZERO_ADDRESS)
     })
   })
 
@@ -66,7 +68,7 @@ describe('BALLEv2 Token', () => {
     })
 
     it('should not allow mint tokens if no minter set', async () => {
-      await expect(balle.mint(testAccount.address, 500)).to.be.revertedWith('!minter')
+      await expect(balle.mint(testAccount.address, expandTo18Decimals(500))).to.be.revertedWith('!minter')
     })
 
     it('should not allow add minter for non governance address', async () => {
@@ -82,9 +84,9 @@ describe('BALLEv2 Token', () => {
     })
 
     it('should allow mint tokens', async () => {
-      await expect(balle.mint(testAccount.address, 100))
+      await expect(balle.mint(testAccount.address, expandTo18Decimals(100)))
         .to.emit(balle, 'Transfer')
-        .withArgs('0x0000000000000000000000000000000000000000', testAccount.address, 100)
+        .withArgs(ZERO_ADDRESS, testAccount.address, expandTo18Decimals(100))
     })
 
     it('should allow to remove minter', async () => {
@@ -94,7 +96,7 @@ describe('BALLEv2 Token', () => {
     })
 
     it('should not allow mint tokens after minter removed', async () => {
-      await expect(balle.mint(testAccount.address, 100)).to.be.revertedWith('!minter')
+      await expect(balle.mint(testAccount.address, expandTo18Decimals(100))).to.be.revertedWith('!minter')
     })
   })
 
@@ -105,31 +107,31 @@ describe('BALLEv2 Token', () => {
 
     it('should allow minting to an address', async () => {
       await expect(balle.addMinter(ownerAccount.address)).to.emit(balle, 'AddMinter').withArgs(ownerAccount.address)
-      await expect(balle.mint(testAccount.address, 500))
+      await expect(balle.mint(testAccount.address, expandTo18Decimals(500)))
         .to.emit(balle, 'Transfer')
-        .withArgs('0x0000000000000000000000000000000000000000', testAccount.address, 500)
+        .withArgs(ZERO_ADDRESS, testAccount.address, expandTo18Decimals(500))
     })
 
     it('should allow transfer to another address', async () => {
-      await expect(balle.connect(testAccount).transfer(test2Account.address, 100))
+      await expect(balle.connect(testAccount).transfer(test2Account.address, expandTo18Decimals(100)))
         .to.emit(balle, 'Transfer')
-        .withArgs(testAccount.address, test2Account.address, 100)
+        .withArgs(testAccount.address, test2Account.address, expandTo18Decimals(100))
     })
 
     it('should allow more minting', async () => {
-      await expect(balle.mint(testAccount.address, 400))
+      await expect(balle.mint(testAccount.address, expandTo18Decimals(400)))
         .to.emit(balle, 'Transfer')
-        .withArgs('0x0000000000000000000000000000000000000000', testAccount.address, 400)
+        .withArgs(ZERO_ADDRESS, testAccount.address, expandTo18Decimals(400))
     })
 
     it('should not allow minting if cap exceeded', async () => {
-      await expect(balle.mint(testAccount.address, 400)).to.be.revertedWith('!cap')
+      await expect(balle.mint(testAccount.address, expandTo18Decimals(400))).to.be.revertedWith('!cap')
     })
 
     it('should allow minting to max cap', async () => {
-      await expect(balle.mint(testAccount.address, 100))
+      await expect(balle.mint(testAccount.address, expandTo18Decimals(100)))
         .to.emit(balle, 'Transfer')
-        .withArgs('0x0000000000000000000000000000000000000000', testAccount.address, 100)
+        .withArgs(ZERO_ADDRESS, testAccount.address, expandTo18Decimals(100))
     })
   })
 })
