@@ -33,6 +33,7 @@ describe('BALLEv2 Token', () => {
       expect(await balle.symbol()).to.be.equal('BALLE')
       expect(await balle.decimals()).to.be.equal(18)
       expect(await balle.totalSupply()).to.be.equal(0)
+      expect(await balle.cap()).to.be.equal(expandTo18Decimals(1000))
     })
   })
 
@@ -110,18 +111,21 @@ describe('BALLEv2 Token', () => {
       await expect(balle.mint(testAccount.address, expandTo18Decimals(500)))
         .to.emit(balle, 'Transfer')
         .withArgs(ZERO_ADDRESS, testAccount.address, expandTo18Decimals(500))
+      expect(await balle.balanceOf(testAccount.address)).to.be.equal(expandTo18Decimals(500))
     })
 
     it('should allow transfer to another address', async () => {
       await expect(balle.connect(testAccount).transfer(test2Account.address, expandTo18Decimals(100)))
         .to.emit(balle, 'Transfer')
         .withArgs(testAccount.address, test2Account.address, expandTo18Decimals(100))
+      expect(await balle.balanceOf(test2Account.address)).to.be.equal(expandTo18Decimals(100))
     })
 
     it('should allow more minting', async () => {
       await expect(balle.mint(testAccount.address, expandTo18Decimals(400)))
         .to.emit(balle, 'Transfer')
         .withArgs(ZERO_ADDRESS, testAccount.address, expandTo18Decimals(400))
+      expect(await balle.balanceOf(testAccount.address)).to.be.equal(expandTo18Decimals(800))
     })
 
     it('should not allow minting if cap exceeded', async () => {
