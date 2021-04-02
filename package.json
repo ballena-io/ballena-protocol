@@ -12,18 +12,13 @@
     "prettier": "npx prettier --write .",
     "lint:sol": "npx solhint -f table contracts/**/*.sol",
     "lint:ts": "npx eslint -f table .",
-    "lint": "yarn lint:sol && yarn lint:ts"
+    "lint": "yarn lint:sol && yarn lint:ts",
+    "prepare": "npx husky install",
+    "pre-commit": "yarn prettier:check"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ballena-io/ballena-protocol.git"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "yarn prettier",
-      "pre-push": "yarn lint",
-      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
-    }
   },
   "keywords": [],
   "author": "ballena.io",
