@@ -9,11 +9,11 @@ The minting will be made from a couple of sources, so, there is a mecanism to au
 ## Governance
 
 On contract creation, the creator address is established as governance address for the token. It will be assigned to the Gnosis Safe after deployment.
-The governance address can authorize and revoke minters.
+The governance address can authorize and revoke minters and set a new governance address.
 
 ## Minters
 
-Only addresses authorized as minters will be able to mint new BALLE.
+Only addresses authorized as governance or minters will be able to mint new BALLE.
 Some of the minters will be:
 
 - BALLEv2 Migration contract
@@ -21,3 +21,7 @@ Some of the minters will be:
 - BALLEv2 Governance pool rewards contract
 
 Minting amount will be limited to the maximun supply of 40,000 BALLE.
+
+## Misc
+
+BALLEv2 token has an special function `governanceRecoverUnsupported` that can recover tokens sent accidentally to the token contract. In case someone messed up and send there his tokens, a request to the project governance can be made to claim them. The use of such function is at disposal of the governance and will be decided by voting. Not guarantee that it will be voted to send tokens back.
