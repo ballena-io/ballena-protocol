@@ -3,7 +3,7 @@
   "version": "1.0.0-beta.01",
   "description": "ballena.io protocol",
   "scripts": {
-    "clean": "rimraf artifacts && rimraf cache && rimraf coverage && rimraf typechain && rimraf coverage.json",
+    "clean": "rimraf build && rimraf coverage && rimraf coverage.json",
     "compile": "npx hardhat compile",
     "test": "npx hardhat test",
     "coverage": "npx hardhat coverage",
@@ -26,7 +26,7 @@
   "bugs": {
     "url": "https://github.com/ballena-io/ballena-protocol/issues"
   },
-  "homepage": "https://github.com/ballena-io/ballena-protocol#readme",
+  "homepage": "https://ballena.io",
   "devDependencies": {
     "@commitlint/cli": "^12.0.1",
     "@commitlint/config-conventional": "^12.0.1",

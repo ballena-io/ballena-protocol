@@ -2,7 +2,7 @@ import { Contract, ContractFactory } from '@ethersproject/contracts'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import { ethers } from 'hardhat'
 import { expect } from '../shared/expect'
-import { ZERO_ADDRESS } from '../shared/constants'
+import { ZERO_ADDRESS } from '../../src/utils/constants'
 import { expandTo18Decimals } from '../shared/utils'
 
 describe('BALLEv2 Token', () => {

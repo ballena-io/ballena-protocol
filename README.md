@@ -6,7 +6,7 @@ Implementation of [ballena.io](https://ballena.io) smart contracts on the Binanc
 
 ## Implementation docs
 
-In the folder [docs](./docs/) of this repository you will find all documentation related to the implementation of the smart contracts.
+In the [docs](./docs/) folder you will find all documentation related to the implementation of the smart contracts.
 
 ## Developers
 

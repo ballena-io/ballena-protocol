@@ -1,6 +1,7 @@
 # Global
 .DS_Store
 node_modules/
+build/
 tmp
 
 # local env files
@@ -20,8 +21,3 @@ pnpm-debug.log*
 # Test
 coverage/
 coverage.json
-
-#Hardhat directories
-cache/
-artifacts/
-typechain/
