@@ -1,7 +1,5 @@
-artifacts/
-cache/
+build/
 coverage/
 node_modules/
-typechain/
 
 coverage.json
