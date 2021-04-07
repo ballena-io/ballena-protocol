@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from 'fs'
 import { BalleNetworkConfig } from './types/config'
 import { HardhatUserConfig, NetworksUserConfig, HardhatNetworkUserConfig, NetworkUserConfig } from 'hardhat/types'
-// import "hardhat-deploy"
-// import "hardhat-deploy-ethers"
+import 'hardhat-deploy'
+import '@nomiclabs/hardhat-ethers'
 import '@nomiclabs/hardhat-waffle'
 import '@nomiclabs/hardhat-etherscan'
 import '@typechain/hardhat'
@@ -20,6 +20,7 @@ function createHardhatNetworkConfig(
         url: 'https://bsc-dataseed.binance.org/',
       },
       allowUnlimitedContractSize: false,
+      tags: ['test'],
       accounts: [
         {
           privateKey: deployerPrivateKey,
@@ -37,7 +38,11 @@ function createHardhatNetworkConfig(
     }
   }
   return {
+    forking: {
+      url: 'https://bsc-dataseed.binance.org/',
+    },
     allowUnlimitedContractSize: false,
+    tags: ['test'],
   }
 }
 
@@ -117,10 +122,21 @@ const config: HardhatUserConfig = {
     artifacts: 'build/artifacts',
     cache: 'build/cache',
     sources: 'contracts',
+    deploy: 'src/deploy',
   },
   typechain: {
     outDir: 'build/typechain',
     target: 'ethers-v5',
+  },
+  namedAccounts: {
+    deployer: 0,
+    test: 1,
+    test2: 2,
+    balle: {
+      default: '0x9f0D5f45CE8573f43E0BA17876329784be0fd700', // use mainnet address, because we use fork
+      56: '0x9f0D5f45CE8573f43E0BA17876329784be0fd700',
+      97: '0x8bD237e94CE369F6D78c7bb08B90efc5c6f27A4f',
+    },
   },
   etherscan: {
     apiKey: balleNetworkConfig.apiKey,
