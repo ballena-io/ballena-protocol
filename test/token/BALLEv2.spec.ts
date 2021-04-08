@@ -1,31 +1,22 @@
 import { Contract, ContractFactory } from '@ethersproject/contracts'
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
-import { ethers } from 'hardhat'
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address'
+import { ethers, deployments } from 'hardhat'
 import { expect } from '../shared/expect'
 import { ZERO_ADDRESS } from '../../src/utils/constants'
-import { expandTo18Decimals } from '../shared/utils'
+import { expandTo18Decimals } from '../../src/utils'
 
 describe('BALLEv2 Token', () => {
   let Balle: ContractFactory
   let balle: Contract
-  let TokenA: ContractFactory
   let tokenA: Contract
-  let ownerAccount: SignerWithAddress, testAccount: SignerWithAddress, test2Account: SignerWithAddress
-
-  async function deployContracts() {
-    balle = await Balle.deploy('BALLEv2', 'BALLE', expandTo18Decimals(1000))
-    await balle.deployed()
-  }
-
-  async function deployMockContracts() {
-    tokenA = await TokenA.deploy()
-    await tokenA.deployed()
-  }
+  let deployerAccount: SignerWithAddress, testAccount: SignerWithAddress, test2Account: SignerWithAddress
 
   before('Load contract factory', async () => {
     Balle = await ethers.getContractFactory('BALLEv2')
-    TokenA = await ethers.getContractFactory('TokenA')
-    ;[ownerAccount, testAccount, test2Account] = await ethers.getSigners()
+    const { deployer, test, test2 } = await ethers.getNamedSigners()
+    deployerAccount = deployer
+    testAccount = test
+    test2Account = test2
   })
 
   describe('Test constructor', () => {
@@ -34,7 +25,7 @@ describe('BALLEv2 Token', () => {
     })
 
     it('should build a valid BALLE token', async () => {
-      balle = await Balle.deploy('BALLEv2', 'BALLE', expandTo18Decimals(1000))
+      const balle = await Balle.deploy('BALLEv2', 'BALLE', expandTo18Decimals(1000))
       await balle.deployed()
 
       expect(await balle.name()).to.be.equal('BALLEv2')
@@ -46,15 +37,17 @@ describe('BALLEv2 Token', () => {
   })
 
   describe('Token governance', () => {
-    before('Deploy BALLEv2 contract', async () => {
-      await deployContracts()
+    before('Deploy contracts', async () => {
+      await deployments.fixture()
+      balle = await ethers.getContract('BALLEv2')
     })
 
     it('should set initial governance to contract creator', async () => {
-      expect(await balle.governance()).to.be.equal(ownerAccount.address)
+      expect(await balle.governance()).to.be.equal(deployerAccount.address)
     })
 
     it('should not allow non governance address to set new governance', async () => {
+      const balle = await ethers.getContract('BALLEv2')
       await expect(balle.connect(testAccount).setGovernance(test2Account.address)).to.be.revertedWith('!governance')
     })
 
@@ -70,8 +63,9 @@ describe('BALLEv2 Token', () => {
   })
 
   describe('Token minting', () => {
-    before('Deploy BALLEv2 contract', async () => {
-      await deployContracts()
+    before('Deploy contracts', async () => {
+      await deployments.fixture()
+      balle = await ethers.getContract('BALLEv2')
     })
 
     it('should allow mint tokens from governance address', async () => {
@@ -120,8 +114,9 @@ describe('BALLEv2 Token', () => {
   })
 
   describe('Token basic operations and cap', () => {
-    before('Deploy BALLEv2 contract', async () => {
-      await deployContracts()
+    before('Deploy contracts', async () => {
+      await deployments.fixture()
+      balle = await ethers.getContract('BALLEv2')
     })
 
     it('should allow minting to an address', async () => {
@@ -146,20 +141,23 @@ describe('BALLEv2 Token', () => {
     })
 
     it('should not allow minting if cap exceeded', async () => {
-      await expect(balle.mint(testAccount.address, expandTo18Decimals(400))).to.be.revertedWith('!cap')
+      await expect(balle.mint(testAccount.address, expandTo18Decimals(39101))).to.be.revertedWith('!cap')
     })
 
     it('should allow minting to max cap', async () => {
-      await expect(balle.mint(testAccount.address, expandTo18Decimals(100)))
+      const cap = await balle.cap()
+      const supply = await balle.totalSupply()
+      await expect(balle.mint(testAccount.address, cap.sub(supply)))
         .to.emit(balle, 'Transfer')
-        .withArgs(ZERO_ADDRESS, testAccount.address, expandTo18Decimals(100))
+        .withArgs(ZERO_ADDRESS, testAccount.address, expandTo18Decimals(39100))
     })
   })
 
   describe('Token special functions', () => {
-    before('Deploy BALLEv2 contract and tokenA mock', async () => {
-      await deployContracts()
-      await deployMockContracts()
+    before('Deploy contracts', async () => {
+      await deployments.fixture()
+      balle = await ethers.getContract('BALLEv2')
+      tokenA = await ethers.getContract('TokenA')
     })
 
     it('should only allow governance address recover unsupported tokens', async () => {
