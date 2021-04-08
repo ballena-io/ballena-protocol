@@ -9,14 +9,11 @@ describe('BALLEv2 Token', () => {
   let Balle: ContractFactory
   let balle: Contract
   let tokenA: Contract
-  let deployerAccount: SignerWithAddress, testAccount: SignerWithAddress, test2Account: SignerWithAddress
+  let deployer: SignerWithAddress, test: SignerWithAddress, test2: SignerWithAddress
 
   before('Load contract factory', async () => {
     Balle = await ethers.getContractFactory('BALLEv2')
-    const { deployer, test, test2 } = await ethers.getNamedSigners()
-    deployerAccount = deployer
-    testAccount = test
-    test2Account = test2
+    ;({ deployer, test, test2 } = await ethers.getNamedSigners())
   })
 
   describe('Test constructor', () => {
@@ -43,22 +40,20 @@ describe('BALLEv2 Token', () => {
     })
 
     it('should set initial governance to contract creator', async () => {
-      expect(await balle.governance()).to.be.equal(deployerAccount.address)
+      expect(await balle.governance()).to.be.equal(deployer.address)
     })
 
     it('should not allow non governance address to set new governance', async () => {
       const balle = await ethers.getContract('BALLEv2')
-      await expect(balle.connect(testAccount).setGovernance(test2Account.address)).to.be.revertedWith('!governance')
+      await expect(balle.connect(test).setGovernance(test.address)).to.be.revertedWith('!governance')
     })
 
     it('should allow governance to set new governance', async () => {
-      await expect(balle.setGovernance(testAccount.address))
-        .to.emit(balle, 'SetGovernance')
-        .withArgs(testAccount.address)
+      await expect(balle.setGovernance(test.address)).to.emit(balle, 'SetGovernance').withArgs(test.address)
     })
 
     it('should not allow zero address to be set as governance', async () => {
-      await expect(balle.connect(testAccount).setGovernance(ZERO_ADDRESS)).to.be.revertedWith('zero address')
+      await expect(balle.connect(test).setGovernance(ZERO_ADDRESS)).to.be.revertedWith('zero address')
     })
   })
 
@@ -69,10 +64,10 @@ describe('BALLEv2 Token', () => {
     })
 
     it('should allow mint tokens from governance address', async () => {
-      await expect(balle.mint(testAccount.address, expandTo18Decimals(500)))
+      await expect(balle.mint(test.address, expandTo18Decimals(500)))
         .to.emit(balle, 'Transfer')
-        .withArgs(ZERO_ADDRESS, testAccount.address, expandTo18Decimals(500))
-      expect(await balle.balanceOf(testAccount.address)).to.be.equal(expandTo18Decimals(500))
+        .withArgs(ZERO_ADDRESS, test.address, expandTo18Decimals(500))
+      expect(await balle.balanceOf(test.address)).to.be.equal(expandTo18Decimals(500))
     })
 
     it('should not allow zero address to be set as minter', async () => {
@@ -80,15 +75,15 @@ describe('BALLEv2 Token', () => {
     })
 
     it('should not allow add minter from non governance address', async () => {
-      await expect(balle.connect(testAccount).addMinter(testAccount.address)).to.be.revertedWith('!governance')
+      await expect(balle.connect(test).addMinter(test.address)).to.be.revertedWith('!governance')
     })
 
     it('should allow add minter from governance address', async () => {
-      await expect(balle.addMinter(testAccount.address)).to.emit(balle, 'AddMinter').withArgs(testAccount.address)
+      await expect(balle.addMinter(test.address)).to.emit(balle, 'AddMinter').withArgs(test.address)
     })
 
     it('should not allow remove minter from non governance address', async () => {
-      await expect(balle.connect(testAccount).removeMinter(test2Account.address)).to.be.revertedWith('!governance')
+      await expect(balle.connect(test).removeMinter(test2.address)).to.be.revertedWith('!governance')
     })
 
     it('should not allow zero address to be removed as minter', async () => {
@@ -96,18 +91,18 @@ describe('BALLEv2 Token', () => {
     })
 
     it('should allow mint tokens', async () => {
-      await expect(balle.connect(testAccount).mint(test2Account.address, expandTo18Decimals(100)))
+      await expect(balle.connect(test).mint(test2.address, expandTo18Decimals(100)))
         .to.emit(balle, 'Transfer')
-        .withArgs(ZERO_ADDRESS, test2Account.address, expandTo18Decimals(100))
-      expect(await balle.balanceOf(test2Account.address)).to.be.equal(expandTo18Decimals(100))
+        .withArgs(ZERO_ADDRESS, test2.address, expandTo18Decimals(100))
+      expect(await balle.balanceOf(test2.address)).to.be.equal(expandTo18Decimals(100))
     })
 
     it('should allow to remove minter', async () => {
-      await expect(balle.removeMinter(testAccount.address)).to.emit(balle, 'RemoveMinter').withArgs(testAccount.address)
+      await expect(balle.removeMinter(test.address)).to.emit(balle, 'RemoveMinter').withArgs(test.address)
     })
 
     it('should not allow mint tokens after minter removed', async () => {
-      await expect(balle.connect(testAccount).mint(test2Account.address, expandTo18Decimals(100))).to.be.revertedWith(
+      await expect(balle.connect(test).mint(test2.address, expandTo18Decimals(100))).to.be.revertedWith(
         '!governance && !minter',
       )
     })
@@ -120,36 +115,36 @@ describe('BALLEv2 Token', () => {
     })
 
     it('should allow minting to an address', async () => {
-      await expect(balle.mint(testAccount.address, expandTo18Decimals(500)))
+      await expect(balle.mint(test.address, expandTo18Decimals(500)))
         .to.emit(balle, 'Transfer')
-        .withArgs(ZERO_ADDRESS, testAccount.address, expandTo18Decimals(500))
-      expect(await balle.balanceOf(testAccount.address)).to.be.equal(expandTo18Decimals(500))
+        .withArgs(ZERO_ADDRESS, test.address, expandTo18Decimals(500))
+      expect(await balle.balanceOf(test.address)).to.be.equal(expandTo18Decimals(500))
     })
 
     it('should allow transfer to another address', async () => {
-      await expect(balle.connect(testAccount).transfer(test2Account.address, expandTo18Decimals(100)))
+      await expect(balle.connect(test).transfer(test2.address, expandTo18Decimals(100)))
         .to.emit(balle, 'Transfer')
-        .withArgs(testAccount.address, test2Account.address, expandTo18Decimals(100))
-      expect(await balle.balanceOf(test2Account.address)).to.be.equal(expandTo18Decimals(100))
+        .withArgs(test.address, test2.address, expandTo18Decimals(100))
+      expect(await balle.balanceOf(test2.address)).to.be.equal(expandTo18Decimals(100))
     })
 
     it('should allow more minting', async () => {
-      await expect(balle.mint(testAccount.address, expandTo18Decimals(400)))
+      await expect(balle.mint(test.address, expandTo18Decimals(400)))
         .to.emit(balle, 'Transfer')
-        .withArgs(ZERO_ADDRESS, testAccount.address, expandTo18Decimals(400))
-      expect(await balle.balanceOf(testAccount.address)).to.be.equal(expandTo18Decimals(800))
+        .withArgs(ZERO_ADDRESS, test.address, expandTo18Decimals(400))
+      expect(await balle.balanceOf(test.address)).to.be.equal(expandTo18Decimals(800))
     })
 
     it('should not allow minting if cap exceeded', async () => {
-      await expect(balle.mint(testAccount.address, expandTo18Decimals(39101))).to.be.revertedWith('!cap')
+      await expect(balle.mint(test.address, expandTo18Decimals(39101))).to.be.revertedWith('!cap')
     })
 
     it('should allow minting to max cap', async () => {
       const cap = await balle.cap()
       const supply = await balle.totalSupply()
-      await expect(balle.mint(testAccount.address, cap.sub(supply)))
+      await expect(balle.mint(test.address, cap.sub(supply)))
         .to.emit(balle, 'Transfer')
-        .withArgs(ZERO_ADDRESS, testAccount.address, expandTo18Decimals(39100))
+        .withArgs(ZERO_ADDRESS, test.address, expandTo18Decimals(39100))
     })
   })
 
@@ -162,9 +157,7 @@ describe('BALLEv2 Token', () => {
 
     it('should only allow governance address recover unsupported tokens', async () => {
       await expect(
-        balle
-          .connect(testAccount)
-          .governanceRecoverUnsupported(tokenA.address, testAccount.address, expandTo18Decimals(50)),
+        balle.connect(test).governanceRecoverUnsupported(tokenA.address, test.address, expandTo18Decimals(50)),
       ).to.be.revertedWith('!governance')
     })
 
@@ -181,11 +174,11 @@ describe('BALLEv2 Token', () => {
         .withArgs(ZERO_ADDRESS, balle.address, expandTo18Decimals(50))
       expect(await tokenA.balanceOf(balle.address)).to.be.equal(expandTo18Decimals(50))
 
-      await expect(balle.governanceRecoverUnsupported(tokenA.address, testAccount.address, expandTo18Decimals(50)))
+      await expect(balle.governanceRecoverUnsupported(tokenA.address, test.address, expandTo18Decimals(50)))
         .to.emit(tokenA, 'Transfer')
-        .withArgs(balle.address, testAccount.address, expandTo18Decimals(50))
+        .withArgs(balle.address, test.address, expandTo18Decimals(50))
       expect(await tokenA.balanceOf(balle.address)).to.be.equal(0)
-      expect(await tokenA.balanceOf(testAccount.address)).to.be.equal(expandTo18Decimals(50))
+      expect(await tokenA.balanceOf(test.address)).to.be.equal(expandTo18Decimals(50))
     })
   })
 })
