@@ -7,9 +7,13 @@ export async function passOneHour(): Promise<void> {
   })
 }
 
-export async function mineBlock(timestamp: number): Promise<void> {
+export async function getBlockNumber(): Promise<number> {
+  return parseInt(await network.provider.send('eth_blockNumber', []))
+}
+
+export async function mineBlock(): Promise<void> {
   await network.provider.request({
     method: 'evm_mine',
-    params: [timestamp],
+    params: [],
   })
 }
