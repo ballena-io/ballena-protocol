@@ -1,0 +1,143 @@
+{
+  "address": "0xE0C05103B2cE7e82d96E1Eb8082Cc8eC3D476ef6",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_balle",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_balleV2",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "addr",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "Migrate",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "balle",
+      "outputs": [
+        {
+          "internalType": "contract IERC20",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "balleV2",
+      "outputs": [
+        {
+          "internalType": "contract IMintableERC20",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "migrate",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0x484b01e90efce189aab053f258b923d6419d1745355422895f94eecc8e459d9a",
+  "receipt": {
+    "to": null,
+    "from": "0xF662c2785A537F9cd75240544624f7C52d539355",
+    "contractAddress": "0xE0C05103B2cE7e82d96E1Eb8082Cc8eC3D476ef6",
+    "transactionIndex": 0,
+    "gasUsed": "268184",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0x6f3a5b67daf9c525def12e1329ff8ca4b222bc13009ea24bf1883eb54ccb0f4a",
+    "transactionHash": "0x484b01e90efce189aab053f258b923d6419d1745355422895f94eecc8e459d9a",
+    "logs": [],
+    "blockNumber": 7918480,
+    "cumulativeGasUsed": "268184",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [
+    "0x8bD237e94CE369F6D78c7bb08B90efc5c6f27A4f",
+    "0x43fC744c34b211cD57c6f0d1ddB4EA8BC504541b"
+  ],
+  "solcInputHash": "6ac43225a77935da380ac9a3d7e67bba",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.3+commit.8d00100c\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_balle\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_balleV2\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"Migrate\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"balle\",\"outputs\":[{\"internalType\":\"contract IERC20\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"balleV2\",\"outputs\":[{\"internalType\":\"contract IMintableERC20\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"migrate\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"migrate()\":{\"details\":\"Transfer BALLE from wallet, and mint new BALLEv2 to wallet\"}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/token/BalleMigration.sol\":\"BalleMigration\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"none\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":500},\"remappings\":[]},\"sources\":{\"@openzeppelin/contracts/token/ERC20/IERC20.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity ^0.8.0;\\n\\n/**\\n * @dev Interface of the ERC20 standard as defined in the EIP.\\n */\\ninterface IERC20 {\\n    /**\\n     * @dev Returns the amount of tokens in existence.\\n     */\\n    function totalSupply() external view returns (uint256);\\n\\n    /**\\n     * @dev Returns the amount of tokens owned by `account`.\\n     */\\n    function balanceOf(address account) external view returns (uint256);\\n\\n    /**\\n     * @dev Moves `amount` tokens from the caller's account to `recipient`.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * Emits a {Transfer} event.\\n     */\\n    function transfer(address recipient, uint256 amount) external returns (bool);\\n\\n    /**\\n     * @dev Returns the remaining number of tokens that `spender` will be\\n     * allowed to spend on behalf of `owner` through {transferFrom}. This is\\n     * zero by default.\\n     *\\n     * This value changes when {approve} or {transferFrom} are called.\\n     */\\n    function allowance(address owner, address spender) external view returns (uint256);\\n\\n    /**\\n     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * IMPORTANT: Beware that changing an allowance with this method brings the risk\\n     * that someone may use both the old and the new allowance by unfortunate\\n     * transaction ordering. One possible solution to mitigate this race\\n     * condition is to first reduce the spender's allowance to 0 and set the\\n     * desired value afterwards:\\n     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729\\n     *\\n     * Emits an {Approval} event.\\n     */\\n    function approve(address spender, uint256 amount) external returns (bool);\\n\\n    /**\\n     * @dev Moves `amount` tokens from `sender` to `recipient` using the\\n     * allowance mechanism. `amount` is then deducted from the caller's\\n     * allowance.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * Emits a {Transfer} event.\\n     */\\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\\n\\n    /**\\n     * @dev Emitted when `value` tokens are moved from one account (`from`) to\\n     * another (`to`).\\n     *\\n     * Note that `value` may be zero.\\n     */\\n    event Transfer(address indexed from, address indexed to, uint256 value);\\n\\n    /**\\n     * @dev Emitted when the allowance of a `spender` for an `owner` is set by\\n     * a call to {approve}. `value` is the new allowance.\\n     */\\n    event Approval(address indexed owner, address indexed spender, uint256 value);\\n}\\n\",\"keccak256\":\"0xf8e8d118a7a8b2e134181f7da655f6266aa3a0f9134b2605747139fcb0c5d835\",\"license\":\"MIT\"},\"contracts/interfaces/IMintableERC20.sol\":{\"content\":\"// contracts/interfaces/IMintableERC20.sol\\n// SPDX-License-Identifier: MIT\\npragma solidity 0.8.3;\\n\\nimport \\\"@openzeppelin/contracts/token/ERC20/IERC20.sol\\\";\\n\\ninterface IMintableERC20 is IERC20 {\\n    function mint(address _to, uint256 _amount) external;\\n}\\n\",\"keccak256\":\"0x07902ae24ef2c9bbd7833b21577644b1afc25c8bc23e4271d0573d660e6d1fd2\",\"license\":\"MIT\"},\"contracts/token/BalleMigration.sol\":{\"content\":\"// contracts/token/BalleMigration.sol\\n// SPDX-License-Identifier: MIT\\npragma solidity 0.8.3;\\n\\nimport \\\"@openzeppelin/contracts/token/ERC20/IERC20.sol\\\";\\nimport \\\"../interfaces/IMintableERC20.sol\\\";\\n\\ncontract BalleMigration {\\n    IERC20 public balle;\\n    IMintableERC20 public balleV2;\\n\\n    event Migrate(address indexed addr, uint256 amount);\\n\\n    constructor(address _balle, address _balleV2) {\\n        require(_balle != address(0), \\\"BALLE address not valid\\\");\\n        require(_balleV2 != address(0), \\\"BALLEv2 address not valid\\\");\\n        require(_balle != _balleV2, \\\"Invalid address\\\");\\n\\n        balle = IERC20(_balle);\\n        balleV2 = IMintableERC20(_balleV2);\\n    }\\n\\n    /**\\n     * @dev Transfer BALLE from wallet, and mint new BALLEv2 to wallet\\n     */\\n    function migrate() external {\\n        require(block.number < 6821861, \\\"too late\\\"); // TODO: update with real end block!\\n        uint256 amount = balle.balanceOf(msg.sender);\\n        require(amount > 0, \\\"!amount\\\");\\n        balle.transferFrom(msg.sender, address(this), amount);\\n        balleV2.mint(msg.sender, amount);\\n\\n        emit Migrate(msg.sender, amount);\\n    }\\n}\\n\",\"keccak256\":\"0xb7d09f87bb580a104950fa82ee39d2e03944fbeb4b68246ab534008177f7210a\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b506040516104c13803806104c183398101604081905261002f91610181565b6001600160a01b03821661008a5760405162461bcd60e51b815260206004820152601760248201527f42414c4c452061646472657373206e6f742076616c696400000000000000000060448201526064015b60405180910390fd5b6001600160a01b0381166100e05760405162461bcd60e51b815260206004820152601960248201527f42414c4c4576322061646472657373206e6f742076616c6964000000000000006044820152606401610081565b806001600160a01b0316826001600160a01b031614156101345760405162461bcd60e51b815260206004820152600f60248201526e496e76616c6964206164647265737360881b6044820152606401610081565b600080546001600160a01b039384166001600160a01b031991821617909155600180549290931691161790556101b3565b80516001600160a01b038116811461017c57600080fd5b919050565b60008060408385031215610193578182fd5b61019c83610165565b91506101aa60208401610165565b90509250929050565b6102ff806101c26000396000f3fe608060405234801561001057600080fd5b50600436106100415760003560e01c8063695bfdac146100465780638fd3ab8014610075578063ded0da101461007f575b600080fd5b600154610059906001600160a01b031681565b6040516001600160a01b03909116815260200160405180910390f35b61007d610092565b005b600054610059906001600160a01b031681565b626817e543106100d45760405162461bcd60e51b8152602060048201526008602482015267746f6f206c61746560c01b60448201526064015b60405180910390fd5b600080546040516370a0823160e01b81523360048201526001600160a01b03909116906370a082319060240160206040518083038186803b15801561011857600080fd5b505afa15801561012c573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061015091906102da565b90506000811161018c5760405162461bcd60e51b815260206004820152600760248201526608585b5bdd5b9d60ca1b60448201526064016100cb565b6000546040516323b872dd60e01b8152336004820152306024820152604481018390526001600160a01b03909116906323b872dd90606401602060405180830381600087803b1580156101de57600080fd5b505af11580156101f2573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061021691906102b3565b506001546040516340c10f1960e01b8152336004820152602481018390526001600160a01b03909116906340c10f1990604401600060405180830381600087803b15801561026357600080fd5b505af1158015610277573d6000803e3d6000fd5b50506040518381523392507fa59785389b00cbd19745afbe8d59b28e3161395c6b1e3525861a2b0dede0b90d915060200160405180910390a250565b6000602082840312156102c4578081fd5b815180151581146102d3578182fd5b9392505050565b6000602082840312156102eb578081fd5b505191905056fea164736f6c6343000803000a",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b50600436106100415760003560e01c8063695bfdac146100465780638fd3ab8014610075578063ded0da101461007f575b600080fd5b600154610059906001600160a01b031681565b6040516001600160a01b03909116815260200160405180910390f35b61007d610092565b005b600054610059906001600160a01b031681565b626817e543106100d45760405162461bcd60e51b8152602060048201526008602482015267746f6f206c61746560c01b60448201526064015b60405180910390fd5b600080546040516370a0823160e01b81523360048201526001600160a01b03909116906370a082319060240160206040518083038186803b15801561011857600080fd5b505afa15801561012c573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061015091906102da565b90506000811161018c5760405162461bcd60e51b815260206004820152600760248201526608585b5bdd5b9d60ca1b60448201526064016100cb565b6000546040516323b872dd60e01b8152336004820152306024820152604481018390526001600160a01b03909116906323b872dd90606401602060405180830381600087803b1580156101de57600080fd5b505af11580156101f2573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061021691906102b3565b506001546040516340c10f1960e01b8152336004820152602481018390526001600160a01b03909116906340c10f1990604401600060405180830381600087803b15801561026357600080fd5b505af1158015610277573d6000803e3d6000fd5b50506040518381523392507fa59785389b00cbd19745afbe8d59b28e3161395c6b1e3525861a2b0dede0b90d915060200160405180910390a250565b6000602082840312156102c4578081fd5b815180151581146102d3578182fd5b9392505050565b6000602082840312156102eb578081fd5b505191905056fea164736f6c6343000803000a",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {
+      "migrate()": {
+        "details": "Transfer BALLE from wallet, and mint new BALLEv2 to wallet"
+      }
+    },
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {},
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 1517,
+        "contract": "contracts/token/BalleMigration.sol:BalleMigration",
+        "label": "balle",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_contract(IERC20)578"
+      },
+      {
+        "astId": 1520,
+        "contract": "contracts/token/BalleMigration.sol:BalleMigration",
+        "label": "balleV2",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_contract(IMintableERC20)1134"
+      }
+    ],
+    "types": {
+      "t_contract(IERC20)578": {
+        "encoding": "inplace",
+        "label": "contract IERC20",
+        "numberOfBytes": "20"
+      },
+      "t_contract(IMintableERC20)1134": {
+        "encoding": "inplace",
+        "label": "contract IMintableERC20",
+        "numberOfBytes": "20"
+      }
+    }
+  }
+}

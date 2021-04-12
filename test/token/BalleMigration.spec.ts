@@ -83,7 +83,7 @@ describe('BALLE Migration', () => {
       expect(await balleV2.balanceOf(testAccount.address)).to.be.equal(expandTo18Decimals(500))
     })
 
-    it('should revert if last allowed block passed', async () => {
+    it.skip('should revert if last allowed block passed', async () => {
       const currentBlock = await getBlockNumber()
       let counter = 0
 
