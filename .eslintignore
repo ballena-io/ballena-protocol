@@ -2,6 +2,7 @@
 build/
 contracts/
 coverage/
+deployments/
 node_modules/
 
 # files
