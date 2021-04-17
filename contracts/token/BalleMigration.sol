@@ -24,7 +24,7 @@ contract BalleMigration {
      * @dev Transfer BALLE from wallet, and mint new BALLEv2 to wallet
      */
     function migrate() external {
-        require(block.number < 6821861, "too late"); // TODO: update with real end block!
+        require(block.number < 8234475, "too late"); // TODO: update with real end block!
         uint256 amount = balle.balanceOf(msg.sender);
         require(amount > 0, "!amount");
         balle.transferFrom(msg.sender, address(this), amount);
