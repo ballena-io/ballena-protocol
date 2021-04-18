@@ -21,3 +21,6 @@ pnpm-debug.log*
 # Test
 coverage/
 coverage.json
+
+# Local deployments
+deployments/localhost/
