@@ -246,6 +246,14 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     }
 
     /**
+     * @dev Function that deposits all user tokens balance.
+     */
+    function depositAll(uint256 _vid) public nonReentrant {
+        VaultInfo storage vault = vaultInfo[_vid];
+        deposit(_vid, vault.depositToken.balanceOf(msg.sender));
+    }
+
+    /**
      * @dev Function that withdraws user tokens.
      */
     function withdraw(uint256 _vid, uint256 _amount) public nonReentrant vaultExists(_vid) {
