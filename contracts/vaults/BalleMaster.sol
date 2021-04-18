@@ -47,10 +47,10 @@ contract BalleMaster is Ownable, ReentrancyGuard {
 
     // The BALLE token.
     BALLEv2 public balle;
-    // BALLE tokens created per block.
-    uint256 public ballePerBlock = 2283105022831050;
-    // BALLE tokens to distribute
-    uint256 public balleTotalRewards = 24000e18;
+    // BALLE tokens created per block: 2283105022831050.
+    uint256 public ballePerBlock;
+    // BALLE tokens to distribute: 24000e18.
+    uint256 public balleTotalRewards;
     // The block number when BALLE rewards distribution starts.
     uint256 public startBlock;
 
@@ -65,8 +65,14 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     event Withdraw(address indexed user, uint256 indexed vid, uint256 amount);
     event EmergencyWithdraw(address indexed user, uint256 indexed vid, uint256 amount);
 
-    constructor(BALLEv2 _balle) {
+    constructor(
+        BALLEv2 _balle,
+        uint256 _ballePerBlock,
+        uint256 _balleTotalRewards
+    ) {
         balle = _balle;
+        ballePerBlock = _ballePerBlock;
+        balleTotalRewards = _balleTotalRewards;
     }
 
     /**
