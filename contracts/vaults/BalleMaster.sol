@@ -127,7 +127,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         uint256 _vid,
         uint256 _allocPoint,
         bool _withUpdate
-    ) public onlyOwner {
+    ) public onlyOwner vaultExists(_vid) {
         if (_withUpdate) {
             massUpdateVaults();
         }
@@ -223,7 +223,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     /**
      * @dev Function that moves tokens from user -> BalleMaster (BALLE allocation) -> Strat (compounding).
      */
-    function deposit(uint256 _vid, uint256 _amount) public nonReentrant {
+    function deposit(uint256 _vid, uint256 _amount) public nonReentrant vaultExists(_vid) {
         updateVault(_vid);
         VaultInfo storage vault = vaultInfo[_vid];
         UserInfo storage user = userInfo[_vid][msg.sender];
@@ -248,7 +248,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     /**
      * @dev Function that withdraws user tokens.
      */
-    function withdraw(uint256 _vid, uint256 _amount) public nonReentrant {
+    function withdraw(uint256 _vid, uint256 _amount) public nonReentrant vaultExists(_vid) {
         updateVault(_vid);
 
         VaultInfo storage vault = vaultInfo[_vid];
@@ -309,9 +309,9 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     /**
      * @dev Function that withdraws without caring about rewards. EMERGENCY ONLY.
      */
-    function emergencyWithdraw(uint256 _pid) public nonReentrant {
-        VaultInfo storage vault = vaultInfo[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
+    function emergencyWithdraw(uint256 _vid) public nonReentrant vaultExists(_vid) {
+        VaultInfo storage vault = vaultInfo[_vid];
+        UserInfo storage user = userInfo[_vid][msg.sender];
 
         uint256 depositTotal = IStrategy(vault.strat).depositTotal();
         uint256 sharesTotal = IStrategy(vault.strat).sharesTotal();
@@ -328,7 +328,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         }
         vault.depositToken.safeTransfer(address(msg.sender), amount);
 
-        emit EmergencyWithdraw(msg.sender, _pid, amount);
+        emit EmergencyWithdraw(msg.sender, _vid, amount);
     }
 
     /**
