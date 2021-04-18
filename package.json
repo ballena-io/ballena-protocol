@@ -3,7 +3,7 @@
   "version": "1.0.0-beta.01",
   "description": "ballena.io protocol",
   "scripts": {
-    "clean": "rimraf build && rimraf coverage && rimraf coverage.json",
+    "clean": "rimraf build && rimraf coverage && rimraf coverage.json && rimraf deployments/localhost",
     "compile": "npx hardhat compile",
     "test": "npx hardhat test",
     "coverage": "npx hardhat coverage",
