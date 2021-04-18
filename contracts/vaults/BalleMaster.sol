@@ -22,6 +22,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     struct VaultInfo {
         IERC20 depositToken; // Address of deposited token contract.
         IERC20 wantToken; // Address of the token to maximize.
+        bool rewardsActive; // BALLE rewards active for this vault.
         uint256 allocPoint; // How many allocation points assigned to this vault. BALLEs to distribute per block.
         uint256 lastRewardBlock; // Last block number that BALLEs distribution occurs.
         uint256 accBallePerShare; // Accumulated BALLEs per share, times 1e12. See below.
@@ -61,6 +62,9 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     // Total allocation points. Must be the sum of all allocation points in all vaults.
     uint256 public totalAllocPoint = 0;
 
+    event ActivateRewards(uint256 indexed vid, uint256 allocPoint);
+    event ModifyRewards(uint256 indexed vid, uint256 allocPoint);
+    event DeactivateRewards(uint256 indexed vid);
     event Deposit(address indexed user, uint256 indexed vid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed vid, uint256 amount);
     event EmergencyWithdraw(address indexed user, uint256 indexed vid, uint256 amount);
@@ -93,27 +97,18 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     /**
      * @dev Function to add a new vault configuration. Can only be called by the owner.
      */
-    function add(
+    function addVault(
         IERC20 _depositToken,
         IERC20 _wantToken,
-        uint256 _allocPoint,
-        address _strat,
-        bool _withUpdate
+        address _strat
     ) public onlyOwner {
-        if (_withUpdate) {
-            massUpdateVaults();
-        }
-        if (startBlock == 0) {
-            startBlock = block.number;
-        }
-        uint256 lastRewardBlock = block.number;
-        totalAllocPoint = totalAllocPoint + _allocPoint;
         vaultInfo.push(
             VaultInfo({
                 depositToken: _depositToken,
                 wantToken: _wantToken,
-                allocPoint: _allocPoint,
-                lastRewardBlock: lastRewardBlock,
+                rewardsActive: false,
+                allocPoint: 0,
+                lastRewardBlock: 0,
                 accBallePerShare: 0,
                 strat: _strat
             })
@@ -121,24 +116,62 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Function to update the given vault's BALLE allocation point. Can only be called by the owner.
+     * @dev Function to activate vault rewards. Can only be called by the owner.
      */
-    function set(
-        uint256 _vid,
-        uint256 _allocPoint,
-        bool _withUpdate
-    ) public onlyOwner vaultExists(_vid) {
-        if (_withUpdate) {
-            massUpdateVaults();
+    function activateVaultRewards(uint256 _vid, uint256 _allocPoint) public onlyOwner vaultExists(_vid) {
+        require(!vaultInfo[_vid].rewardsActive, "active");
+        require(_allocPoint > 0, "!allocpoint");
+
+        massUpdateVaults();
+
+        if (startBlock == 0) {
+            startBlock = block.number;
         }
+        uint256 lastRewardBlock = block.number;
+        totalAllocPoint = totalAllocPoint + _allocPoint;
+
+        vaultInfo[_vid].allocPoint = _allocPoint;
+        vaultInfo[_vid].lastRewardBlock = lastRewardBlock;
+        vaultInfo[_vid].rewardsActive = true;
+        vaultInfo[_vid].accBallePerShare = 0;
+
+        emit ActivateRewards(_vid, _allocPoint);
+    }
+
+    /**
+     * @dev Function to modify vault rewards. Can only be called by the owner.
+     */
+    function modifyVaultRewards(uint256 _vid, uint256 _allocPoint) public onlyOwner vaultExists(_vid) {
+        require(vaultInfo[_vid].rewardsActive, "!active");
+        require(_allocPoint > 0, "!allocpoint");
+
+        massUpdateVaults();
+
         totalAllocPoint = totalAllocPoint - vaultInfo[_vid].allocPoint + _allocPoint;
         vaultInfo[_vid].allocPoint = _allocPoint;
+
+        emit ModifyRewards(_vid, _allocPoint);
+    }
+
+    /**
+     * @dev Function to deactivate vault rewards. Can only be called by the owner.
+     */
+    function deactivateVaultRewards(uint256 _vid) public onlyOwner vaultExists(_vid) {
+        require(vaultInfo[_vid].rewardsActive, "!active");
+
+        massUpdateVaults();
+
+        totalAllocPoint = totalAllocPoint - vaultInfo[_vid].allocPoint;
+        vaultInfo[_vid].allocPoint = 0;
+        vaultInfo[_vid].rewardsActive = false;
+
+        emit DeactivateRewards(_vid);
     }
 
     /**
      * @dev View function to calculate the reward multiplier over the given _from to _to block.
      */
-    function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256) {
+    function getBlockMultiplier(uint256 _from, uint256 _to) public view returns (uint256) {
         if (_to < _from) {
             return 0;
         }
@@ -162,8 +195,8 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         UserInfo storage user = userInfo[_vid][_user];
         uint256 accBallePerShare = vault.accBallePerShare;
         uint256 sharesTotal = IStrategy(vault.strat).sharesTotal();
-        if (block.number > vault.lastRewardBlock && sharesTotal != 0) {
-            uint256 multiplier = getMultiplier(vault.lastRewardBlock, block.number);
+        if (vault.rewardsActive && block.number > vault.lastRewardBlock && sharesTotal != 0) {
+            uint256 multiplier = getBlockMultiplier(vault.lastRewardBlock, block.number);
             uint256 balleReward = (multiplier * ballePerBlock * vault.allocPoint) / totalAllocPoint;
             accBallePerShare = accBallePerShare + (balleReward * 1e12) / sharesTotal;
         }
@@ -200,6 +233,9 @@ contract BalleMaster is Ownable, ReentrancyGuard {
      */
     function updateVault(uint256 _vid) internal {
         VaultInfo storage vault = vaultInfo[_vid];
+        if (!vault.rewardsActive) {
+            return;
+        }
         if (block.number <= vault.lastRewardBlock) {
             return;
         }
@@ -208,7 +244,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
             vault.lastRewardBlock = block.number;
             return;
         }
-        uint256 multiplier = getMultiplier(vault.lastRewardBlock, block.number);
+        uint256 multiplier = getBlockMultiplier(vault.lastRewardBlock, block.number);
         if (multiplier <= 0) {
             return;
         }
