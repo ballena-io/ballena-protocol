@@ -14,7 +14,7 @@
     "lint:ts": "npx eslint -f table .",
     "lint": "yarn lint:sol && yarn lint:ts",
     "prepare": "npx husky install",
-    "pre-commit": "yarn prettier:check"
+    "pre-commit": "yarn prettier:check && npx commitlint -e"
   },
   "repository": {
     "type": "git",
