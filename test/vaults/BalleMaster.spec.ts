@@ -60,7 +60,7 @@ describe('BalleMaster', () => {
     it('should update totalAllocPoint')
   })
 
-  describe('Deposit & Withdraw', () => {
+  describe('Deposit, Withdraw & Harvest', () => {
     before('Deploy contracts', async () => {
       await deployments.fixture()
       balleMaster = await ethers.getContract('BalleMaster')
@@ -69,7 +69,11 @@ describe('BalleMaster', () => {
     it('should revert if deposit to non existent vault')
     it('should revert if withdraw from non existent vault')
     it('should revert if withdraw from vault with no deposits')
+    it('should revert if harvest to non existent vault')
+    it('should revert if harvest and no shares on vault')
     it('should deposit from user 1')
+    it('should harvest from user 1')
+    it('should revert harvest from user 2')
     it('should withdrawAll from user 1')
     it('should depositAll from user 1')
     it('should partial withdraw from user 1')
@@ -130,6 +134,8 @@ describe('BalleMaster', () => {
     it('should get rewards on withdrawAll from user 2 on vault #1')
     it('should show pending BALLE for user 1 on vault #1')
     it('should modify vault #1 with x5 rewards on vault #1')
+    it('should show pending BALLE for user 1 on vault #1')
+    it('should harvest BALLE rewards for user 1 on vault #1')
     it('should show pending BALLE for user 1 on vault #1')
     it('should not get more rewards when all distributed')
     it('should get rewards on withdrawAll from user 1 on vault #1')

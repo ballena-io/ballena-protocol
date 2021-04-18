@@ -67,6 +67,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     event DeactivateRewards(uint256 indexed vid);
     event Deposit(address indexed user, uint256 indexed vid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed vid, uint256 amount);
+    event Harvest(address indexed user, uint256 indexed vid, uint256 amount);
     event EmergencyWithdraw(address indexed user, uint256 indexed vid, uint256 amount);
 
     constructor(
@@ -301,8 +302,8 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         uint256 depositTotal = IStrategy(vault.strat).depositTotal();
         uint256 sharesTotal = IStrategy(vault.strat).sharesTotal();
 
-        require(user.shares > 0, "user.shares is 0");
-        require(sharesTotal > 0, "sharesTotal is 0");
+        require(sharesTotal > 0, "!sharesTotal");
+        require(user.shares > 0, "!user.shares");
 
         // Withdraw pending BALLE
         uint256 pending = (user.shares * vault.accBallePerShare) / 1e12 - user.rewardDebt;
@@ -348,6 +349,30 @@ contract BalleMaster is Ownable, ReentrancyGuard {
      */
     function withdrawAll(uint256 _vid) public nonReentrant {
         withdraw(_vid, type(uint256).max);
+    }
+
+    /**
+     * @dev Function that harvest BALLE rewards.
+     */
+    function balleHarvest(uint256 _vid) public nonReentrant vaultExists(_vid) {
+        updateVault(_vid);
+
+        VaultInfo storage vault = vaultInfo[_vid];
+        UserInfo storage user = userInfo[_vid][msg.sender];
+
+        uint256 sharesTotal = IStrategy(vault.strat).sharesTotal();
+
+        require(sharesTotal > 0, "!sharesTotal");
+        require(user.shares > 0, "!user.shares");
+
+        // Withdraw BALLE rewards
+        uint256 rewardAmount = (user.shares * vault.accBallePerShare) / 1e12 - user.rewardDebt;
+        if (rewardAmount > 0) {
+            safeBalleTransfer(msg.sender, rewardAmount);
+        }
+        user.rewardDebt = (user.shares * vault.accBallePerShare) / 1e12;
+
+        emit Harvest(msg.sender, _vid, rewardAmount);
     }
 
     /**
