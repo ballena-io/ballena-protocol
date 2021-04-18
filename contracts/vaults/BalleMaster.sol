@@ -18,6 +18,16 @@ import "../interfaces/IStrategy.sol";
 contract BalleMaster is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
+    // Info of each vault
+    struct VaultInfo {
+        IERC20 depositToken; // Address of deposited token contract.
+        IERC20 wantToken; // Address of the token to maximize.
+        uint256 allocPoint; // How many allocation points assigned to this vault. BALLEs to distribute per block.
+        uint256 lastRewardBlock; // Last block number that BALLEs distribution occurs.
+        uint256 accBallePerShare; // Accumulated BALLEs per share, times 1e12. See below.
+        address strat; // Address of the strategy contract that will maximize want tokens.
+    }
+
     // Info of each user
     struct UserInfo {
         uint256 shares; // User shares of the vault.
@@ -26,24 +36,13 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         // We do some fancy math here. Basically, any point in time, the amount of BALLEs
         // entitled to a user but is pending to be distributed is:
         //
-        //   amount = user.shares / sharesTotal * lockedTotal
-        //   pending reward = (amount * vault.accBallePerShare) - user.rewardDebt
+        //   pending reward = (user.shares * vault.accBallePerShare) / 1e12 - user.rewardDebt
         //
         // Whenever a user deposits or withdraws LP tokens to a vault. Here's what happens:
-        //   1. The vault's `accBallePerShare` (and `lastRewardBlock`) gets updated.
-        //   2. User receives the pending reward sent to his/her address.
-        //   3. User's `amount` gets updated.
+        //   1. The vault's `accBallePerShare` and `lastRewardBlock` gets updated.
+        //   2. User receives the pending reward sent to his address.
+        //   3. User's `shares` gets updated.
         //   4. User's `rewardDebt` gets updated.
-    }
-
-    // Info of each vault
-    struct VaultInfo {
-        IERC20 lpToken; // Address of LP token contract.
-        IERC20 want; // Address of the want token.
-        uint256 allocPoint; // How many allocation points assigned to this vault. BALLEs to distribute per block.
-        uint256 lastRewardBlock; // Last block number that BALLEs distribution occurs.
-        uint256 accBallePerShare; // Accumulated BALLEs per share, times 1e12. See below.
-        address strat; // Strategy address that will auto compound want tokens
     }
 
     // The BALLE token.
@@ -87,11 +86,10 @@ contract BalleMaster is Ownable, ReentrancyGuard {
 
     /**
      * @dev Function to add a new vault configuration. Can only be called by the owner.
-     * XXX DO NOT add the same LP token more than once. Rewards will be messed up if you do. (Only if want tokens are stored here.)
      */
     function add(
-        IERC20 _lpToken,
-        IERC20 _want,
+        IERC20 _depositToken,
+        IERC20 _wantToken,
         uint256 _allocPoint,
         address _strat,
         bool _withUpdate
@@ -106,8 +104,8 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         totalAllocPoint = totalAllocPoint + _allocPoint;
         vaultInfo.push(
             VaultInfo({
-                lpToken: _lpToken,
-                want: _want,
+                depositToken: _depositToken,
+                wantToken: _wantToken,
                 allocPoint: _allocPoint,
                 lastRewardBlock: lastRewardBlock,
                 accBallePerShare: 0,
@@ -174,17 +172,17 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         UserInfo storage user = userInfo[_vid][_user];
 
         uint256 sharesTotal = IStrategy(vault.strat).sharesTotal();
-        uint256 lockedTotal = IStrategy(vault.strat).lockedTotal();
+        uint256 depositTotal = IStrategy(vault.strat).depositTotal();
         if (sharesTotal == 0) {
             return 0;
         }
-        return (user.shares * lockedTotal) / sharesTotal;
+        return (user.shares * depositTotal) / sharesTotal;
     }
 
     /**
      * @dev Function to update reward variables for all vaults. Be careful of gas spending!
      */
-    function massUpdateVaults() public {
+    function massUpdateVaults() internal {
         uint256 length = vaultInfo.length;
         for (uint256 vid = 0; vid < length; ++vid) {
             updateVault(vid);
@@ -194,7 +192,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     /**
      * @dev Function to update reward variables of the given vault to be up-to-date.
      */
-    function updateVault(uint256 _vid) public {
+    function updateVault(uint256 _vid) internal {
         VaultInfo storage vault = vaultInfo[_vid];
         if (block.number <= vault.lastRewardBlock) {
             return;
@@ -231,9 +229,9 @@ contract BalleMaster is Ownable, ReentrancyGuard {
             }
         }
         if (_amount > 0) {
-            vault.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
+            vault.depositToken.safeTransferFrom(address(msg.sender), address(this), _amount);
 
-            vault.lpToken.safeIncreaseAllowance(vault.strat, _amount);
+            vault.depositToken.safeIncreaseAllowance(vault.strat, _amount);
             uint256 sharesAdded = IStrategy(vaultInfo[_vid].strat).deposit(msg.sender, _amount);
             user.shares = user.shares + sharesAdded;
         }
@@ -250,7 +248,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         VaultInfo storage vault = vaultInfo[_vid];
         UserInfo storage user = userInfo[_vid][msg.sender];
 
-        uint256 lockedTotal = IStrategy(vault.strat).lockedTotal();
+        uint256 depositTotal = IStrategy(vault.strat).depositTotal();
         uint256 sharesTotal = IStrategy(vault.strat).sharesTotal();
 
         require(user.shares > 0, "user.shares is 0");
@@ -263,12 +261,13 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         }
 
         // Withdraw tokens
-        uint256 amount = (user.shares * lockedTotal) / sharesTotal;
+        uint256 amount = (user.shares * depositTotal) / sharesTotal;
         if (_amount > amount) {
             _amount = amount;
         }
         if (_amount > 0) {
-            (uint256 sharesRemoved, uint256 wantRemoved) = IStrategy(vault.strat).withdraw(msg.sender, _amount);
+            (uint256 sharesRemoved, uint256 depositRemoved, uint256 wantRemoved) =
+                IStrategy(vault.strat).withdraw(msg.sender, _amount);
 
             if (sharesRemoved > user.shares) {
                 user.shares = 0;
@@ -276,18 +275,18 @@ contract BalleMaster is Ownable, ReentrancyGuard {
                 user.shares = user.shares - sharesRemoved;
             }
 
-            uint256 lpBal = IERC20(vault.lpToken).balanceOf(address(this));
-            if (lpBal < _amount) {
-                _amount = lpBal;
+            uint256 depositBal = IERC20(vault.depositToken).balanceOf(address(this));
+            if (depositBal < depositRemoved) {
+                depositRemoved = depositBal;
             }
-            vault.lpToken.safeTransfer(address(msg.sender), _amount);
+            vault.depositToken.safeTransfer(address(msg.sender), depositRemoved);
 
-            if (vault.lpToken != vault.want) {
-                uint256 wantBal = IERC20(vault.want).balanceOf(address(this));
+            if (vault.depositToken != vault.wantToken) {
+                uint256 wantBal = IERC20(vault.wantToken).balanceOf(address(this));
                 if (wantBal < wantRemoved) {
                     wantRemoved = wantBal;
                 }
-                vault.want.safeTransfer(address(msg.sender), wantRemoved);
+                vault.wantToken.safeTransfer(address(msg.sender), wantRemoved);
             }
         }
         user.rewardDebt = (user.shares * vault.accBallePerShare) / 1e12;
@@ -308,20 +307,20 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         VaultInfo storage vault = vaultInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
 
-        uint256 lockedTotal = IStrategy(vault.strat).lockedTotal();
+        uint256 depositTotal = IStrategy(vault.strat).depositTotal();
         uint256 sharesTotal = IStrategy(vault.strat).sharesTotal();
-        uint256 amount = (user.shares * lockedTotal) / sharesTotal;
+        uint256 amount = (user.shares * depositTotal) / sharesTotal;
         user.shares = 0;
         user.rewardDebt = 0;
 
         // TODO consider implementing emergencyWithdraw on strategy too.
         IStrategy(vault.strat).withdraw(msg.sender, amount);
 
-        uint256 lpBal = IERC20(vault.lpToken).balanceOf(address(this));
+        uint256 lpBal = IERC20(vault.depositToken).balanceOf(address(this));
         if (lpBal < amount) {
             amount = lpBal;
         }
-        vault.lpToken.safeTransfer(address(msg.sender), amount);
+        vault.depositToken.safeTransfer(address(msg.sender), amount);
 
         emit EmergencyWithdraw(msg.sender, _pid, amount);
     }
@@ -342,8 +341,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
      * @dev Function to use from Governance GNOSIS Safe only in case tokens get stuck. EMERGENCY ONLY.
      */
     function inCaseTokensGetStuck(address _token, uint256 _amount) public onlyOwner {
-        // No BALLE tokens here, they get minted to user wallet, so, no need to check.
-        // require(_token != address(balle), "!safe");
+        require(_token != address(balle), "!safe");
         IERC20(_token).safeTransfer(msg.sender, _amount);
     }
 }
