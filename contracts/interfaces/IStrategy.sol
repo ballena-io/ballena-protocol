@@ -4,9 +4,9 @@ pragma solidity 0.8.3;
 
 interface IStrategy {
     // Total tokens managed by strategy
-    function lockedTotal() external view returns (uint256);
+    function depositTotal() external view returns (uint256);
 
-    // Sum of all shares of users to lockedTotal
+    // Sum of all shares of users to depositTotal
     function sharesTotal() external view returns (uint256);
 
     // Main compounding function
@@ -16,7 +16,13 @@ interface IStrategy {
     function deposit(address _userAddress, uint256 _amount) external returns (uint256);
 
     // Transfer tokens strategy -> balleMaster
-    function withdraw(address _userAddress, uint256 _amount) external returns (uint256, uint256);
+    function withdraw(address _userAddress, uint256 _amount)
+        external
+        returns (
+            uint256,
+            uint256,
+            uint256
+        );
 
     function inCaseTokensGetStuck(
         address _token,
