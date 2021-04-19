@@ -9,13 +9,13 @@ interface IStrategy {
     // Sum of all shares of users to depositTotal
     function sharesTotal() external view returns (uint256);
 
-    // Main compounding function
-    function earn() external;
+    // Main harvest function
+    function harvest() external;
 
-    // Transfer tokens balleMaster -> strategy
+    // Transfer tokens BalleMaster -> strategy
     function deposit(address _userAddress, uint256 _amount) external returns (uint256);
 
-    // Transfer tokens strategy -> balleMaster
+    // Transfer tokens strategy -> BalleMaster
     function withdraw(address _userAddress, uint256 _amount)
         external
         returns (

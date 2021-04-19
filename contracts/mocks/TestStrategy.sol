@@ -17,27 +17,49 @@ contract TestStrategy is Ownable {
     uint256 public depositTotal = 0;
     uint256 public sharesTotal = 0;
 
+    /**
+     * @dev Implementation of strategy for testing.
+     * The strategy will "mine" TEST_LP tokens to simulate a working farm for testing purpouses.
+     * It's very simple to facilitate testing. Every time it's harvested, it will add 1% to TEST_LP balance.
+     * Will be improved to test fee distribution, etc.
+     */
     constructor(
         address _balleMaster,
         address _depositToken,
         address _wantToken
     ) {
+        require(_depositToken == _wantToken, "!token");
         balleMaster = _balleMaster;
         depositToken = _depositToken;
         wantToken = _wantToken;
 
+        govAddress = msg.sender;
         transferOwnership(_balleMaster);
     }
 
-    // Main compounding function
-    function earn() external {
+    /**
+     * @dev Function to harvest benefits and implement strategy steps.
+     * It will increase deposited tokens by 1% every time it's called.
+     */
+    function harvest() external {
         require(msg.sender == govAddress, "!gov");
-        uint256 earned = (IERC20(depositToken).balanceOf(address(this)) * 5) / 100;
+
+        if (depositTotal == 0) {
+            return;
+        }
+
+        uint256 earned = IERC20(depositToken).balanceOf(address(this)) / 100;
+        depositTotal = depositTotal + earned;
         IMintableERC20(depositToken).mint(address(this), earned);
     }
 
-    // Transfer tokens balleMaster -> strategy
+    /**
+     * @dev Function to transfer tokens BalleMaster -> strategy and put it to work.
+     * It will leave the tokens here, strategy only for testing purpouses.
+     */
     function deposit(uint256 _amount) public onlyOwner returns (uint256) {
+        require(_amount > 0, "!amount");
+
         IERC20(depositToken).safeTransferFrom(address(msg.sender), address(this), _amount);
 
         uint256 sharesAdded = _amount;
@@ -49,7 +71,9 @@ contract TestStrategy is Ownable {
         return sharesAdded;
     }
 
-    // Transfer tokens strategy -> balleMaster
+    /**
+     * @dev Function to transfer tokens strategy -> BalleMaster.
+     */
     function withdraw(uint256 _amount)
         public
         onlyOwner
@@ -59,7 +83,7 @@ contract TestStrategy is Ownable {
             uint256
         )
     {
-        require(_amount > 0, "_amount <= 0");
+        require(_amount > 0, "!amount");
 
         uint256 depositAmt = IERC20(depositToken).balanceOf(address(this));
         if (_amount > depositAmt) {
@@ -79,10 +103,7 @@ contract TestStrategy is Ownable {
 
         IERC20(depositToken).safeTransfer(msg.sender, _amount);
 
-        // TODO: take account of want token different of deposit token (not auto compound strategy)
-        uint256 wantAmt = _amount;
-
-        return (sharesRemoved, _amount, wantAmt);
+        return (sharesRemoved, _amount, _amount);
     }
 
     function setGov(address _govAddress) public {
