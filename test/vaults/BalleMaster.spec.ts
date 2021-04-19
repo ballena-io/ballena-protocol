@@ -4,6 +4,7 @@ import { ethers, deployments } from 'hardhat'
 import { BigNumber } from 'ethers'
 import { expect } from '../shared/expect'
 import { expandTo18Decimals } from '../../src/utils'
+import { MaxUint256 } from '../../src/utils/constants'
 
 describe('BalleMaster', () => {
   let balle: Contract
@@ -139,29 +140,87 @@ describe('BalleMaster', () => {
     })
   })
 
-  describe('Deposit, Withdraw & Harvest', () => {
+  describe('Deposit & withdraw', () => {
     before('Deploy contracts', async () => {
       await deployments.fixture()
       balle = await ethers.getContract('BALLEv2')
       balleMaster = await ethers.getContract('BalleMaster')
       testStrategy = await ethers.getContract('TestStrategy')
       testLP = await ethers.getContract('TestLP')
+
+      // setup TEST_LP balance
+      await testLP.connect(deployer).mint(deployer.address, expandTo18Decimals(500))
+      await testLP.connect(deployer).mint(test.address, expandTo18Decimals(500))
+      expect(await testLP.connect(deployer).balanceOf(test.address)).to.be.equal(expandTo18Decimals(500))
+      // approve TEST_LP allowances to BalleMaster contract
+      testLP.connect(deployer).approve(balleMaster.address, MaxUint256)
+      testLP.connect(test).approve(balleMaster.address, MaxUint256)
+      // create new vault
+      balleMaster.connect(deployer).addVault(testLP.address, testLP.address, testStrategy.address)
     })
 
-    it('should revert if deposit to non existent vault')
-    it('should revert if withdraw from non existent vault')
-    it('should revert if withdraw from vault with no deposits')
-    it('should revert if harvest to non existent vault')
-    it('should revert if harvest and no shares on vault')
-    it('should deposit from user 1')
-    it('should harvest from user 1')
-    it('should revert harvest from user 2')
-    it('should withdrawAll from user 1')
-    it('should depositAll from user 1')
-    it('should partial withdraw from user 1')
-    it('should add deposit from user 2')
-    it('should withdraw from user 1')
-    it('should withdrawAll from user 2')
+    it('should revert if deposit to non existent vault', async () => {
+      expect(balleMaster.connect(deployer).deposit(99, expandTo18Decimals(100))).to.be.revertedWith('!vault')
+    })
+
+    it('should revert if withdraw from non existent vault', async () => {
+      expect(balleMaster.connect(deployer).withdraw(99, expandTo18Decimals(100))).to.be.revertedWith('!vault')
+    })
+
+    it('should revert if withdraw from vault with no deposits', async () => {
+      expect(balleMaster.connect(deployer).withdraw(0, expandTo18Decimals(100))).to.be.revertedWith('!sharesTotal')
+    })
+
+    it('should deposit from user 1', async () => {
+      expect(balleMaster.connect(deployer).deposit(0, expandTo18Decimals(100)))
+        .to.emit(balleMaster, 'Deposit')
+        .withArgs(deployer.address, 0, expandTo18Decimals(100), 0)
+      expect(await balleMaster.connect(deployer).stakedTokens(0, deployer.address)).to.be.equal(expandTo18Decimals(100))
+    })
+
+    it('should harvest from user 1', async () => {
+      expect(balleMaster.connect(deployer).withdraw(0, 0))
+        .to.emit(balleMaster, 'Withdraw')
+        .withArgs(deployer.address, 0, 0, 0)
+    })
+
+    it('should revert withdraw from user 2', async () => {
+      expect(balleMaster.connect(test).withdraw(0, 0)).to.be.revertedWith('!user.shares')
+    })
+
+    it('should withdrawAll from user 1', async () => {
+      expect(balleMaster.connect(deployer).withdrawAll(0))
+        .to.emit(balleMaster, 'Withdraw')
+        .withArgs(deployer.address, 0, expandTo18Decimals(100), 0)
+    })
+
+    it('should deposit from user 2', async () => {
+      expect(balleMaster.connect(test).deposit(0, expandTo18Decimals(150)))
+        .to.emit(balleMaster, 'Deposit')
+        .withArgs(test.address, 0, expandTo18Decimals(150), 0)
+      expect(await balleMaster.connect(test).stakedTokens(0, test.address)).to.be.equal(expandTo18Decimals(150))
+    })
+
+    it('should depositAll from user 2', async () => {
+      expect(balleMaster.connect(test).depositAll(0))
+        .to.emit(balleMaster, 'Deposit')
+        .withArgs(test.address, 0, expandTo18Decimals(350), 0)
+      expect(await balleMaster.connect(test).stakedTokens(0, test.address)).to.be.equal(expandTo18Decimals(500))
+    })
+
+    it('should partial withdraw from user 2', async () => {
+      expect(balleMaster.connect(test).withdraw(0, expandTo18Decimals(200)))
+        .to.emit(balleMaster, 'Withdraw')
+        .withArgs(test.address, 0, expandTo18Decimals(200), 0)
+      expect(await balleMaster.connect(test).stakedTokens(0, test.address)).to.be.equal(expandTo18Decimals(300))
+    })
+
+    it('should withdraw from user 2', async () => {
+      expect(balleMaster.connect(test).withdraw(0, expandTo18Decimals(300)))
+        .to.emit(balleMaster, 'Withdraw')
+        .withArgs(test.address, 0, expandTo18Decimals(300), 0)
+      expect(await balleMaster.connect(test).stakedTokens(0, test.address)).to.be.equal(0)
+    })
   })
 
   describe('Deposit & Withdraw when wantToken != depositToken', () => {

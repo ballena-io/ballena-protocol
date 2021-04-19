@@ -65,9 +65,8 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     event ActivateRewards(uint256 indexed vid, uint256 allocPoint);
     event ModifyRewards(uint256 indexed vid, uint256 allocPoint);
     event DeactivateRewards(uint256 indexed vid);
-    event Deposit(address indexed user, uint256 indexed vid, uint256 amount);
-    event Withdraw(address indexed user, uint256 indexed vid, uint256 amount);
-    event Harvest(address indexed user, uint256 indexed vid, uint256 amount);
+    event Deposit(address indexed user, uint256 indexed vid, uint256 amount, uint256 rewards);
+    event Withdraw(address indexed user, uint256 indexed vid, uint256 amount, uint256 rewards);
     event EmergencyWithdraw(address indexed user, uint256 indexed vid, uint256 amount);
 
     constructor(
@@ -260,13 +259,14 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     /**
      * @dev Function that moves tokens from user -> BalleMaster (BALLE allocation) -> Strat (compounding).
      */
-    function deposit(uint256 _vid, uint256 _amount) public nonReentrant vaultExists(_vid) {
+    function _deposit(uint256 _vid, uint256 _amount) internal {
         updateVault(_vid);
         VaultInfo storage vault = vaultInfo[_vid];
         UserInfo storage user = userInfo[_vid][msg.sender];
 
+        uint256 pending;
         if (user.shares > 0) {
-            uint256 pending = (user.shares * vault.accBallePerShare) / 1e12 - user.rewardDebt;
+            pending = (user.shares * vault.accBallePerShare) / 1e12 - user.rewardDebt;
             if (pending > 0) {
                 safeBalleTransfer(msg.sender, pending);
             }
@@ -275,11 +275,18 @@ contract BalleMaster is Ownable, ReentrancyGuard {
             vault.depositToken.safeTransferFrom(address(msg.sender), address(this), _amount);
 
             vault.depositToken.safeIncreaseAllowance(vault.strat, _amount);
-            uint256 sharesAdded = IStrategy(vaultInfo[_vid].strat).deposit(msg.sender, _amount);
+            uint256 sharesAdded = IStrategy(vaultInfo[_vid].strat).deposit(_amount);
             user.shares = user.shares + sharesAdded;
         }
         user.rewardDebt = (user.shares * vault.accBallePerShare) / 1e12;
-        emit Deposit(msg.sender, _vid, _amount);
+        emit Deposit(msg.sender, _vid, _amount, pending);
+    }
+
+    /**
+     * @dev Function that deposits user tokens.
+     */
+    function deposit(uint256 _vid, uint256 _amount) public nonReentrant vaultExists(_vid) {
+        _deposit(_vid, _amount);
     }
 
     /**
@@ -287,13 +294,13 @@ contract BalleMaster is Ownable, ReentrancyGuard {
      */
     function depositAll(uint256 _vid) public nonReentrant {
         VaultInfo storage vault = vaultInfo[_vid];
-        deposit(_vid, vault.depositToken.balanceOf(msg.sender));
+        _deposit(_vid, vault.depositToken.balanceOf(msg.sender));
     }
 
     /**
-     * @dev Function that withdraws user tokens.
+     * @dev Function that performs the withdrawal.
      */
-    function withdraw(uint256 _vid, uint256 _amount) public nonReentrant vaultExists(_vid) {
+    function _withdraw(uint256 _vid, uint256 _amount) internal {
         updateVault(_vid);
 
         VaultInfo storage vault = vaultInfo[_vid];
@@ -318,7 +325,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         }
         if (_amount > 0) {
             (uint256 sharesRemoved, uint256 depositRemoved, uint256 wantRemoved) =
-                IStrategy(vault.strat).withdraw(msg.sender, _amount);
+                IStrategy(vault.strat).withdraw(_amount);
 
             if (sharesRemoved > user.shares) {
                 user.shares = 0;
@@ -341,38 +348,21 @@ contract BalleMaster is Ownable, ReentrancyGuard {
             }
         }
         user.rewardDebt = (user.shares * vault.accBallePerShare) / 1e12;
-        emit Withdraw(msg.sender, _vid, _amount);
+        emit Withdraw(msg.sender, _vid, _amount, pending);
+    }
+
+    /**
+     * @dev Function that withdraws user tokens.
+     */
+    function withdraw(uint256 _vid, uint256 _amount) public nonReentrant vaultExists(_vid) {
+        _withdraw(_vid, _amount);
     }
 
     /**
      * @dev Function that withdraws all user tokens balance.
      */
     function withdrawAll(uint256 _vid) public nonReentrant {
-        withdraw(_vid, type(uint256).max);
-    }
-
-    /**
-     * @dev Function that harvest BALLE rewards.
-     */
-    function balleHarvest(uint256 _vid) public nonReentrant vaultExists(_vid) {
-        updateVault(_vid);
-
-        VaultInfo storage vault = vaultInfo[_vid];
-        UserInfo storage user = userInfo[_vid][msg.sender];
-
-        uint256 sharesTotal = IStrategy(vault.strat).sharesTotal();
-
-        require(sharesTotal > 0, "!sharesTotal");
-        require(user.shares > 0, "!user.shares");
-
-        // Withdraw BALLE rewards
-        uint256 rewardAmount = (user.shares * vault.accBallePerShare) / 1e12 - user.rewardDebt;
-        if (rewardAmount > 0) {
-            safeBalleTransfer(msg.sender, rewardAmount);
-        }
-        user.rewardDebt = (user.shares * vault.accBallePerShare) / 1e12;
-
-        emit Harvest(msg.sender, _vid, rewardAmount);
+        _withdraw(_vid, type(uint256).max);
     }
 
     /**
@@ -389,7 +379,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         user.rewardDebt = 0;
 
         // TODO consider implementing emergencyWithdraw on strategy too.
-        IStrategy(vault.strat).withdraw(msg.sender, amount);
+        IStrategy(vault.strat).withdraw(amount);
 
         uint256 lpBal = IERC20(vault.depositToken).balanceOf(address(this));
         if (lpBal < amount) {
