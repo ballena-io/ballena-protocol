@@ -5,12 +5,10 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts } = hre
   const { deploy } = deployments
   const { deployer } = await getNamedAccounts()
-  const BalleMaster = await deployments.get('BalleMaster')
-  const TestLP = await deployments.get('TestLP')
 
-  await deploy('TestStrategy', {
+  await deploy('TestLP', {
     from: deployer,
-    args: [BalleMaster.address, TestLP.address, TestLP.address],
+    args: [],
     log: true,
     deterministicDeployment: false,
   })
@@ -27,6 +25,5 @@ deploy.skip = async (hre: HardhatRuntimeEnvironment) => {
   }
   return false
 }
-deploy.tags = ['TestStrategy']
-deploy.dependencies = ['TestLP', 'BalleMaster']
+deploy.tags = ['TestLP']
 export default deploy

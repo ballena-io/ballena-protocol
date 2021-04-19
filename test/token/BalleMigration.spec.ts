@@ -11,7 +11,7 @@ describe('BALLE Migration', () => {
   let balleV2: Contract
   let BalleMigration: ContractFactory
   let balleMigration: Contract
-  let deployerAccount: SignerWithAddress, testAccount: SignerWithAddress
+  let deployer: SignerWithAddress, test: SignerWithAddress
 
   before('Load contract factory and deploy contracts', async () => {
     await deployments.fixture()
@@ -19,9 +19,7 @@ describe('BALLE Migration', () => {
     balleV2 = await ethers.getContract('BALLEv2')
 
     BalleMigration = await ethers.getContractFactory('BalleMigration')
-    const { deployer, test } = await ethers.getNamedSigners()
-    deployerAccount = deployer
-    testAccount = test
+    ;({ deployer, test } = await ethers.getNamedSigners())
   })
 
   describe('Test constructor', () => {
@@ -51,36 +49,36 @@ describe('BALLE Migration', () => {
     })
 
     it('should revert if not amount to migrate', async () => {
-      await expect(balleMigration.connect(testAccount).migrate()).to.be.revertedWith('!amount')
+      await expect(balleMigration.connect(test).migrate()).to.be.revertedWith('!amount')
     })
 
     it('should fail migrate if not allowance', async () => {
       // setup BALLE balance
-      await balle.addMinter(deployerAccount.address)
-      await expect(balle.mint(testAccount.address, expandTo18Decimals(500)))
+      await balle.addMinter(deployer.address)
+      await expect(balle.mint(test.address, expandTo18Decimals(500)))
         .to.emit(balle, 'Transfer')
-        .withArgs(ZERO_ADDRESS, testAccount.address, expandTo18Decimals(500))
-      expect(await balle.balanceOf(testAccount.address)).to.be.equal(expandTo18Decimals(500))
+        .withArgs(ZERO_ADDRESS, test.address, expandTo18Decimals(500))
+      expect(await balle.balanceOf(test.address)).to.be.equal(expandTo18Decimals(500))
 
-      await expect(balleMigration.connect(testAccount).migrate()).to.be.revertedWith(
+      await expect(balleMigration.connect(test).migrate()).to.be.revertedWith(
         'ERC20: transfer amount exceeds allowance',
       )
     })
 
     it('should migrate tokens', async () => {
       // BALLE balance already set, verify.
-      expect(await balle.balanceOf(testAccount.address)).to.be.equal(expandTo18Decimals(500))
+      expect(await balle.balanceOf(test.address)).to.be.equal(expandTo18Decimals(500))
       // approve BALLE transfer to migration contract
-      balle.connect(testAccount).approve(balleMigration.address, MaxUint256)
+      balle.connect(test).approve(balleMigration.address, MaxUint256)
 
       // set migration contract as BALLEv2 minter
       await balleV2.addMinter(balleMigration.address)
 
-      await expect(balleMigration.connect(testAccount).migrate())
+      await expect(balleMigration.connect(test).migrate())
         .to.emit(balleMigration, 'Migrate')
-        .withArgs(testAccount.address, expandTo18Decimals(500))
-      expect(await balle.balanceOf(testAccount.address)).to.be.equal(0)
-      expect(await balleV2.balanceOf(testAccount.address)).to.be.equal(expandTo18Decimals(500))
+        .withArgs(test.address, expandTo18Decimals(500))
+      expect(await balle.balanceOf(test.address)).to.be.equal(0)
+      expect(await balleV2.balanceOf(test.address)).to.be.equal(expandTo18Decimals(500))
     })
 
     it.skip('should revert if last allowed block passed', async () => {
@@ -91,7 +89,7 @@ describe('BALLE Migration', () => {
         counter++
         mineBlock()
       }
-      await expect(balleMigration.connect(testAccount).migrate()).to.be.revertedWith('too late')
+      await expect(balleMigration.connect(test).migrate()).to.be.revertedWith('too late')
     })
   })
 })
