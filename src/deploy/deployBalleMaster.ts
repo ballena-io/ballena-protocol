@@ -4,7 +4,7 @@ import { BigNumber } from 'ethers'
 import { expandTo18Decimals } from '../utils'
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  const { deployments, getNamedAccounts, network } = hre
+  const { deployments, getNamedAccounts, network, ethers } = hre
   const { deploy } = deployments
   const { deployer } = await getNamedAccounts()
   const BalleV2 = await deployments.get('BALLEv2')
@@ -14,7 +14,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   // If tests network, use testing reward params, unless fork node
   if (network.tags['test'] && network.name !== 'localhost') {
     ballePerBlock = expandTo18Decimals(1)
-    balleTotalRewards = expandTo18Decimals(500)
+    balleTotalRewards = expandTo18Decimals(50)
   }
 
   await deploy('BalleMaster', {
@@ -23,6 +23,11 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     log: true,
     deterministicDeployment: false,
   })
+
+  // Add BalleMaster as BALLE minter
+  const BalleMaster = await deployments.get('BalleMaster')
+  const balle = await ethers.getContractAt('BALLEv2', BalleV2.address)
+  await balle.addMinter(BalleMaster.address)
 }
 
 deploy.tags = ['BalleMaster']
