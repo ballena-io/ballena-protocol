@@ -47,10 +47,10 @@ contract BalleMaster is Ownable, ReentrancyGuard {
 
     // The BALLE token.
     BALLEv2 public balle;
-    // BALLE tokens created per block.
-    uint256 public ballePerBlock = 2283105022831050;
-    // BALLE tokens to distribute
-    uint256 public balleTotalRewards = 24000e18;
+    // BALLE tokens created per block: 2283105022831050.
+    uint256 public ballePerBlock;
+    // BALLE tokens to distribute: 24000e18.
+    uint256 public balleTotalRewards;
     // The block number when BALLE rewards distribution starts.
     uint256 public startBlock;
 
@@ -65,8 +65,14 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     event Withdraw(address indexed user, uint256 indexed vid, uint256 amount);
     event EmergencyWithdraw(address indexed user, uint256 indexed vid, uint256 amount);
 
-    constructor(BALLEv2 _balle) {
+    constructor(
+        BALLEv2 _balle,
+        uint256 _ballePerBlock,
+        uint256 _balleTotalRewards
+    ) {
         balle = _balle;
+        ballePerBlock = _ballePerBlock;
+        balleTotalRewards = _balleTotalRewards;
     }
 
     /**
@@ -121,7 +127,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         uint256 _vid,
         uint256 _allocPoint,
         bool _withUpdate
-    ) public onlyOwner {
+    ) public onlyOwner vaultExists(_vid) {
         if (_withUpdate) {
             massUpdateVaults();
         }
@@ -217,7 +223,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     /**
      * @dev Function that moves tokens from user -> BalleMaster (BALLE allocation) -> Strat (compounding).
      */
-    function deposit(uint256 _vid, uint256 _amount) public nonReentrant {
+    function deposit(uint256 _vid, uint256 _amount) public nonReentrant vaultExists(_vid) {
         updateVault(_vid);
         VaultInfo storage vault = vaultInfo[_vid];
         UserInfo storage user = userInfo[_vid][msg.sender];
@@ -242,7 +248,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     /**
      * @dev Function that withdraws user tokens.
      */
-    function withdraw(uint256 _vid, uint256 _amount) public nonReentrant {
+    function withdraw(uint256 _vid, uint256 _amount) public nonReentrant vaultExists(_vid) {
         updateVault(_vid);
 
         VaultInfo storage vault = vaultInfo[_vid];
@@ -303,9 +309,9 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     /**
      * @dev Function that withdraws without caring about rewards. EMERGENCY ONLY.
      */
-    function emergencyWithdraw(uint256 _pid) public nonReentrant {
-        VaultInfo storage vault = vaultInfo[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
+    function emergencyWithdraw(uint256 _vid) public nonReentrant vaultExists(_vid) {
+        VaultInfo storage vault = vaultInfo[_vid];
+        UserInfo storage user = userInfo[_vid][msg.sender];
 
         uint256 depositTotal = IStrategy(vault.strat).depositTotal();
         uint256 sharesTotal = IStrategy(vault.strat).sharesTotal();
@@ -322,7 +328,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         }
         vault.depositToken.safeTransfer(address(msg.sender), amount);
 
-        emit EmergencyWithdraw(msg.sender, _pid, amount);
+        emit EmergencyWithdraw(msg.sender, _vid, amount);
     }
 
     /**
