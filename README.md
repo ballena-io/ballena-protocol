@@ -1,6 +1,6 @@
 # ballena-protocol
 
-> **_NOTE:_** Tests coverage deactivated until https://github.com/sc-forks/solidity-coverage/issues/624 solved because now is incompatible with hardhat-deploy.
+[![codecov](https://codecov.io/gh/ballena-io/ballena-protocol/branch/master/graph/badge.svg?token=zmQsGQ5KVQ)](https://codecov.io/gh/ballena-io/ballena-protocol)
 
 Implementation of [ballena.io](https://ballena.io) smart contracts on the Binance Smart Chain. In-depth documentation on [ballena.io](https://ballena.io) is available at [docs.ballena.io](https://docs.ballena.io).
 
