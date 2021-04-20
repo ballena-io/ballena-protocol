@@ -56,7 +56,7 @@ At any point in time, the amount of BALLEs entitled to a user but is pending to 
 
 Each vault is managed from two smart contracts, this one, that will be responsible for its lifecycle, rewards distribution and entry/exit point or interface with the user (every operation with the vault will be thru this contract), and the Strategy smart contract that will implement the strategy details and will interact with the destination platform.
 
-No tokens are held in any of the two contracts of the vault, they only pass thru them to reach the destination's platform farm smart contract when the user makes a deposit deposit and the inverse path on withdrawal.
+No tokens are held in any of the two contracts of the vault, they only pass thru them to reach the destination's platform farm smart contract when the user makes a deposit and the inverse path on withdrawal.
 
 For the creation of a new vault, a new strategy smart contract will be deployed to the blockchain. Then a new entry to vault's registry on BalleMaster smart contract will be created with the address of the tokens involved and the strategy smart contract address. This step will be made by a call to `addVault()`.
 At this point, the vault is created, so it can be tested that deposit and withdraw functions are working properly (`deposit()`, `withdraw()`, `emergencyWithdraw()` and `harvest()`), to ensure that there will be no problems with user's tokens.
