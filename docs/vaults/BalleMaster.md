@@ -83,7 +83,7 @@ There is some information about the vaults to show in the frontend app that shou
 
 The first, is the visibility of the vault itself. The vault shoul be made visible on our frontend on the same moment the activation occurs, and while this can not be determined exactly (depends when the last needed signature on the GNOSIS is made), there should be a method to show the vault automatically when it's activated (reading his status information from the smart contract)
 
-The status information from the vault usefull for frontend can be read from `vaultInfo(VAULT_ID)`:
+The status information from the vault useful for frontend can be read from `vaultInfo(VAULT_ID)`:
 
 - `lastRewardBlock`: is set to 0 when the vault is created, then set to the block that is activated. So, if 0 is not activated and if >0 it was activated.
 - `rewardsActive`: the vault gets BALLE
