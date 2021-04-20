@@ -81,7 +81,7 @@ In case a vault needs to be retired, it should be deactivated from rewards distr
 
 There is some information about the vaults to show in the frontend app that should be obtained here.
 
-The first, is the visibility of the vault itself. The vault shoul be made visible on our frontend on the same moment the activation occurs, and while this can not be determined exactly (depends when the last needed signature on the GNOSIS is made), there should be a method to show the vault automatically when it's activated (reading his status information from the smart contract)
+The first is the visibility of the vault itself. The vault should be made visible on our frontend at the same moment the activation occurs, and while this can not be determined exactly (depends when the last needed signature on the GNOSIS is made), there should be a method to show the vault automatically when it's activated (reading his status information from the smart contract)
 
 The status information from the vault useful for frontend can be read from `vaultInfo(VAULT_ID)`:
 
