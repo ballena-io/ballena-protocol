@@ -63,7 +63,7 @@ At this point, the vault is created, so it can be tested that deposit and withdr
 
 The only thing that is not working still is the BALLE rewards distribution to ensure that testing phase previous to launch will not interfere with rewards distribution.
 
-For activation of BALLE reward distribution on the new vault, a transaction from our GNOSIS Management Safe should be made. This is to ensure that no one person alone can change rewards distribution on vaults. The GNOSIS safe is set as owner of our BalleMaster smart contract after deployment on mainnet and all methods involved on reward distribution and balancing shoul be made from it. For this transactions to be made, a determined number of signatures on the GNOSIS Safe will be needed.
+For activation of BALLE reward distribution on the new vault, a transaction from our GNOSIS Management Safe should be made. This is to ensure that no one person alone can change rewards distribution on vaults. The GNOSIS safe is set as the owner of our BalleMaster smart contract after deployment on mainnet and all methods involved in reward distribution and balancing should be made from it. For these transactions to be made, a determined number of signatures on the GNOSIS Safe will be needed.
 
 ### Rewards activation
 
