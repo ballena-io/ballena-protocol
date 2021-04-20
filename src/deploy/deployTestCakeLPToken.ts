@@ -17,13 +17,11 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 deploy.skip = async (hre: HardhatRuntimeEnvironment) => {
   const { network } = hre
 
-  if (!network.tags['test']) {
-    return true
+  if (network.name == 'hardhat') {
+    // deploy only for tests
+    return false
   }
-  if (network.name === 'localhost') {
-    return true
-  }
-  return false
+  return true
 }
 deploy.tags = ['CakeLP']
 export default deploy
