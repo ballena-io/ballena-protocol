@@ -54,6 +54,8 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     uint256 public balleTotalRewards;
     // The block number when BALLE rewards distribution starts.
     uint256 public startBlock;
+    // The block number when BALLE rewards distribution ends.
+    uint256 public endBlock;
 
     // Info of each vault.
     VaultInfo[] public vaultInfo;
@@ -126,6 +128,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
 
         if (startBlock == 0) {
             startBlock = block.number;
+            endBlock = startBlock + (balleTotalRewards / ballePerBlock);
         }
         uint256 lastRewardBlock = block.number;
         totalAllocPoint = totalAllocPoint + _allocPoint;
@@ -175,14 +178,17 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         if (_to < _from) {
             return 0;
         }
+        if (_to < startBlock) {
+            return 0;
+        }
+        if (_from > endBlock) {
+            return 0;
+        }
         if (_from < startBlock) {
-            return 0;
+            _from = startBlock;
         }
-        if ((_from - startBlock) * ballePerBlock > balleTotalRewards) {
-            return 0;
-        }
-        if ((_to - startBlock) * ballePerBlock > balleTotalRewards) {
-            return (balleTotalRewards - (_from - startBlock) * ballePerBlock) / ballePerBlock;
+        if (_to > endBlock) {
+            _to = endBlock;
         }
         return _to - _from;
     }
