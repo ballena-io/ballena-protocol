@@ -13,10 +13,10 @@ interface IStrategy {
     function harvest() external;
 
     // Transfer tokens BalleMaster -> strategy
-    function deposit(address _userAddress, uint256 _amount) external returns (uint256);
+    function deposit(uint256 _amount) external returns (uint256);
 
     // Transfer tokens strategy -> BalleMaster
-    function withdraw(address _userAddress, uint256 _amount)
+    function withdraw(uint256 _amount)
         external
         returns (
             uint256,
