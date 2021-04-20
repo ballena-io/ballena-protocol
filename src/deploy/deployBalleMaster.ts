@@ -11,8 +11,8 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   let ballePerBlock = BigNumber.from('228310502283105')
   let balleTotalRewards = expandTo18Decimals(24000)
 
-  // If tests network, use testing reward params, unless fork node
-  if (network.tags['test'] && network.name !== 'localhost') {
+  // If tests network (hardhat), use deployed BALLE instead of real one
+  if (network.name == 'hardhat') {
     ballePerBlock = expandTo18Decimals(1)
     balleTotalRewards = expandTo18Decimals(50)
   }

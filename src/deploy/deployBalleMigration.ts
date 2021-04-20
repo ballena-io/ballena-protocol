@@ -8,8 +8,8 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const BalleV2 = await deployments.get('BALLEv2')
   let balleV1 = balle
 
-  // If tests network, use deployed BALLE instead of real one, unless fork node
-  if (network.tags['test'] && network.name !== 'localhost') {
+  // If tests network (hardhat), use deployed BALLE instead of real one
+  if (network.name == 'hardhat') {
     const Balle = await deployments.get('BALLE')
     balleV1 = Balle.address
   }
