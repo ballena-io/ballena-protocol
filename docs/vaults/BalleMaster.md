@@ -54,7 +54,7 @@ At any point in time, the amount of BALLEs entitled to a user but is pending to 
 
 ## Vault management
 
-Each vault is managed from two smart contracts, this one, that will be responsible of it's lifecycle, rewards distribution and entry/exit point or inteface with the user (every operation with the vault will be thru this contract), and the Strategy smart contract that will implement the strategy details and will interact with the destination platform.
+Each vault is managed from two smart contracts, this one, that will be responsible for its lifecycle, rewards distribution and entry/exit point or interface with the user (every operation with the vault will be thru this contract), and the Strategy smart contract that will implement the strategy details and will interact with the destination platform.
 
 No tokens are held in any of the two contracts of the vault, they only pass thru them to reach the destination's platform farm smart contract when the user makes a deposit deposit and the inverse path on withdrawal.
 
