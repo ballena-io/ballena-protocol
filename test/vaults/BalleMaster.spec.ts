@@ -242,7 +242,7 @@ describe('BalleMaster', () => {
     it('should withdrawAll both tokens from user 2')
   })
 
-  describe.only('Rewards calculation', () => {
+  describe('Rewards calculation', () => {
     before('Deploy contracts', async () => {
       await deployments.fixture()
       balle = await ethers.getContract('BALLEv2')
