@@ -19,6 +19,7 @@ function createHardhatNetworkConfig(
       forking: {
         url: 'https://bsc-dataseed.binance.org/',
       },
+      chainId: 56,
       allowUnlimitedContractSize: false,
       tags: ['test'],
       accounts: [
@@ -140,6 +141,9 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: balleNetworkConfig.apiKey,
+  },
+  mocha: {
+    timeout: 30000,
   },
 }
 
