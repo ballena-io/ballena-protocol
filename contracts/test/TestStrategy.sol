@@ -16,6 +16,7 @@ contract TestStrategy is Ownable {
     address public govAddress;
     uint256 public depositTotal = 0;
     uint256 public sharesTotal = 0;
+    uint256 public wantTotal = 0;
 
     /**
      * @dev Implementation of strategy for testing.
@@ -28,7 +29,6 @@ contract TestStrategy is Ownable {
         address _depositToken,
         address _wantToken
     ) {
-        require(_depositToken == _wantToken, "!token");
         balleMaster = _balleMaster;
         depositToken = _depositToken;
         wantToken = _wantToken;
@@ -49,8 +49,15 @@ contract TestStrategy is Ownable {
         }
 
         uint256 earned = IERC20(depositToken).balanceOf(address(this)) / 100;
-        depositTotal = depositTotal + earned;
-        IMintableERC20(depositToken).mint(address(this), earned);
+        if (depositToken == wantToken) {
+            // autocompounding strategy
+            depositTotal = depositTotal + earned;
+            IMintableERC20(depositToken).mint(address(this), earned);
+        } else {
+            // wantToken maximizer strategy
+            wantTotal = wantTotal + earned;
+            IMintableERC20(wantToken).mint(address(this), earned);
+        }
     }
 
     /**
@@ -98,12 +105,17 @@ contract TestStrategy is Ownable {
         if (sharesRemoved > sharesTotal) {
             sharesRemoved = sharesTotal;
         }
+        uint256 wantAmount = (wantTotal * sharesRemoved) / sharesTotal;
         sharesTotal = sharesTotal - sharesRemoved;
         depositTotal = depositTotal - _amount;
+        wantTotal = wantTotal - wantAmount;
 
         IERC20(depositToken).safeTransfer(msg.sender, _amount);
+        if (depositToken != wantToken) {
+            IERC20(wantToken).safeTransfer(msg.sender, wantAmount);
+        }
 
-        return (sharesRemoved, _amount, _amount);
+        return (sharesRemoved, _amount, wantAmount);
     }
 
     function setGov(address _govAddress) public {
