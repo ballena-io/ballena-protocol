@@ -1,0 +1,36 @@
+{
+  "language": "Solidity",
+  "sources": {
+    "contracts/utils/Multicall.sol": {
+      "content": "// contracts/utils/Multicall.sol\n// SPDX-License-Identifier: MIT\npragma solidity 0.8.3;\n\n/// @title Multicall - Aggregate results from multiple read-only function calls\n/// @author Michael Elliot <mike@makerdao.com>\n/// @author Joshua Levine <joshua@makerdao.com>\n/// @author Nick Johnson <arachnid@notdot.net>\n/// @author Bogdan Dumitru <bogdan@bowd.io>\n\ncontract Multicall {\n    struct Call {\n        address target;\n        bytes callData;\n    }\n    struct Return {\n        bool success;\n        bytes data;\n    }\n\n    function aggregate(Call[] memory calls, bool strict)\n        public\n        returns (uint256 blockNumber, Return[] memory returnData)\n    {\n        blockNumber = block.number;\n        returnData = new Return[](calls.length);\n        for (uint256 i = 0; i < calls.length; i++) {\n            // solhint-disable-next-line avoid-low-level-calls\n            (bool success, bytes memory ret) = calls[i].target.call(calls[i].callData);\n            if (strict) {\n                require(success, \"!success\");\n            }\n            returnData[i] = Return(success, ret);\n        }\n    }\n\n    // Helper functions\n    function getEthBalance(address addr) public view returns (uint256 balance) {\n        balance = addr.balance;\n    }\n\n    function getBlockHash(uint256 blockNumber) public view returns (bytes32 blockHash) {\n        blockHash = blockhash(blockNumber);\n    }\n\n    function getLastBlockHash() public view returns (bytes32 blockHash) {\n        blockHash = blockhash(block.number - 1);\n    }\n\n    function getCurrentBlockTimestamp() public view returns (uint256 timestamp) {\n        // solhint-disable-next-line not-rely-on-time\n        timestamp = block.timestamp;\n    }\n\n    function getCurrentBlockDifficulty() public view returns (uint256 difficulty) {\n        difficulty = block.difficulty;\n    }\n\n    function getCurrentBlockGasLimit() public view returns (uint256 gaslimit) {\n        gaslimit = block.gaslimit;\n    }\n\n    function getCurrentBlockCoinbase() public view returns (address coinbase) {\n        coinbase = block.coinbase;\n    }\n}\n"
+    }
+  },
+  "settings": {
+    "optimizer": {
+      "enabled": true,
+      "runs": 500
+    },
+    "metadata": {
+      "bytecodeHash": "none",
+      "useLiteralContent": true
+    },
+    "outputSelection": {
+      "*": {
+        "*": [
+          "abi",
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "evm.methodIdentifiers",
+          "metadata",
+          "devdoc",
+          "userdoc",
+          "storageLayout",
+          "evm.gasEstimates"
+        ],
+        "": [
+          "ast"
+        ]
+      }
+    }
+  }
+}
