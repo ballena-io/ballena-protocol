@@ -13,6 +13,7 @@ describe('BalleMaster', () => {
   let balleMaster: Contract
   let testStrategy: Contract
   let testLP: Contract
+  let tokenA: Contract
   let deployer: SignerWithAddress, test: SignerWithAddress
   let LocalStrategy: ContractFactory
   let localStrategy1: Contract
@@ -81,9 +82,13 @@ describe('BalleMaster', () => {
     })
 
     it('should activate vault #0 rewards', async () => {
-      expect(balleMaster.connect(deployer).activateVaultRewards(0, 100))
+      await expect(balleMaster.connect(deployer).activateVaultRewards(0, 100))
         .to.emit(balleMaster, 'ActivateRewards')
         .withArgs(0, 100)
+      startBlock = await getBlockNumber()
+      endBlock = startBlock + 50
+      expect(await balleMaster.startBlock()).to.be.equal(startBlock)
+      expect(await balleMaster.endBlock()).to.be.equal(endBlock)
     })
 
     it('should revert if try to activate an already activated vault', async () => {
@@ -152,6 +157,14 @@ describe('BalleMaster', () => {
 
     it('should update totalAllocPoint', async () => {
       expect(await balleMaster.totalAllocPoint()).to.be.equal(100)
+    })
+
+    it('should check getBlockMultiplier()', async () => {
+      expect(await balleMaster.getBlockMultiplier(endBlock, startBlock)).to.be.equal(0)
+      expect(await balleMaster.getBlockMultiplier(startBlock - 1, startBlock - 1)).to.be.equal(0)
+      expect(await balleMaster.getBlockMultiplier(endBlock + 1, endBlock + 2)).to.be.equal(0)
+      expect(await balleMaster.getBlockMultiplier(0, startBlock + 3)).to.be.equal(3)
+      expect(await balleMaster.getBlockMultiplier(startBlock, startBlock + 5)).to.be.equal(5)
     })
   })
 
@@ -242,14 +255,66 @@ describe('BalleMaster', () => {
   describe('Deposit & Withdraw when wantToken != depositToken', () => {
     before('Deploy contracts', async () => {
       await deployments.fixture()
+      balle = await ethers.getContract('BALLEv2')
+      balleMaster = await ethers.getContract('BalleMaster')
+      testLP = await ethers.getContract('TestLP')
+      tokenA = await ethers.getContract('TokenA')
+      localStrategy1 = await LocalStrategy.deploy(balleMaster.address, testLP.address, tokenA.address)
+      await localStrategy1.deployed()
+
+      // setup TEST_LP balance
+      await testLP.mint(deployer.address, expandTo18Decimals(500))
+      await testLP.mint(test.address, expandTo18Decimals(500))
+      expect(await testLP.balanceOf(deployer.address)).to.be.equal(expandTo18Decimals(500))
+      expect(await testLP.balanceOf(test.address)).to.be.equal(expandTo18Decimals(500))
+      // approve TEST_LP allowances to BalleMaster contract
+      testLP.connect(deployer).approve(balleMaster.address, MaxUint256)
+      testLP.connect(test).approve(balleMaster.address, MaxUint256)
+      // create new vault
+      balleMaster.connect(deployer).addVault(testLP.address, tokenA.address, localStrategy1.address)
     })
 
-    it('should deposit from user 1')
-    it('should deposit from user 2')
-    it('should partial withdraw both tokens from user 1')
-    it('should add deposit from user 2')
-    it('should withdraw both tokens from user 1')
-    it('should withdrawAll both tokens from user 2')
+    it('should deposit from user 1', async () => {
+      await expect(balleMaster.connect(deployer).deposit(0, expandTo18Decimals(400)))
+        .to.emit(balleMaster, 'Deposit')
+        .withArgs(deployer.address, 0, expandTo18Decimals(400), 0)
+      expect(await balleMaster.stakedTokens(0, deployer.address)).to.be.equal(expandTo18Decimals(400))
+    })
+
+    it('should deposit from user 2', async () => {
+      await expect(balleMaster.connect(test).deposit(0, expandTo18Decimals(200)))
+        .to.emit(balleMaster, 'Deposit')
+        .withArgs(test.address, 0, expandTo18Decimals(200), 0)
+      expect(await balleMaster.stakedTokens(0, test.address)).to.be.equal(expandTo18Decimals(200))
+    })
+
+    it('should partial withdraw both tokens from user 1', async () => {
+      expect(balleMaster.connect(deployer).withdraw(0, expandTo18Decimals(100)))
+        .to.emit(balleMaster, 'Withdraw')
+        .withArgs(deployer.address, 0, expandTo18Decimals(100), 0)
+      expect(await balleMaster.stakedTokens(0, deployer.address)).to.be.equal(expandTo18Decimals(300))
+    })
+
+    it('should add deposit from user 2', async () => {
+      await expect(balleMaster.connect(test).deposit(0, expandTo18Decimals(200)))
+        .to.emit(balleMaster, 'Deposit')
+        .withArgs(test.address, 0, expandTo18Decimals(200), 0)
+      expect(await balleMaster.stakedTokens(0, test.address)).to.be.equal(expandTo18Decimals(400))
+    })
+
+    it('should withdraw both tokens from user 1', async () => {
+      expect(balleMaster.connect(deployer).withdraw(0, expandTo18Decimals(300)))
+        .to.emit(balleMaster, 'Withdraw')
+        .withArgs(deployer.address, 0, expandTo18Decimals(300), 0)
+      expect(await balleMaster.stakedTokens(0, deployer.address)).to.be.equal(0)
+    })
+
+    it('should withdrawAll both tokens from user 2', async () => {
+      expect(balleMaster.connect(test).withdrawAll(0))
+        .to.emit(balleMaster, 'Withdraw')
+        .withArgs(test.address, 0, expandTo18Decimals(400), 0)
+      expect(await balleMaster.stakedTokens(0, test.address)).to.be.equal(0)
+    })
   })
 
   describe('Rewards calculation', () => {
@@ -304,15 +369,12 @@ describe('BalleMaster', () => {
         .withArgs(0, 100)
       startBlock = await getBlockNumber()
       endBlock = startBlock + 50
-      console.log(startBlock)
       expect(await balleMaster.startBlock()).to.be.equal(startBlock)
       expect(await balleMaster.endBlock()).to.be.equal(endBlock)
     })
 
     it('should give BALLE for user 1 on vault #0', async () => {
-      console.log(await getBlockNumber())
       mineBlock()
-      console.log(await getBlockNumber())
       // 1 block of accumulated rewards
       expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal(expandTo18Decimals(1))
     })
@@ -673,12 +735,73 @@ describe('BalleMaster', () => {
       balleMaster = await ethers.getContract('BalleMaster')
       testStrategy = await ethers.getContract('TestStrategy')
       testLP = await ethers.getContract('TestLP')
+
+      // setup TEST_LP balance
+      await testLP.mint(deployer.address, expandTo18Decimals(500))
+      await testLP.mint(test.address, expandTo18Decimals(500))
+      expect(await testLP.balanceOf(deployer.address)).to.be.equal(expandTo18Decimals(500))
+      expect(await testLP.balanceOf(test.address)).to.be.equal(expandTo18Decimals(500))
+      // approve TEST_LP allowances to BalleMaster contract
+      testLP.connect(deployer).approve(balleMaster.address, MaxUint256)
+      testLP.connect(test).approve(balleMaster.address, MaxUint256)
+      // create new vault
+      balleMaster.connect(deployer).addVault(testLP.address, testLP.address, testStrategy.address)
     })
 
-    it('should deposit from user 1')
-    it('should deposit from user 2')
-    it('should emergency withdraw from user 1')
-    it('should revert if try to transfer stuck BALLE tokens')
-    it('should transfer stuck tokens')
+    it('should deposit from user 1', async () => {
+      await expect(balleMaster.connect(deployer).deposit(0, expandTo18Decimals(300)))
+        .to.emit(balleMaster, 'Deposit')
+        .withArgs(deployer.address, 0, expandTo18Decimals(300), 0)
+      expect(await balleMaster.stakedTokens(0, deployer.address)).to.be.equal(expandTo18Decimals(300))
+      // check LP balance
+      expect(await testLP.balanceOf(testStrategy.address)).to.be.equal(expandTo18Decimals(300))
+      expect(await testLP.balanceOf(deployer.address)).to.be.equal(expandTo18Decimals(200))
+    })
+
+    it('should deposit from user 2', async () => {
+      await expect(balleMaster.connect(test).deposit(0, expandTo18Decimals(300)))
+        .to.emit(balleMaster, 'Deposit')
+        .withArgs(test.address, 0, expandTo18Decimals(300), 0)
+      expect(await balleMaster.stakedTokens(0, test.address)).to.be.equal(expandTo18Decimals(300))
+      // check LP balance
+      expect(await testLP.balanceOf(testStrategy.address)).to.be.equal(expandTo18Decimals(600))
+      expect(await testLP.balanceOf(test.address)).to.be.equal(expandTo18Decimals(200))
+    })
+
+    it('should emergency withdraw from user 1', async () => {
+      await expect(balleMaster.connect(deployer).emergencyWithdraw(0))
+        .to.emit(balleMaster, 'EmergencyWithdraw')
+        .withArgs(deployer.address, 0, expandTo18Decimals(300))
+      expect(await balleMaster.stakedTokens(0, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal(0)
+      // check LP balance
+      expect(await testLP.balanceOf(testStrategy.address)).to.be.equal(expandTo18Decimals(300))
+      expect(await testLP.balanceOf(deployer.address)).to.be.equal(expandTo18Decimals(500))
+      expect(await testLP.balanceOf(test.address)).to.be.equal(expandTo18Decimals(200))
+    })
+
+    it('should revert if anyone (not owner) try to transfer stuck tokens', async () => {
+      expect(
+        balleMaster.connect(test).inCaseTokensGetStuck(testLP.address, expandTo18Decimals(100)),
+      ).to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('should revert if try to transfer stuck BALLE tokens', async () => {
+      expect(
+        balleMaster.connect(deployer).inCaseTokensGetStuck(balle.address, expandTo18Decimals(100)),
+      ).to.be.revertedWith('!safe')
+    })
+
+    it('should transfer stuck tokens', async () => {
+      // Send tokens to contract.
+      await testLP.connect(deployer).transfer(balleMaster.address, expandTo18Decimals(100))
+      expect(await testLP.balanceOf(balleMaster.address)).to.be.equal(expandTo18Decimals(100))
+      expect(await testLP.balanceOf(deployer.address)).to.be.equal(expandTo18Decimals(400))
+
+      // Recover stuck tokens.
+      await balleMaster.connect(deployer).inCaseTokensGetStuck(testLP.address, expandTo18Decimals(100))
+      expect(await testLP.balanceOf(balleMaster.address)).to.be.equal(expandTo18Decimals(0))
+      expect(await testLP.balanceOf(deployer.address)).to.be.equal(expandTo18Decimals(500))
+    })
   })
 })
