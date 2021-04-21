@@ -56,13 +56,15 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     uint256 public startBlock;
     // The block number when BALLE rewards distribution ends.
     uint256 public endBlock;
+    // Total allocation points. Must be the sum of all allocation points in all vaults.
+    uint256 public totalAllocPoint = 0;
+    // BALLE to be minted for rewards.
+    uint256 public balleToMint = 0;
 
     // Info of each vault.
     VaultInfo[] public vaultInfo;
     // Info of each user that stakes LP tokens.
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
-    // Total allocation points. Must be the sum of all allocation points in all vaults.
-    uint256 public totalAllocPoint = 0;
 
     event ActivateRewards(uint256 indexed vid, uint256 allocPoint);
     event ModifyRewards(uint256 indexed vid, uint256 allocPoint);
@@ -255,8 +257,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
             return;
         }
         uint256 balleReward = (multiplier * ballePerBlock * vault.allocPoint) / totalAllocPoint;
-
-        balle.mint(address(this), balleReward);
+        balleToMint = balleToMint + balleReward;
 
         vault.accBallePerShare = vault.accBallePerShare + (balleReward * 1e12) / sharesTotal;
         vault.lastRewardBlock = block.number;
@@ -279,7 +280,6 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         }
         if (_amount > 0) {
             vault.depositToken.safeTransferFrom(address(msg.sender), address(this), _amount);
-
             vault.depositToken.safeIncreaseAllowance(vault.strat, _amount);
             uint256 sharesAdded = IStrategy(vaultInfo[_vid].strat).deposit(_amount);
             user.shares = user.shares + sharesAdded;
@@ -397,12 +397,24 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Function for Safe BALLE transfer, just in case if rounding error causes pool to not have enough.
+     * @dev Function for Safe BALLE transfer.
+     * Will mint BALLE when needed and take care if rounding error causes pool to not have enough BALLE.
      */
     function safeBalleTransfer(address _to, uint256 _amount) internal {
         uint256 balleBal = balle.balanceOf(address(this));
         if (_amount > balleBal) {
-            balle.transfer(_to, balleBal);
+            if (balleToMint > 0) {
+                balle.mint(address(this), balleToMint);
+                balleToMint = 0;
+                balleBal = balle.balanceOf(address(this));
+                if (_amount > balleBal) {
+                    balle.transfer(_to, balleBal);
+                } else {
+                    balle.transfer(_to, _amount);
+                }
+            } else {
+                balle.transfer(_to, balleBal);
+            }
         } else {
             balle.transfer(_to, _amount);
         }
