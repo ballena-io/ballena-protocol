@@ -21,7 +21,6 @@ function createHardhatNetworkConfig(
       },
       chainId: 56,
       allowUnlimitedContractSize: false,
-      tags: ['test'],
       accounts: [
         {
           privateKey: deployerPrivateKey,
@@ -39,11 +38,7 @@ function createHardhatNetworkConfig(
     }
   }
   return {
-    forking: {
-      url: 'https://bsc-dataseed.binance.org/',
-    },
     allowUnlimitedContractSize: false,
-    tags: ['test'],
   }
 }
 
