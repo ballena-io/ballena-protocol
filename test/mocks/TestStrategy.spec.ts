@@ -50,7 +50,7 @@ describe('Test Strategy', () => {
     })
 
     it('should allow gov address call harvest()', async () => {
-      expect(testStrategy.connect(deployer).harvest())
+      await expect(testStrategy.connect(deployer).harvest())
     })
 
     it('should revert if not gov address try to change govAddress', async () => {
@@ -58,11 +58,11 @@ describe('Test Strategy', () => {
     })
 
     it('should allow gov address set a new govAddress', async () => {
-      expect(testStrategy.connect(deployer).setGov(test.address))
+      await expect(testStrategy.connect(deployer).setGov(test.address))
     })
 
     it('should allow new gov address call harvest()', async () => {
-      expect(testStrategy.connect(test).harvest())
+      await expect(testStrategy.connect(test).harvest())
     })
 
     it('should revert if not owner address calls deposit()', async () => {

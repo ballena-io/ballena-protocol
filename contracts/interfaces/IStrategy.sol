@@ -3,6 +3,12 @@
 pragma solidity 0.8.3;
 
 interface IStrategy {
+    // Deposited token
+    function depositToken() external view returns (address);
+
+    // Token to accumulate
+    function wantToken() external view returns (address);
+
     // Total tokens managed by strategy
     function depositTotal() external view returns (uint256);
 
