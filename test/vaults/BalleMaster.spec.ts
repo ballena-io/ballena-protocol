@@ -5,7 +5,7 @@ import { BigNumber } from 'ethers'
 import { expect } from '../shared/expect'
 import { getBlockNumber, mineBlock } from '../shared/hardhatNode'
 import { expandTo18Decimals } from '../../src/utils'
-import { MaxUint256 } from '../../src/utils/constants'
+import { MaxUint256, ZERO_ADDRESS } from '../../src/utils/constants'
 
 describe('BalleMaster', () => {
   let balle: Contract
@@ -51,16 +51,35 @@ describe('BalleMaster', () => {
       balleMaster = await ethers.getContract('BalleMaster')
       testStrategy = await ethers.getContract('TestStrategy')
       testLP = await ethers.getContract('TestLP')
+      tokenA = await ethers.getContract('TokenA')
     })
 
     it('should revert if anyone (not owner) try to add new vault', async () => {
-      expect(
+      await expect(
         balleMaster.connect(test).addVault(testLP.address, testLP.address, testStrategy.address),
       ).to.be.revertedWith('Ownable: caller is not the owner')
     })
 
+    it('should revert if zero address strat on add new vault', async () => {
+      await expect(
+        balleMaster.connect(deployer).addVault(testLP.address, testLP.address, ZERO_ADDRESS),
+      ).to.be.revertedWith('!strat')
+    })
+
+    it('should revert if deposit token does not match strat deposit token on add new vault', async () => {
+      await expect(
+        balleMaster.connect(deployer).addVault(tokenA.address, testLP.address, testStrategy.address),
+      ).to.be.revertedWith('!depositToken')
+    })
+
+    it('should revert if want token does not match strat want token on add new vault', async () => {
+      await expect(
+        balleMaster.connect(deployer).addVault(testLP.address, tokenA.address, testStrategy.address),
+      ).to.be.revertedWith('!wantToken')
+    })
+
     it('should add new vault #0', async () => {
-      balleMaster.connect(deployer).addVault(testLP.address, testLP.address, testStrategy.address)
+      await balleMaster.connect(deployer).addVault(testLP.address, testLP.address, testStrategy.address)
     })
 
     it('should get total vault count', async () => {
@@ -68,17 +87,17 @@ describe('BalleMaster', () => {
     })
 
     it('should revert if anyone (not owner) try to activate vault #0 rewards', async () => {
-      expect(balleMaster.connect(test).activateVaultRewards(0, 100)).to.be.revertedWith(
+      await expect(balleMaster.connect(test).activateVaultRewards(0, 100)).to.be.revertedWith(
         'Ownable: caller is not the owner',
       )
     })
 
     it('should revert if try to activate rewards on non existent vault', async () => {
-      expect(balleMaster.connect(deployer).activateVaultRewards(99, 100)).to.be.revertedWith('!vault')
+      await expect(balleMaster.connect(deployer).activateVaultRewards(99, 100)).to.be.revertedWith('!vault')
     })
 
     it('should revert if try to activate vault #0 rewards with 0 allocPoint', async () => {
-      expect(balleMaster.connect(deployer).activateVaultRewards(0, 0)).to.be.revertedWith('!allocpoint')
+      await expect(balleMaster.connect(deployer).activateVaultRewards(0, 0)).to.be.revertedWith('!allocpoint')
     })
 
     it('should activate vault #0 rewards', async () => {
@@ -92,19 +111,19 @@ describe('BalleMaster', () => {
     })
 
     it('should revert if try to activate an already activated vault', async () => {
-      expect(balleMaster.connect(deployer).activateVaultRewards(0, 100)).to.be.revertedWith('active')
+      await expect(balleMaster.connect(deployer).activateVaultRewards(0, 100)).to.be.revertedWith('active')
     })
 
     it('should add new vault #1', async () => {
-      balleMaster.connect(deployer).addVault(testLP.address, testLP.address, testStrategy.address)
+      await balleMaster.connect(deployer).addVault(testLP.address, testLP.address, testStrategy.address)
     })
 
     it('should revert if try to modify rewards on non active vault', async () => {
-      expect(balleMaster.connect(deployer).modifyVaultRewards(1, 200)).to.be.revertedWith('!active')
+      await expect(balleMaster.connect(deployer).modifyVaultRewards(1, 200)).to.be.revertedWith('!active')
     })
 
     it('should activate vault #1 rewards', async () => {
-      expect(balleMaster.connect(deployer).activateVaultRewards(1, 200))
+      await expect(balleMaster.connect(deployer).activateVaultRewards(1, 200))
         .to.emit(balleMaster, 'ActivateRewards')
         .withArgs(1, 200)
     })
@@ -114,21 +133,21 @@ describe('BalleMaster', () => {
     })
 
     it('should revert if anyone (not owner) try to modify vault #1 rewards', async () => {
-      expect(balleMaster.connect(test).modifyVaultRewards(1, 100)).to.be.revertedWith(
+      await expect(balleMaster.connect(test).modifyVaultRewards(1, 100)).to.be.revertedWith(
         'Ownable: caller is not the owner',
       )
     })
 
     it('should revert if try to modify rewards on non existent vault', async () => {
-      expect(balleMaster.connect(deployer).modifyVaultRewards(99, 100)).to.be.revertedWith('!vault')
+      await expect(balleMaster.connect(deployer).modifyVaultRewards(99, 100)).to.be.revertedWith('!vault')
     })
 
     it('should revert if try to modify vault #1 rewards with 0 allocPoint', async () => {
-      expect(balleMaster.connect(deployer).modifyVaultRewards(1, 0)).to.be.revertedWith('!allocpoint')
+      await expect(balleMaster.connect(deployer).modifyVaultRewards(1, 0)).to.be.revertedWith('!allocpoint')
     })
 
     it('should modify vault #1 rewards', async () => {
-      expect(balleMaster.connect(deployer).modifyVaultRewards(1, 500))
+      await expect(balleMaster.connect(deployer).modifyVaultRewards(1, 500))
         .to.emit(balleMaster, 'ModifyRewards')
         .withArgs(1, 500)
     })
@@ -138,25 +157,27 @@ describe('BalleMaster', () => {
     })
 
     it('should revert if anyone (not owner) try to deactivate vault #1 rewards', async () => {
-      expect(balleMaster.connect(test).deactivateVaultRewards(1)).to.be.revertedWith('Ownable: caller is not the owner')
+      await expect(balleMaster.connect(test).deactivateVaultRewards(1)).to.be.revertedWith(
+        'Ownable: caller is not the owner',
+      )
     })
 
     it('should revert if try to deactivate rewards on non existent vault', async () => {
-      expect(balleMaster.connect(deployer).deactivateVaultRewards(99)).to.be.revertedWith('!vault')
+      await expect(balleMaster.connect(deployer).deactivateVaultRewards(99)).to.be.revertedWith('!vault')
     })
 
     it('should deactivate vault #1 rewards', async () => {
-      expect(balleMaster.connect(deployer).deactivateVaultRewards(1))
+      await expect(balleMaster.connect(deployer).deactivateVaultRewards(1))
         .to.emit(balleMaster, 'DeactivateRewards')
         .withArgs(1)
     })
 
     it('should revert if try to deactivate already deactivated vault #1', async () => {
-      expect(balleMaster.connect(deployer).deactivateVaultRewards(1)).to.be.revertedWith('!active')
+      await expect(balleMaster.connect(deployer).deactivateVaultRewards(1)).to.be.revertedWith('!active')
     })
 
     it('should update totalAllocPoint', async () => {
-      expect(await balleMaster.totalAllocPoint()).to.be.equal(100)
+      await expect(await balleMaster.totalAllocPoint()).to.be.equal(100)
     })
 
     it('should check getBlockMultiplier()', async () => {
@@ -189,63 +210,65 @@ describe('BalleMaster', () => {
     })
 
     it('should revert if deposit to non existent vault', async () => {
-      expect(balleMaster.connect(deployer).deposit(99, expandTo18Decimals(100))).to.be.revertedWith('!vault')
+      await expect(balleMaster.connect(deployer).deposit(99, expandTo18Decimals(100))).to.be.revertedWith('!vault')
     })
 
     it('should revert if withdraw from non existent vault', async () => {
-      expect(balleMaster.connect(deployer).withdraw(99, expandTo18Decimals(100))).to.be.revertedWith('!vault')
+      await expect(balleMaster.connect(deployer).withdraw(99, expandTo18Decimals(100))).to.be.revertedWith('!vault')
     })
 
     it('should revert if withdraw from vault with no deposits', async () => {
-      expect(balleMaster.connect(deployer).withdraw(0, expandTo18Decimals(100))).to.be.revertedWith('!sharesTotal')
+      await expect(balleMaster.connect(deployer).withdraw(0, expandTo18Decimals(100))).to.be.revertedWith(
+        '!sharesTotal',
+      )
     })
 
     it('should deposit from user 1', async () => {
-      expect(balleMaster.connect(deployer).deposit(0, expandTo18Decimals(100)))
+      await expect(balleMaster.connect(deployer).deposit(0, expandTo18Decimals(100)))
         .to.emit(balleMaster, 'Deposit')
         .withArgs(deployer.address, 0, expandTo18Decimals(100), 0)
       expect(await balleMaster.stakedTokens(0, deployer.address)).to.be.equal(expandTo18Decimals(100))
     })
 
     it('should harvest from user 1', async () => {
-      expect(balleMaster.connect(deployer).withdraw(0, 0))
+      await expect(balleMaster.connect(deployer).withdraw(0, 0))
         .to.emit(balleMaster, 'Withdraw')
         .withArgs(deployer.address, 0, 0, 0)
     })
 
     it('should revert withdraw from user 2', async () => {
-      expect(balleMaster.connect(test).withdraw(0, 0)).to.be.revertedWith('!user.shares')
+      await expect(balleMaster.connect(test).withdraw(0, 0)).to.be.revertedWith('!user.shares')
     })
 
     it('should withdrawAll from user 1', async () => {
-      expect(balleMaster.connect(deployer).withdrawAll(0))
+      await expect(balleMaster.connect(deployer).withdrawAll(0))
         .to.emit(balleMaster, 'Withdraw')
         .withArgs(deployer.address, 0, expandTo18Decimals(100), 0)
     })
 
     it('should deposit from user 2', async () => {
-      expect(balleMaster.connect(test).deposit(0, expandTo18Decimals(150)))
+      await expect(balleMaster.connect(test).deposit(0, expandTo18Decimals(150)))
         .to.emit(balleMaster, 'Deposit')
         .withArgs(test.address, 0, expandTo18Decimals(150), 0)
       expect(await balleMaster.stakedTokens(0, test.address)).to.be.equal(expandTo18Decimals(150))
     })
 
     it('should depositAll from user 2', async () => {
-      expect(balleMaster.connect(test).depositAll(0))
+      await expect(balleMaster.connect(test).depositAll(0))
         .to.emit(balleMaster, 'Deposit')
         .withArgs(test.address, 0, expandTo18Decimals(350), 0)
       expect(await balleMaster.stakedTokens(0, test.address)).to.be.equal(expandTo18Decimals(500))
     })
 
     it('should partial withdraw from user 2', async () => {
-      expect(balleMaster.connect(test).withdraw(0, expandTo18Decimals(200)))
+      await expect(balleMaster.connect(test).withdraw(0, expandTo18Decimals(200)))
         .to.emit(balleMaster, 'Withdraw')
         .withArgs(test.address, 0, expandTo18Decimals(200), 0)
       expect(await balleMaster.stakedTokens(0, test.address)).to.be.equal(expandTo18Decimals(300))
     })
 
     it('should withdraw from user 2', async () => {
-      expect(balleMaster.connect(test).withdraw(0, expandTo18Decimals(300)))
+      await expect(balleMaster.connect(test).withdraw(0, expandTo18Decimals(300)))
         .to.emit(balleMaster, 'Withdraw')
         .withArgs(test.address, 0, expandTo18Decimals(300), 0)
       expect(await balleMaster.stakedTokens(0, test.address)).to.be.equal(0)
@@ -289,7 +312,7 @@ describe('BalleMaster', () => {
     })
 
     it('should partial withdraw both tokens from user 1', async () => {
-      expect(balleMaster.connect(deployer).withdraw(0, expandTo18Decimals(100)))
+      await expect(balleMaster.connect(deployer).withdraw(0, expandTo18Decimals(100)))
         .to.emit(balleMaster, 'Withdraw')
         .withArgs(deployer.address, 0, expandTo18Decimals(100), 0)
       expect(await balleMaster.stakedTokens(0, deployer.address)).to.be.equal(expandTo18Decimals(300))
@@ -303,14 +326,14 @@ describe('BalleMaster', () => {
     })
 
     it('should withdraw both tokens from user 1', async () => {
-      expect(balleMaster.connect(deployer).withdraw(0, expandTo18Decimals(300)))
+      await expect(balleMaster.connect(deployer).withdraw(0, expandTo18Decimals(300)))
         .to.emit(balleMaster, 'Withdraw')
         .withArgs(deployer.address, 0, expandTo18Decimals(300), 0)
       expect(await balleMaster.stakedTokens(0, deployer.address)).to.be.equal(0)
     })
 
     it('should withdrawAll both tokens from user 2', async () => {
-      expect(balleMaster.connect(test).withdrawAll(0))
+      await expect(balleMaster.connect(test).withdrawAll(0))
         .to.emit(balleMaster, 'Withdraw')
         .withArgs(test.address, 0, expandTo18Decimals(400), 0)
       expect(await balleMaster.stakedTokens(0, test.address)).to.be.equal(0)
@@ -345,7 +368,7 @@ describe('BalleMaster', () => {
     })
 
     it('should add vault #0', async () => {
-      balleMaster.connect(deployer).addVault(testLP.address, testLP.address, localStrategy1.address)
+      await balleMaster.connect(deployer).addVault(testLP.address, testLP.address, localStrategy1.address)
     })
 
     it('should deposit from user 1 on vault #0', async () => {
@@ -781,13 +804,13 @@ describe('BalleMaster', () => {
     })
 
     it('should revert if anyone (not owner) try to transfer stuck tokens', async () => {
-      expect(
+      await expect(
         balleMaster.connect(test).inCaseTokensGetStuck(testLP.address, expandTo18Decimals(100)),
       ).to.be.revertedWith('Ownable: caller is not the owner')
     })
 
     it('should revert if try to transfer stuck BALLE tokens', async () => {
-      expect(
+      await expect(
         balleMaster.connect(deployer).inCaseTokensGetStuck(balle.address, expandTo18Decimals(100)),
       ).to.be.revertedWith('!safe')
     })

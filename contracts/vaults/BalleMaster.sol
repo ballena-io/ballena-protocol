@@ -102,14 +102,17 @@ contract BalleMaster is Ownable, ReentrancyGuard {
      * @dev Function to add a new vault configuration. Can only be called by the owner.
      */
     function addVault(
-        IERC20 _depositToken,
-        IERC20 _wantToken,
+        address _depositToken,
+        address _wantToken,
         address _strat
     ) public onlyOwner {
+        require(_strat != address(0), "!strat");
+        require(_depositToken == IStrategy(_strat).depositToken(), "!depositToken");
+        require(_wantToken == IStrategy(_strat).wantToken(), "!wantToken");
         vaultInfo.push(
             VaultInfo({
-                depositToken: _depositToken,
-                wantToken: _wantToken,
+                depositToken: IERC20(_depositToken),
+                wantToken: IERC20(_wantToken),
                 rewardsActive: false,
                 allocPoint: 0,
                 lastRewardBlock: 0,
