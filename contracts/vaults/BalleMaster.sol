@@ -22,11 +22,13 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     struct VaultInfo {
         IERC20 depositToken; // Address of deposited token contract.
         IERC20 wantToken; // Address of the token to maximize.
-        bool rewardsActive; // BALLE rewards active for this vault.
+        address strat; // Address of the strategy contract that will maximize want tokens.
+        address proposedStrat; // Address of the proposed strategy contract to upgrade.
         uint256 allocPoint; // How many allocation points assigned to this vault. BALLEs to distribute per block.
         uint256 lastRewardBlock; // Last block number that BALLEs distribution occurs.
         uint256 accBallePerShare; // Accumulated BALLEs per share, times 1e12. See below.
-        address strat; // Address of the strategy contract that will maximize want tokens.
+        uint256 proposedTime; // Time of the proposed strategy upgrade
+        bool rewardsActive; // BALLE rewards active for this vault.
     }
 
     // Info of each user
@@ -47,11 +49,11 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     }
 
     // The BALLE token.
-    BALLEv2 public balle;
+    BALLEv2 public immutable balle;
     // BALLE tokens created per block: 2283105022831050.
-    uint256 public ballePerBlock;
+    uint256 public immutable ballePerBlock;
     // BALLE tokens to distribute: 24000e18.
-    uint256 public balleTotalRewards;
+    uint256 public immutable balleTotalRewards;
     // The block number when BALLE rewards distribution starts.
     uint256 public startBlock;
     // The block number when BALLE rewards distribution ends.
@@ -60,6 +62,8 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     uint256 public totalAllocPoint = 0;
     // BALLE to be minted for rewards.
     uint256 public balleToMint = 0;
+    // The minimum time it has to pass before a strat candidate can be approved.
+    uint256 public immutable approvalDelay;
 
     // Info of each vault.
     VaultInfo[] public vaultInfo;
@@ -69,6 +73,9 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     event ActivateRewards(uint256 indexed vid, uint256 allocPoint);
     event ModifyRewards(uint256 indexed vid, uint256 allocPoint);
     event DeactivateRewards(uint256 indexed vid);
+    event ProposeStratUpgrade(uint256 indexed vid, address indexed strat);
+    event StratUpgrade(uint256 indexed vid, address indexed strat);
+    event EmergencyStratUpgrade(uint256 indexed vid, address indexed strat);
     event Deposit(address indexed user, uint256 indexed vid, uint256 amount, uint256 rewards);
     event Withdraw(address indexed user, uint256 indexed vid, uint256 amount, uint256 rewards);
     event EmergencyWithdraw(address indexed user, uint256 indexed vid, uint256 amount);
@@ -76,11 +83,13 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     constructor(
         BALLEv2 _balle,
         uint256 _ballePerBlock,
-        uint256 _balleTotalRewards
+        uint256 _balleTotalRewards,
+        uint256 _approvalDelay
     ) {
         balle = _balle;
         ballePerBlock = _ballePerBlock;
         balleTotalRewards = _balleTotalRewards;
+        approvalDelay = _approvalDelay;
     }
 
     /**
@@ -113,11 +122,13 @@ contract BalleMaster is Ownable, ReentrancyGuard {
             VaultInfo({
                 depositToken: IERC20(_depositToken),
                 wantToken: IERC20(_wantToken),
-                rewardsActive: false,
+                strat: _strat,
+                proposedStrat: address(0),
                 allocPoint: 0,
                 lastRewardBlock: 0,
                 accBallePerShare: 0,
-                strat: _strat
+                proposedTime: 0,
+                rewardsActive: false
             })
         );
     }
@@ -174,6 +185,64 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         vaultInfo[_vid].rewardsActive = false;
 
         emit DeactivateRewards(_vid);
+    }
+
+    /**
+     * @dev Function to propose a strategy upgrade. Can only be called by the owner.
+     */
+    function proposeStratUpgrade(uint256 _vid, address _strat) public onlyOwner vaultExists(_vid) {
+        require(_strat != address(0), "!strat");
+
+        vaultInfo[_vid].proposedStrat = _strat;
+        // solhint-disable-next-line not-rely-on-time
+        vaultInfo[_vid].proposedTime = block.timestamp;
+
+        emit ProposeStratUpgrade(_vid, _strat);
+    }
+
+    /**
+     * @dev It switches the active strat for the strat candidate. After upgrading, the
+     * candidate implementation is set to the 0x0 address, and proposedTime to 0.
+     */
+    function stratUpgrade(uint256 _vid, address _strat) external onlyOwner vaultExists(_vid) {
+        require(_strat != address(0), "!strat");
+        VaultInfo storage vault = vaultInfo[_vid];
+        require(vault.proposedStrat == _strat, "!strat");
+        // solhint-disable-next-line not-rely-on-time
+        require(vault.proposedTime + approvalDelay < block.timestamp, "!timelock");
+
+        (uint256 sharesAmt, uint256 depositAmt, uint256 wantAmt) =
+            IStrategy(vault.strat).upgradeTo(vault.proposedStrat);
+        IStrategy(vault.proposedStrat).upgradeFrom(vault.strat, sharesAmt, depositAmt, wantAmt);
+
+        vault.strat = vault.proposedStrat;
+        vault.proposedStrat = address(0);
+        vault.proposedTime = 0;
+
+        emit StratUpgrade(_vid, _strat);
+    }
+
+    /**
+     * @dev It switches the active strat for the strat candidate. After upgrading, the
+     * candidate implementation is set to the 0x0 address, and proposedTime to 0.
+     * Emergency function, used only when not a regular upgrade can be performed.
+     */
+    function emergencyStratUpgrade(uint256 _vid, address _strat) external onlyOwner vaultExists(_vid) {
+        require(_strat != address(0), "!strat");
+        VaultInfo storage vault = vaultInfo[_vid];
+        require(vault.proposedStrat == _strat, "!strat");
+        // solhint-disable-next-line not-rely-on-time
+        require(vault.proposedTime + approvalDelay < block.timestamp, "!timelock");
+
+        (uint256 sharesAmt, uint256 depositAmt, uint256 wantAmt) =
+            IStrategy(vault.strat).emergencyUpgradeTo(vault.proposedStrat);
+        IStrategy(vault.proposedStrat).upgradeFrom(vault.strat, sharesAmt, depositAmt, wantAmt);
+
+        vault.strat = vault.proposedStrat;
+        vault.proposedStrat = address(0);
+        vault.proposedTime = 0;
+
+        emit EmergencyStratUpgrade(_vid, _strat);
     }
 
     /**

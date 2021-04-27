@@ -2,7 +2,7 @@
 
 This contract will take care of all rewards calculations and distribution of BALLE tokens in vaults.
 It's ownable and the owner is the only who can manage the active vaults and it's parameters for rewards distribution.
-The ownership will be transferred to the Governance GNOSIS Safe
+The ownership will be transferred to the Governance Gnosis Safe
 
 ## Information
 
@@ -63,31 +63,45 @@ At this point, the vault is created, so it can be tested that deposit and withdr
 
 The only thing that is not working still is the BALLE rewards distribution to ensure that testing phase previous to launch will not interfere with rewards distribution.
 
-For activation of BALLE reward distribution on the new vault, a transaction from our GNOSIS Management Safe should be made. This is to ensure that no one person alone can change rewards distribution on vaults. The GNOSIS safe is set as the owner of our BalleMaster smart contract after deployment on mainnet and all methods involved in reward distribution and balancing should be made from it. For these transactions to be made, a determined number of signatures on the GNOSIS Safe will be needed.
+For activation of BALLE reward distribution on the new vault, a transaction from our Gnosis Management Safe should be made. This is to ensure that no one person alone can change rewards distribution on vaults. The Gnosis safe is set as the owner of our BalleMaster smart contract after deployment on mainnet and all methods involved in reward distribution and balancing should be made from it. For these transactions to be made, a determined number of signatures on the Gnosis Safe will be needed.
 
 ### Rewards activation
 
-After the creation and testing of the new vault, it will need an activation from the GNOSIS Management Safe that will call the `activateVaultRewards()` method of the smart contract. With this call, where the `allocPoint` for the vault should be indicated, all needed variables for the vault get initialized and reward distribution starts from the next block onwards.
+After the creation and testing of the new vault, it will need an activation from the Gnosis Management Safe that will call the `activateVaultRewards()` method of the smart contract. With this call, where the `allocPoint` for the vault should be indicated, all needed variables for the vault get initialized and reward distribution starts from the next block onwards.
 
 ### Rewards modification
 
-If, at some point, the rewards distribution multiplicator for one vault needs to be changed, it can be made from the GNOSIS Management Safe with a call to `modifyVaultRewards()` method of the smart contract with the new `allocPoint` for the vault.
+If, at some point, the rewards distribution multiplicator for one vault needs to be changed, it can be made from the Gnosis Management Safe with a call to `modifyVaultRewards()` method of the smart contract with the new `allocPoint` for the vault.
 
 ### Rewards deactivation
 
-In case a vault needs to be retired, it should be deactivated from rewards distribution to not interfere with the active vaults. This will be made from our GNOSIS Management Safe with a call to `deactivateVaultRewards()` method of the smart contract.
+In case a vault needs to be retired, it should be deactivated from rewards distribution to not interfere with the active vaults. This will be made from our Gnosis Management Safe with a call to `deactivateVaultRewards()` method of the smart contract.
+
+### Strategy upgrade
+
+The vault's strategy smart contract can be upgraded if any change on it should be implemented. The upgrade can be required because of changes in the destiny farming platform or for optimization purposes, for example, but allways will be a delay in the new strategy contract activation so anyone can know it will be changed and have time to withdraw its funds in case it feels that they will be no safe.
+If the strategy needs to be upgraded, a new smart contract will be deployed to the blockchain and the `proposeStratUpgrade()` method of the BalleMaster smart contract will be called from our Gnosis Management Safe. This will mark the vault as _Strategy upgrade timelock period_ that will end 24 hours later. Then a new call, this time to `stratUpgrade()` from the Gnosis Management Safe on the same vault will change the active strategy to the new smart contract.
+If the strategy can work normally while in _upgrade timelock period_, it will do, but in case it needs to stop working, the vault will be paused. That way, deposits will be not enabled, but withdrawals can allways be made normally.
+
+There will be an alternative method for upgrading the strategy, in case the `emergencyWithdraw` method present in most farms needs to be used for some reason (something not working with farm). This method, usually, allows to withdraw the deposited LP's without the generated rewards. So, the rewards from last successfull harvest to this point will be ignored, but the LP's can be withdrawn. This BalleMaster method will be `emergencyStratUpgrade()` and will be called from our Gnosis Management Safe too.
+
+For any upgrade method to work, the `proposeStratUpgrade()` should be called 24 hour before.
 
 ## Vault information for frontend
 
 There is some information about the vaults to show in the frontend app that should be obtained here.
 
-The first is the visibility of the vault itself. The vault should be made visible on our frontend at the same moment the activation occurs, and while this can not be determined exactly (depends when the last needed signature on the GNOSIS is made), there should be a method to show the vault automatically when it's activated (reading his status information from the smart contract)
+The first is the visibility of the vault itself. The vault should be made visible on our frontend at the same moment the activation occurs, and while this can not be determined exactly (depends when the last needed signature on the Gnosis is made), there should be a method to show the vault automatically when it's activated (reading his status information from the smart contract)
 
 The status information from the vault useful for frontend can be read from `vaultInfo(VAULT_ID)`:
 
 - `lastRewardBlock`: is set to 0 when the vault is created, then set to the block that is activated. So, if 0 is not activated and if >0 it was activated.
-- `rewardsActive`: the vault gets BALLE
-- `allocPoint`: rewards multiplier (100 = 1x)
+- `rewardsActive`: the vault gets BALLE.
+- `allocPoint`: rewards multiplier (100 = 1x).
+- `strat`: strategy smart contract address.
+- `paused`: the strategy is paused.
+- `proposedStrat`: strategy address proposed for upgrade.
+- `proposedTime`: time of upgrade proposition submitted (Blockchain time, UTC).
 
 To get the staked tokens of the user (will include benefits in case of an autocompounding strategy): `stakedTokens(VAULT_ID, WALLET_ADDRESS)`
 

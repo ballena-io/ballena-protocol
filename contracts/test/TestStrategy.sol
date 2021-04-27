@@ -118,6 +118,73 @@ contract TestStrategy is Ownable {
         return (sharesRemoved, _amount, wantAmount);
     }
 
+    function upgradeTo(address _strat)
+        external
+        onlyOwner
+        returns (
+            uint256,
+            uint256,
+            uint256
+        )
+    {
+        require(_strat != address(0), "!strat");
+        // A real strategy would prepare to upgrade (remove tokens from farm)
+        // Set allowance for new strat contract
+        uint256 depositAmt = IERC20(depositToken).balanceOf(address(this));
+        uint256 wantAmt;
+        IERC20(depositToken).safeIncreaseAllowance(_strat, depositAmt);
+        if (depositToken != wantToken) {
+            wantAmt = IERC20(wantToken).balanceOf(address(this));
+            IERC20(wantToken).safeIncreaseAllowance(_strat, wantAmt);
+        }
+        return (sharesTotal, depositAmt, wantAmt);
+    }
+
+    function emergencyUpgradeTo(address _strat)
+        external
+        onlyOwner
+        returns (
+            uint256,
+            uint256,
+            uint256
+        )
+    {
+        require(_strat != address(0), "!strat");
+        // A real strategy would prepare to upgrade (remove tokens from farm)
+        // Set allowance for new strat contract
+        uint256 depositAmt = IERC20(depositToken).balanceOf(address(this));
+        uint256 wantAmt;
+        IERC20(depositToken).safeIncreaseAllowance(_strat, depositAmt);
+        if (depositToken != wantToken) {
+            wantAmt = IERC20(wantToken).balanceOf(address(this));
+            IERC20(wantToken).safeIncreaseAllowance(_strat, wantAmt);
+        }
+        return (sharesTotal, depositAmt, wantAmt);
+    }
+
+    function upgradeFrom(
+        address _strat,
+        uint256 _sharesTotal,
+        uint256 _depositAmt,
+        uint256 _wantAmt
+    ) external onlyOwner {
+        require(_strat != address(0), "!strat");
+        // A real strategy would prepare to upgrade (remove tokens from farm)
+        // Transfer tokens
+
+        IERC20(depositToken).safeTransferFrom(_strat, address(this), _depositAmt);
+        depositTotal = IERC20(depositToken).balanceOf(address(this));
+
+        if (_wantAmt > 0) {
+            IERC20(wantToken).safeTransferFrom(_strat, address(this), _wantAmt);
+            wantTotal = IERC20(wantToken).balanceOf(address(this));
+        }
+
+        sharesTotal = _sharesTotal;
+
+        // A real strategy would finish to upgrade (send tokens to farm)
+    }
+
     function setGov(address _govAddress) public {
         require(msg.sender == govAddress, "!gov");
         govAddress = _govAddress;
