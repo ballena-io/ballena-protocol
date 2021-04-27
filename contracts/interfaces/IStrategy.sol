@@ -36,9 +36,29 @@ interface IStrategy {
         address _to
     ) external;
 
-    // Upgrade strategy to the new one indicated
-    function upgradeTo(address _strat) external;
+    // Prepare to upgrade strategy to the new one indicated
+    function upgradeTo(address _strat)
+        external
+        returns (
+            uint256,
+            uint256,
+            uint256
+        );
 
-    // Emergency upgrade to the new strategy indicated
-    function emergencyUpgradeTo(address _strat) external;
+    // Emergency prepare to upgrade strategy to the new one indicated
+    function emergencyUpgradeTo(address _strat)
+        external
+        returns (
+            uint256,
+            uint256,
+            uint256
+        );
+
+    // Second phase of strategy upgrade (to execute on new strategy)
+    function upgradeFrom(
+        address _strat,
+        uint256 _sharesTotal,
+        uint256 _depositAmt,
+        uint256 _wantAmt
+    ) external;
 }
