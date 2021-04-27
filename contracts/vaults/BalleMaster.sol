@@ -29,6 +29,8 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         uint256 accBallePerShare; // Accumulated BALLEs per share, times 1e12. See below.
         uint256 proposedTime; // Time of the proposed strategy upgrade
         bool rewardsActive; // BALLE rewards active for this vault.
+        bool paused; // The vault's strategy is paused.
+        bool retired; // The vault is retired.
     }
 
     // Info of each user
@@ -76,6 +78,10 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     event ProposeStratUpgrade(uint256 indexed vid, address indexed strat);
     event StratUpgrade(uint256 indexed vid, address indexed strat);
     event EmergencyStratUpgrade(uint256 indexed vid, address indexed strat);
+    event PauseVault(uint256 indexed vid);
+    event UnpauseVault(uint256 indexed vid);
+    event PanicVault(uint256 indexed vid);
+    event RetireVault(uint256 indexed vid);
     event Deposit(address indexed user, uint256 indexed vid, uint256 amount, uint256 rewards);
     event Withdraw(address indexed user, uint256 indexed vid, uint256 amount, uint256 rewards);
     event EmergencyWithdraw(address indexed user, uint256 indexed vid, uint256 amount);
@@ -128,7 +134,9 @@ contract BalleMaster is Ownable, ReentrancyGuard {
                 lastRewardBlock: 0,
                 accBallePerShare: 0,
                 proposedTime: 0,
-                rewardsActive: false
+                rewardsActive: false,
+                paused: false,
+                retired: false
             })
         );
     }
@@ -246,6 +254,54 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     }
 
     /**
+     * @dev Function to pause vault strategy. Can only be called by the owner.
+     */
+    function pauseVault(uint256 _vid) public onlyOwner vaultExists(_vid) {
+        require(!vaultInfo[_vid].paused, "!active");
+
+        IStrategy(vaultInfo[_vid].strat).pause();
+        vaultInfo[_vid].paused = true;
+
+        emit PauseVault(_vid);
+    }
+
+    /**
+     * @dev Function to unpause vault strategy. Can only be called by the owner.
+     */
+    function unpauseVault(uint256 _vid) public onlyOwner vaultExists(_vid) {
+        require(vaultInfo[_vid].paused, "!paused");
+
+        IStrategy(vaultInfo[_vid].strat).unpause();
+        vaultInfo[_vid].paused = false;
+
+        emit UnpauseVault(_vid);
+    }
+
+    /**
+     * @dev Function to panic vault strategy. Can only be called by the owner.
+     */
+    function panicVault(uint256 _vid) public onlyOwner vaultExists(_vid) {
+        require(!vaultInfo[_vid].paused, "!active");
+
+        IStrategy(vaultInfo[_vid].strat).panic();
+        vaultInfo[_vid].paused = true;
+
+        emit PanicVault(_vid);
+    }
+
+    /**
+     * @dev Function to retire vault strategy. Can only be called by the owner.
+     */
+    function retireVault(uint256 _vid) public onlyOwner vaultExists(_vid) {
+        require(!vaultInfo[_vid].retired, "!active");
+
+        IStrategy(vaultInfo[_vid].strat).retire();
+        vaultInfo[_vid].retired = true;
+
+        emit RetireVault(_vid);
+    }
+
+    /**
      * @dev View function to calculate the reward multiplier over the given _from to _to block.
      */
     function getBlockMultiplier(uint256 _from, uint256 _to) public view returns (uint256) {
@@ -350,7 +406,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
                 safeBalleTransfer(msg.sender, pending);
             }
         }
-        if (_amount > 0) {
+        if (_amount > 0 && !vault.paused && !vault.retired) {
             vault.depositToken.safeTransferFrom(address(msg.sender), address(this), _amount);
             vault.depositToken.safeIncreaseAllowance(vault.strat, _amount);
             uint256 sharesAdded = IStrategy(vaultInfo[_vid].strat).deposit(_amount);

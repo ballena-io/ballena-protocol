@@ -61,4 +61,16 @@ interface IStrategy {
         uint256 _depositAmt,
         uint256 _wantAmt
     ) external;
+
+    // Pause strategy
+    function pause() external;
+
+    // Unpause strategy
+    function unpause() external;
+
+    // Panic strategy
+    function panic() external;
+
+    // Retire strategy
+    function retire() external;
 }
