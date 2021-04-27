@@ -234,7 +234,10 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         // solhint-disable-next-line not-rely-on-time
         require(vault.proposedTime + approvalDelay < block.timestamp, "!timelock");
 
-        IStrategy(vault.strat).emergencyUpgradeTo(vault.proposedStrat);
+        (uint256 sharesAmt, uint256 depositAmt, uint256 wantAmt) =
+            IStrategy(vault.strat).emergencyUpgradeTo(vault.proposedStrat);
+        IStrategy(vault.proposedStrat).upgradeFrom(vault.strat, sharesAmt, depositAmt, wantAmt);
+
         vault.strat = vault.proposedStrat;
         vault.proposedStrat = address(0);
         vault.proposedTime = 0;

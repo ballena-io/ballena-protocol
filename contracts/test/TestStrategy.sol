@@ -176,7 +176,7 @@ contract TestStrategy is Ownable {
         depositTotal = IERC20(depositToken).balanceOf(address(this));
 
         if (_wantAmt > 0) {
-            IERC20(wantToken).safeTransferFrom(_strat, address(this), _depositAmt);
+            IERC20(wantToken).safeTransferFrom(_strat, address(this), _wantAmt);
             wantTotal = IERC20(wantToken).balanceOf(address(this));
         }
 

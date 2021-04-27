@@ -174,6 +174,47 @@ describe('BalleMaster', () => {
     })
   })
 
+  describe('Test emergency strategy upgrade', () => {
+    before('Deploy contracts', async () => {
+      await deployments.fixture()
+      balleMaster = await BalleMaster.deploy(
+        balle.address,
+        BigNumber.from('228310502283105'),
+        expandTo18Decimals(24000),
+        0,
+      )
+      await balleMaster.deployed()
+      testLP = await ethers.getContract('TestLP')
+      tokenA = await ethers.getContract('TokenA')
+      localStrategy1 = await LocalStrategy.deploy(balleMaster.address, testLP.address, tokenA.address)
+      await localStrategy1.deployed()
+      localStrategy2 = await LocalStrategy.deploy(balleMaster.address, testLP.address, tokenA.address)
+      await localStrategy2.deployed()
+    })
+
+    it('should add new vault #0', async () => {
+      await balleMaster.connect(deployer).addVault(testLP.address, tokenA.address, localStrategy1.address)
+    })
+
+    it('should propose strat upgrade', async () => {
+      await expect(balleMaster.connect(deployer).proposeStratUpgrade(0, localStrategy2.address))
+        .to.emit(balleMaster, 'ProposeStratUpgrade')
+        .withArgs(0, localStrategy2.address)
+    })
+
+    it('should strat upgrade', async () => {
+      await expect(balleMaster.connect(deployer).emergencyStratUpgrade(0, localStrategy2.address))
+        .to.emit(balleMaster, 'EmergencyStratUpgrade')
+        .withArgs(0, localStrategy2.address)
+    })
+
+    it('should revert if try to strategy upgrade again', async () => {
+      await expect(balleMaster.connect(deployer).emergencyStratUpgrade(0, localStrategy2.address)).to.be.revertedWith(
+        '!strat',
+      )
+    })
+  })
+
   describe('Manage vaults', () => {
     before('Deploy contracts', async () => {
       await deployments.fixture()

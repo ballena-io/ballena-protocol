@@ -593,7 +593,7 @@ describe('Test Strategy', () => {
       expect(await testStrategy.wantTotal()).to.be.equal(0)
     })
 
-    it('should prepare updrade to new strategy', async () => {
+    it('should prepare upgrade to new strategy', async () => {
       // use callStatic to check return values of solidity function
       const [shares, deposit, want] = await testStrategy.connect(test).callStatic.upgradeTo(upgradeStrategy.address)
       expect(shares).to.be.equal(expandTo18Decimals(100))
@@ -608,7 +608,7 @@ describe('Test Strategy', () => {
       expect(await testStrategy.wantTotal()).to.be.equal(0)
     })
 
-    it('should complete updrade to new strategy', async () => {
+    it('should complete upgrade to new strategy', async () => {
       // complete upgrade
       await upgradeStrategy
         .connect(test)
@@ -637,6 +637,204 @@ describe('Test Strategy', () => {
       expect(await upgradeStrategy.sharesTotal()).to.be.equal(expandTo18Decimals(50))
       expect(await upgradeStrategy.wantTotal()).to.be.equal(0)
       expect(await testLP.balanceOf(test.address)).to.be.equal(expandTo18Decimals(450))
+    })
+  })
+
+  describe('Test upgrade when wantToken != depositToken', () => {
+    before('Deploy contracts', async () => {
+      await deployments.fixture()
+      testLP = await ethers.getContract('TestLP')
+      tokenA = await ethers.getContract('TokenA')
+      // will make a local deployment for tests, that way, the owner will be test wallet
+      // instead of BalleMaster contract
+      TestStrategy = await ethers.getContractFactory('TestStrategy')
+      testStrategy = await TestStrategy.deploy(test.address, testLP.address, tokenA.address)
+      await testStrategy.deployed()
+      // deploy a second strategy for upgrade
+      upgradeStrategy = await TestStrategy.deploy(test.address, testLP.address, tokenA.address)
+      await testStrategy.deployed()
+    })
+
+    it('should deposit amount', async () => {
+      // setup TEST_LP balance
+      await testLP.mint(test.address, expandTo18Decimals(500))
+      expect(await testLP.balanceOf(test.address)).to.be.equal(expandTo18Decimals(500))
+      // approve TEST_LP transfer to TestStrategy contract
+      testLP.connect(test).approve(testStrategy.address, MaxUint256)
+
+      // use callStatic to check return value of solidity function
+      expect(await testStrategy.connect(test).callStatic.deposit(expandTo18Decimals(500))).to.be.equal(
+        expandTo18Decimals(500),
+      )
+      // make deposit
+      await testStrategy.connect(test).deposit(expandTo18Decimals(500))
+      // check values
+      expect(await testLP.balanceOf(testStrategy.address)).to.be.equal(expandTo18Decimals(500))
+      expect(await testStrategy.depositTotal()).to.be.equal(expandTo18Decimals(500))
+      expect(await testStrategy.sharesTotal()).to.be.equal(expandTo18Decimals(500))
+      expect(await testStrategy.wantTotal()).to.be.equal(0)
+    })
+
+    it('should harvest and increment 1%', async () => {
+      // make harvest
+      await testStrategy.connect(deployer).harvest()
+
+      expect(await testLP.balanceOf(testStrategy.address)).to.be.equal(expandTo18Decimals(500))
+      expect(await tokenA.balanceOf(testStrategy.address)).to.be.equal(expandTo18Decimals(5))
+      expect(await testStrategy.depositTotal()).to.be.equal(expandTo18Decimals(500))
+      expect(await testStrategy.sharesTotal()).to.be.equal(expandTo18Decimals(500))
+      expect(await testStrategy.wantTotal()).to.be.equal(expandTo18Decimals(5))
+    })
+
+    it('should prepare upgrade to new strategy', async () => {
+      // use callStatic to check return values of solidity function
+      const [shares, deposit, want] = await testStrategy.connect(test).callStatic.upgradeTo(upgradeStrategy.address)
+      expect(shares).to.be.equal(expandTo18Decimals(500))
+      expect(deposit).to.be.equal(expandTo18Decimals(500))
+      expect(want).to.be.equal(expandTo18Decimals(5))
+      // prepare upgrade
+      await testStrategy.connect(test).upgradeTo(upgradeStrategy.address)
+      // check values
+      expect(await testLP.balanceOf(testStrategy.address)).to.be.equal(expandTo18Decimals(500))
+      expect(await tokenA.balanceOf(testStrategy.address)).to.be.equal(expandTo18Decimals(5))
+      expect(await testStrategy.depositTotal()).to.be.equal(expandTo18Decimals(500))
+      expect(await testStrategy.sharesTotal()).to.be.equal(expandTo18Decimals(500))
+      expect(await testStrategy.wantTotal()).to.be.equal(expandTo18Decimals(5))
+    })
+
+    it('should complete upgrade to new strategy', async () => {
+      // complete upgrade
+      await upgradeStrategy
+        .connect(test)
+        .upgradeFrom(testStrategy.address, expandTo18Decimals(500), expandTo18Decimals(500), expandTo18Decimals(5))
+      // check values
+      expect(await testLP.balanceOf(upgradeStrategy.address)).to.be.equal(expandTo18Decimals(500))
+      expect(await tokenA.balanceOf(upgradeStrategy.address)).to.be.equal(expandTo18Decimals(5))
+      expect(await upgradeStrategy.depositTotal()).to.be.equal(expandTo18Decimals(500))
+      expect(await upgradeStrategy.sharesTotal()).to.be.equal(expandTo18Decimals(500))
+      expect(await upgradeStrategy.wantTotal()).to.be.equal(expandTo18Decimals(5))
+      expect(await testLP.balanceOf(testStrategy.address)).to.be.equal(0)
+      expect(await tokenA.balanceOf(testStrategy.address)).to.be.equal(0)
+    })
+
+    it('should withdraw amount from upgrade strategy', async () => {
+      expect(await testLP.balanceOf(test.address)).to.be.equal(expandTo18Decimals(0))
+
+      // use callStatic to check return value of solidity function
+      const [shares, deposit, want] = await upgradeStrategy.connect(test).callStatic.withdraw(expandTo18Decimals(400))
+      expect(shares).to.be.equal(expandTo18Decimals(400))
+      expect(deposit).to.be.equal(expandTo18Decimals(400))
+      expect(want).to.be.equal(expandTo18Decimals(4))
+      // make withdraw
+      await upgradeStrategy.connect(test).withdraw(expandTo18Decimals(400))
+      // check values
+      expect(await testLP.balanceOf(upgradeStrategy.address)).to.be.equal(expandTo18Decimals(100))
+      expect(await tokenA.balanceOf(upgradeStrategy.address)).to.be.equal(expandTo18Decimals(1))
+      expect(await upgradeStrategy.depositTotal()).to.be.equal(expandTo18Decimals(100))
+      expect(await upgradeStrategy.sharesTotal()).to.be.equal(expandTo18Decimals(100))
+      expect(await upgradeStrategy.wantTotal()).to.be.equal(expandTo18Decimals(1))
+      expect(await testLP.balanceOf(test.address)).to.be.equal(expandTo18Decimals(400))
+      expect(await tokenA.balanceOf(test.address)).to.be.equal(expandTo18Decimals(4))
+    })
+  })
+
+  describe('Test emergencyUpgrade when wantToken != depositToken', () => {
+    before('Deploy contracts', async () => {
+      await deployments.fixture()
+      testLP = await ethers.getContract('TestLP')
+      tokenA = await ethers.getContract('TokenA')
+      // will make a local deployment for tests, that way, the owner will be test wallet
+      // instead of BalleMaster contract
+      TestStrategy = await ethers.getContractFactory('TestStrategy')
+      testStrategy = await TestStrategy.deploy(test.address, testLP.address, tokenA.address)
+      await testStrategy.deployed()
+      // deploy a second strategy for upgrade
+      upgradeStrategy = await TestStrategy.deploy(test.address, testLP.address, tokenA.address)
+      await testStrategy.deployed()
+    })
+
+    it('should deposit amount', async () => {
+      // setup TEST_LP balance
+      await testLP.mint(test.address, expandTo18Decimals(500))
+      expect(await testLP.balanceOf(test.address)).to.be.equal(expandTo18Decimals(500))
+      // approve TEST_LP transfer to TestStrategy contract
+      testLP.connect(test).approve(testStrategy.address, MaxUint256)
+
+      // use callStatic to check return value of solidity function
+      expect(await testStrategy.connect(test).callStatic.deposit(expandTo18Decimals(500))).to.be.equal(
+        expandTo18Decimals(500),
+      )
+      // make deposit
+      await testStrategy.connect(test).deposit(expandTo18Decimals(500))
+      // check values
+      expect(await testLP.balanceOf(testStrategy.address)).to.be.equal(expandTo18Decimals(500))
+      expect(await testStrategy.depositTotal()).to.be.equal(expandTo18Decimals(500))
+      expect(await testStrategy.sharesTotal()).to.be.equal(expandTo18Decimals(500))
+      expect(await testStrategy.wantTotal()).to.be.equal(0)
+    })
+
+    it('should harvest and increment 1%', async () => {
+      // make harvest
+      await testStrategy.connect(deployer).harvest()
+
+      expect(await testLP.balanceOf(testStrategy.address)).to.be.equal(expandTo18Decimals(500))
+      expect(await tokenA.balanceOf(testStrategy.address)).to.be.equal(expandTo18Decimals(5))
+      expect(await testStrategy.depositTotal()).to.be.equal(expandTo18Decimals(500))
+      expect(await testStrategy.sharesTotal()).to.be.equal(expandTo18Decimals(500))
+      expect(await testStrategy.wantTotal()).to.be.equal(expandTo18Decimals(5))
+    })
+
+    it('should prepare upgrade to new strategy', async () => {
+      // use callStatic to check return values of solidity function
+      const [shares, deposit, want] = await testStrategy
+        .connect(test)
+        .callStatic.emergencyUpgradeTo(upgradeStrategy.address)
+      expect(shares).to.be.equal(expandTo18Decimals(500))
+      expect(deposit).to.be.equal(expandTo18Decimals(500))
+      expect(want).to.be.equal(expandTo18Decimals(5))
+      // prepare upgrade
+      await testStrategy.connect(test).emergencyUpgradeTo(upgradeStrategy.address)
+      // check values
+      expect(await testLP.balanceOf(testStrategy.address)).to.be.equal(expandTo18Decimals(500))
+      expect(await tokenA.balanceOf(testStrategy.address)).to.be.equal(expandTo18Decimals(5))
+      expect(await testStrategy.depositTotal()).to.be.equal(expandTo18Decimals(500))
+      expect(await testStrategy.sharesTotal()).to.be.equal(expandTo18Decimals(500))
+      expect(await testStrategy.wantTotal()).to.be.equal(expandTo18Decimals(5))
+    })
+
+    it('should complete upgrade to new strategy', async () => {
+      // complete upgrade
+      await upgradeStrategy
+        .connect(test)
+        .upgradeFrom(testStrategy.address, expandTo18Decimals(500), expandTo18Decimals(500), expandTo18Decimals(5))
+      // check values
+      expect(await testLP.balanceOf(upgradeStrategy.address)).to.be.equal(expandTo18Decimals(500))
+      expect(await tokenA.balanceOf(upgradeStrategy.address)).to.be.equal(expandTo18Decimals(5))
+      expect(await upgradeStrategy.depositTotal()).to.be.equal(expandTo18Decimals(500))
+      expect(await upgradeStrategy.sharesTotal()).to.be.equal(expandTo18Decimals(500))
+      expect(await upgradeStrategy.wantTotal()).to.be.equal(expandTo18Decimals(5))
+      expect(await testLP.balanceOf(testStrategy.address)).to.be.equal(0)
+      expect(await tokenA.balanceOf(testStrategy.address)).to.be.equal(0)
+    })
+
+    it('should withdraw amount from upgrade strategy', async () => {
+      expect(await testLP.balanceOf(test.address)).to.be.equal(expandTo18Decimals(0))
+
+      // use callStatic to check return value of solidity function
+      const [shares, deposit, want] = await upgradeStrategy.connect(test).callStatic.withdraw(expandTo18Decimals(400))
+      expect(shares).to.be.equal(expandTo18Decimals(400))
+      expect(deposit).to.be.equal(expandTo18Decimals(400))
+      expect(want).to.be.equal(expandTo18Decimals(4))
+      // make withdraw
+      await upgradeStrategy.connect(test).withdraw(expandTo18Decimals(400))
+      // check values
+      expect(await testLP.balanceOf(upgradeStrategy.address)).to.be.equal(expandTo18Decimals(100))
+      expect(await tokenA.balanceOf(upgradeStrategy.address)).to.be.equal(expandTo18Decimals(1))
+      expect(await upgradeStrategy.depositTotal()).to.be.equal(expandTo18Decimals(100))
+      expect(await upgradeStrategy.sharesTotal()).to.be.equal(expandTo18Decimals(100))
+      expect(await upgradeStrategy.wantTotal()).to.be.equal(expandTo18Decimals(1))
+      expect(await testLP.balanceOf(test.address)).to.be.equal(expandTo18Decimals(400))
+      expect(await tokenA.balanceOf(test.address)).to.be.equal(expandTo18Decimals(4))
     })
   })
 })
