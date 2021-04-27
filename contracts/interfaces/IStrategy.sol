@@ -35,4 +35,10 @@ interface IStrategy {
         uint256 _amount,
         address _to
     ) external;
+
+    // Upgrade strategy to the new one indicated
+    function upgradeTo(address _strat) external;
+
+    // Emergency upgrade to the new strategy indicated
+    function emergencyUpgradeTo(address _strat) external;
 }
