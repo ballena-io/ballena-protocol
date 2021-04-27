@@ -194,6 +194,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         require(_strat != address(0), "!strat");
 
         vaultInfo[_vid].proposedStrat = _strat;
+        // solhint-disable-next-line not-rely-on-time
         vaultInfo[_vid].proposedTime = block.timestamp;
 
         emit ProposeStratUpgrade(_vid, _strat);
@@ -207,6 +208,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         require(_strat != address(0), "!strat");
         VaultInfo storage vault = vaultInfo[_vid];
         require(vault.proposedStrat == _strat, "!strat");
+        // solhint-disable-next-line not-rely-on-time
         require(vault.proposedTime + approvalDelay < block.timestamp, "!timelock");
 
         (uint256 sharesAmt, uint256 depositAmt, uint256 wantAmt) =
@@ -229,6 +231,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         require(_strat != address(0), "!strat");
         VaultInfo storage vault = vaultInfo[_vid];
         require(vault.proposedStrat == _strat, "!strat");
+        // solhint-disable-next-line not-rely-on-time
         require(vault.proposedTime + approvalDelay < block.timestamp, "!timelock");
 
         IStrategy(vault.strat).emergencyUpgradeTo(vault.proposedStrat);
