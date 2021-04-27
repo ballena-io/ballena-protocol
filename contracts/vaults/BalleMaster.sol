@@ -74,8 +74,8 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     event ModifyRewards(uint256 indexed vid, uint256 allocPoint);
     event DeactivateRewards(uint256 indexed vid);
     event ProposeStratUpgrade(uint256 indexed vid, address indexed strat);
-    event StratUpgrade(uint256 indexed vid);
-    event EmergencyStratUpgrade(uint256 indexed vid);
+    event StratUpgrade(uint256 indexed vid, address indexed strat);
+    event EmergencyStratUpgrade(uint256 indexed vid, address indexed strat);
     event Deposit(address indexed user, uint256 indexed vid, uint256 amount, uint256 rewards);
     event Withdraw(address indexed user, uint256 indexed vid, uint256 amount, uint256 rewards);
     event EmergencyWithdraw(address indexed user, uint256 indexed vid, uint256 amount);
@@ -203,17 +203,21 @@ contract BalleMaster is Ownable, ReentrancyGuard {
      * @dev It switches the active strat for the strat candidate. After upgrading, the
      * candidate implementation is set to the 0x0 address, and proposedTime to 0.
      */
-    function stratUpgrade(uint256 _vid) external onlyOwner vaultExists(_vid) {
+    function stratUpgrade(uint256 _vid, address _strat) external onlyOwner vaultExists(_vid) {
+        require(_strat != address(0), "!strat");
         VaultInfo storage vault = vaultInfo[_vid];
-        require(vault.proposedStrat != address(0), "!strat");
+        require(vault.proposedStrat == _strat, "!strat");
         require(vault.proposedTime + approvalDelay < block.timestamp, "!timelock");
 
-        IStrategy(vault.strat).upgradeTo(vault.proposedStrat);
+        (uint256 sharesAmt, uint256 depositAmt, uint256 wantAmt) =
+            IStrategy(vault.strat).upgradeTo(vault.proposedStrat);
+        IStrategy(vault.proposedStrat).upgradeFrom(vault.strat, sharesAmt, depositAmt, wantAmt);
+
         vault.strat = vault.proposedStrat;
         vault.proposedStrat = address(0);
         vault.proposedTime = 0;
 
-        emit StratUpgrade(_vid);
+        emit StratUpgrade(_vid, _strat);
     }
 
     /**
@@ -221,9 +225,10 @@ contract BalleMaster is Ownable, ReentrancyGuard {
      * candidate implementation is set to the 0x0 address, and proposedTime to 0.
      * Emergency function, used only when not a regular upgrade can be performed.
      */
-    function emergencyStratUpgrade(uint256 _vid) external onlyOwner vaultExists(_vid) {
+    function emergencyStratUpgrade(uint256 _vid, address _strat) external onlyOwner vaultExists(_vid) {
+        require(_strat != address(0), "!strat");
         VaultInfo storage vault = vaultInfo[_vid];
-        require(vault.proposedStrat != address(0), "!strat");
+        require(vault.proposedStrat == _strat, "!strat");
         require(vault.proposedTime + approvalDelay < block.timestamp, "!timelock");
 
         IStrategy(vault.strat).emergencyUpgradeTo(vault.proposedStrat);
@@ -231,7 +236,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         vault.proposedStrat = address(0);
         vault.proposedTime = 0;
 
-        emit EmergencyStratUpgrade(_vid);
+        emit EmergencyStratUpgrade(_vid, _strat);
     }
 
     /**
