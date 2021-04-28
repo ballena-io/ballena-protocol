@@ -298,6 +298,11 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         IStrategy(vaultInfo[_vid].strat).retire();
         vaultInfo[_vid].retired = true;
 
+        // Make sure rewards are deactivated
+        if (vaultInfo[_vid].rewardsActive) {
+            deactivateVaultRewards(_vid);
+        }
+
         emit RetireVault(_vid);
     }
 

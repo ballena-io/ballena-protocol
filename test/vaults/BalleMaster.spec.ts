@@ -347,7 +347,7 @@ describe('BalleMaster', () => {
     })
 
     it('should update totalAllocPoint', async () => {
-      await expect(await balleMaster.totalAllocPoint()).to.be.equal(100)
+      expect(await balleMaster.totalAllocPoint()).to.be.equal(100)
     })
 
     it('should check getBlockMultiplier()', async () => {
@@ -356,6 +356,86 @@ describe('BalleMaster', () => {
       expect(await balleMaster.getBlockMultiplier(endBlock + 1, endBlock + 2)).to.be.equal(0)
       expect(await balleMaster.getBlockMultiplier(0, startBlock + 3)).to.be.equal(3)
       expect(await balleMaster.getBlockMultiplier(startBlock, startBlock + 5)).to.be.equal(5)
+    })
+
+    it('should revert if anyone (not owner) try to pause vault', async () => {
+      await expect(balleMaster.connect(test).pauseVault(1)).to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('should revert if try to pause non existent vault', async () => {
+      await expect(balleMaster.connect(deployer).pauseVault(99)).to.be.revertedWith('!vault')
+    })
+
+    it('should revert if anyone (not owner) try to unpause vault', async () => {
+      await expect(balleMaster.connect(test).unpauseVault(1)).to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('should revert if try to unpause non existent vault', async () => {
+      await expect(balleMaster.connect(deployer).unpauseVault(99)).to.be.revertedWith('!vault')
+    })
+
+    it('should revert if try to unpause not paused vault', async () => {
+      await expect(balleMaster.connect(deployer).unpauseVault(1)).to.be.revertedWith('!paused')
+    })
+
+    it('should pause vault #1', async () => {
+      await expect(balleMaster.connect(deployer).pauseVault(1)).to.emit(balleMaster, 'PauseVault').withArgs(1)
+    })
+
+    it('should revert if try to pause already paused vault', async () => {
+      await expect(balleMaster.connect(deployer).pauseVault(1)).to.be.revertedWith('!active')
+    })
+
+    it('should revert if anyone (not owner) try to panic vault', async () => {
+      await expect(balleMaster.connect(test).panicVault(1)).to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('should revert if try to panic non existent vault', async () => {
+      await expect(balleMaster.connect(deployer).panicVault(99)).to.be.revertedWith('!vault')
+    })
+
+    it('should revert if try to panic paused vault', async () => {
+      await expect(balleMaster.connect(deployer).panicVault(1)).to.be.revertedWith('!active')
+    })
+
+    it('should unpause vault #1', async () => {
+      await expect(balleMaster.connect(deployer).unpauseVault(1)).to.emit(balleMaster, 'UnpauseVault').withArgs(1)
+    })
+
+    it('should panic vault #1', async () => {
+      await expect(balleMaster.connect(deployer).panicVault(1)).to.emit(balleMaster, 'PanicVault').withArgs(1)
+    })
+
+    it('should unpause vault #1 after panic', async () => {
+      await expect(balleMaster.connect(deployer).unpauseVault(1)).to.emit(balleMaster, 'UnpauseVault').withArgs(1)
+    })
+
+    it('should revert if anyone (not owner) try to retire vault', async () => {
+      await expect(balleMaster.connect(test).retireVault(1)).to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('should revert if try to retire non existent vault', async () => {
+      await expect(balleMaster.connect(deployer).retireVault(99)).to.be.revertedWith('!vault')
+    })
+
+    it('should retire vault #1', async () => {
+      await expect(balleMaster.connect(deployer).retireVault(1)).to.emit(balleMaster, 'RetireVault').withArgs(1)
+    })
+
+    it('should revert if try to retire already retired vault', async () => {
+      await expect(balleMaster.connect(deployer).retireVault(1)).to.be.revertedWith('!active')
+    })
+
+    it('should retire vault #0', async () => {
+      await expect(balleMaster.connect(deployer).retireVault(0))
+        .to.emit(balleMaster, 'RetireVault')
+        .withArgs(0)
+        .and.to.emit(balleMaster, 'DeactivateRewards')
+        .withArgs(0)
+    })
+
+    it('should update totalAllocPoint', async () => {
+      expect(await balleMaster.totalAllocPoint()).to.be.equal(0)
     })
   })
 

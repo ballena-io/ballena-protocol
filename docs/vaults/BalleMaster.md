@@ -112,9 +112,10 @@ The status information from the vault useful for frontend can be read from `vaul
 - `rewardsActive`: the vault gets BALLE.
 - `allocPoint`: rewards multiplier (100 = 1x).
 - `strat`: strategy smart contract address.
-- `paused`: the strategy is paused.
 - `proposedStrat`: strategy address proposed for upgrade.
 - `proposedTime`: time of upgrade proposition submitted (Blockchain time, UTC).
+- `paused`: the strategy is paused.
+- `retired`: the strategy is retired.
 
 To get the staked tokens of the user (will include benefits in case of an autocompounding strategy): `stakedTokens(VAULT_ID, WALLET_ADDRESS)`
 
