@@ -21,6 +21,10 @@ deploy.skip = async (hre: HardhatRuntimeEnvironment) => {
     // deploy only for tests
     return false
   }
+  if (network.name == 'bsc_testnet') {
+    // deploy to testnet
+    return false
+  }
   return true
 }
 deploy.tags = ['TokenB']
