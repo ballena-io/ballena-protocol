@@ -17,6 +17,9 @@ contract TestStrategy is Ownable {
     uint256 public depositTotal = 0;
     uint256 public sharesTotal = 0;
     uint256 public wantTotal = 0;
+    // Not needed variables, only for this testing strategy to work
+    bool public paused = false;
+    bool public retired = false;
 
     /**
      * @dev Implementation of strategy for testing.
@@ -183,6 +186,42 @@ contract TestStrategy is Ownable {
         sharesTotal = _sharesTotal;
 
         // A real strategy would finish to upgrade (send tokens to farm)
+    }
+
+    function pause() external onlyOwner {
+        // A real strategy would enter pause mode:
+        //   - Remove tokens from farm
+        //   - Clear allowances of third party contracts
+
+        // Updating state, not needed on a real one
+        paused = true;
+    }
+
+    function unpause() external onlyOwner {
+        // A real strategy would enter active mode:
+        //   - Set allowances to third party contracts
+        //   - Send tokens to farm
+
+        // Updating state, not needed on a real one
+        paused = false;
+    }
+
+    function panic() external onlyOwner {
+        // A real strategy would panic exit farm:
+        //   - Remove tokens from farm with emergencyWithdraw
+        //   - Clear allowances of third party contracts
+
+        // Updating state, not needed on a real one
+        paused = true;
+    }
+
+    function retire() external onlyOwner {
+        // A real strategy would enter retired mode:
+        //   - Remove tokens from farm
+        //   - Clear allowances of third party contracts
+
+        // Updating state, not needed on a real one
+        paused = true;
     }
 
     function setGov(address _govAddress) public {
