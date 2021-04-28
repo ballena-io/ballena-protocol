@@ -87,6 +87,19 @@ There will be an alternative method for upgrading the strategy, in case the `eme
 
 For any upgrade method to work, the `proposeStratUpgrade()` should be called 24 hour before.
 
+### Pause / Unpause
+
+In case a vault's strategy needs to be paused, it could be made from our Gnosis Management Safe with a call to `pauseVault()` method of the smart contract. All deposits will be transferred from the farm to the strategy contract and third party allowances with the strategy will be reset to 0. With a call to `unpauseVault()` on the same vault will return to operate normally and allowances will be stablished again.
+
+### Panic
+
+In case something is going wrong with the destination farming platform, a call to `panicVault()` from our Gnosis Management Safe will retrieve all deposits from it with the farm's `emergencyWithdraw` or equivalent method and put them on the strategy contract so users could withdraw them safely. The strategy will be set to paused and all third party allowances with the strategy will be reset to 0.
+If after a `panic` the vault can safely work again, it can be made with a call to `unpauseVault()` from our Gnosis Management Safe. The vault will operate normally and allowances will be stablished again.
+
+### Retire
+
+When a vault has reached its end-of-life, it will be retired, from our Gnosis Management Safe with a call to `retireVault()` method of the smart contract. All deposits will be transferred from the farm to the strategy contract and third party allowances with the strategy will be reset to 0. No deposits will be allowed and every user can withdraw all his tokens, earnings and rewards anytime.
+
 ## Vault information for frontend
 
 There is some information about the vaults to show in the frontend app that should be obtained here.
@@ -99,10 +112,21 @@ The status information from the vault useful for frontend can be read from `vaul
 - `rewardsActive`: the vault gets BALLE.
 - `allocPoint`: rewards multiplier (100 = 1x).
 - `strat`: strategy smart contract address.
-- `paused`: the strategy is paused.
 - `proposedStrat`: strategy address proposed for upgrade.
 - `proposedTime`: time of upgrade proposition submitted (Blockchain time, UTC).
+- `paused`: the strategy is paused.
+- `retired`: the strategy is retired.
 
 To get the staked tokens of the user (will include benefits in case of an autocompounding strategy): `stakedTokens(VAULT_ID, WALLET_ADDRESS)`
 
 To get pending BALLE rewards of the user: `pendingBalle(VAULT_ID, WALLET_ADDRESS)`
+
+## Vault states
+
+Any vault can be in one of the following states:
+
+- `new`: the vault is created but still not working. No BALLE rewards. No visible on frontend. Indicated by `lastRewardBlock = 0`
+- `active`: the vault is working and receiving BALLE rewards. Normal state in frontend. Indicated by `rewardsActive = true`. For visibility on frontend is better to use `lastRewardBlock > 0` because if the reward multiplicator is set to 0 any time later, the vault should be still active, but without rewards, so, `rewardsActive` will be set to `false`.
+- `paused`: the vault is temporarily paused, no tokens deposited on destination farm. Balle rewards will be distributed normally. Will be indicated on frontend and deposit button deactivated. Indicated by `paused = true`.
+- `upgrade timelock period`: the vault's stategy can be upgraded when the timelock expires. Will be indicated on frontend (maybe a countdown?), a link to the new contract could be very helpfull. Indicated by `proposedStrat != 0x0000000000000000000000000000000000000000 and proposedTime != 0`
+- `retired`: the vault is retired, no tokens deposited on destination farm. Balle rewards will be stopped. Will be indicated on frontend and deposit button deactivated. Indicated by `retired = true`.
