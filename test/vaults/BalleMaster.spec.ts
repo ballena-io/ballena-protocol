@@ -477,7 +477,8 @@ describe('BalleMaster', () => {
       await expect(balleMaster.connect(deployer).deposit(0, expandTo18Decimals(100)))
         .to.emit(balleMaster, 'Deposit')
         .withArgs(deployer.address, 0, expandTo18Decimals(100), 0)
-      expect(await balleMaster.stakedTokens(0, deployer.address)).to.be.equal(expandTo18Decimals(100))
+      expect(await balleMaster.userDeposit(0, deployer.address)).to.be.equal(expandTo18Decimals(100))
+      expect(await balleMaster.depositTokens(0, deployer.address)).to.be.equal(expandTo18Decimals(100))
     })
 
     it('should harvest from user 1', async () => {
@@ -500,28 +501,32 @@ describe('BalleMaster', () => {
       await expect(balleMaster.connect(test).deposit(0, expandTo18Decimals(150)))
         .to.emit(balleMaster, 'Deposit')
         .withArgs(test.address, 0, expandTo18Decimals(150), 0)
-      expect(await balleMaster.stakedTokens(0, test.address)).to.be.equal(expandTo18Decimals(150))
+      expect(await balleMaster.userDeposit(0, test.address)).to.be.equal(expandTo18Decimals(150))
+      expect(await balleMaster.depositTokens(0, test.address)).to.be.equal(expandTo18Decimals(150))
     })
 
     it('should depositAll from user 2', async () => {
       await expect(balleMaster.connect(test).depositAll(0))
         .to.emit(balleMaster, 'Deposit')
         .withArgs(test.address, 0, expandTo18Decimals(350), 0)
-      expect(await balleMaster.stakedTokens(0, test.address)).to.be.equal(expandTo18Decimals(500))
+      expect(await balleMaster.userDeposit(0, test.address)).to.be.equal(expandTo18Decimals(500))
+      expect(await balleMaster.depositTokens(0, test.address)).to.be.equal(expandTo18Decimals(500))
     })
 
     it('should partial withdraw from user 2', async () => {
       await expect(balleMaster.connect(test).withdraw(0, expandTo18Decimals(200)))
         .to.emit(balleMaster, 'Withdraw')
         .withArgs(test.address, 0, expandTo18Decimals(200), 0)
-      expect(await balleMaster.stakedTokens(0, test.address)).to.be.equal(expandTo18Decimals(300))
+      expect(await balleMaster.userDeposit(0, test.address)).to.be.equal(expandTo18Decimals(300))
+      expect(await balleMaster.depositTokens(0, test.address)).to.be.equal(expandTo18Decimals(300))
     })
 
     it('should withdraw from user 2', async () => {
       await expect(balleMaster.connect(test).withdraw(0, expandTo18Decimals(300)))
         .to.emit(balleMaster, 'Withdraw')
         .withArgs(test.address, 0, expandTo18Decimals(300), 0)
-      expect(await balleMaster.stakedTokens(0, test.address)).to.be.equal(0)
+      expect(await balleMaster.userDeposit(0, test.address)).to.be.equal(0)
+      expect(await balleMaster.depositTokens(0, test.address)).to.be.equal(0)
     })
   })
 
@@ -551,42 +556,48 @@ describe('BalleMaster', () => {
       await expect(balleMaster.connect(deployer).deposit(0, expandTo18Decimals(400)))
         .to.emit(balleMaster, 'Deposit')
         .withArgs(deployer.address, 0, expandTo18Decimals(400), 0)
-      expect(await balleMaster.stakedTokens(0, deployer.address)).to.be.equal(expandTo18Decimals(400))
+      expect(await balleMaster.userDeposit(0, deployer.address)).to.be.equal(expandTo18Decimals(400))
+      expect(await balleMaster.depositTokens(0, deployer.address)).to.be.equal(expandTo18Decimals(400))
     })
 
     it('should deposit from user 2', async () => {
       await expect(balleMaster.connect(test).deposit(0, expandTo18Decimals(200)))
         .to.emit(balleMaster, 'Deposit')
         .withArgs(test.address, 0, expandTo18Decimals(200), 0)
-      expect(await balleMaster.stakedTokens(0, test.address)).to.be.equal(expandTo18Decimals(200))
+      expect(await balleMaster.userDeposit(0, test.address)).to.be.equal(expandTo18Decimals(200))
+      expect(await balleMaster.depositTokens(0, test.address)).to.be.equal(expandTo18Decimals(200))
     })
 
     it('should partial withdraw both tokens from user 1', async () => {
       await expect(balleMaster.connect(deployer).withdraw(0, expandTo18Decimals(100)))
         .to.emit(balleMaster, 'Withdraw')
         .withArgs(deployer.address, 0, expandTo18Decimals(100), 0)
-      expect(await balleMaster.stakedTokens(0, deployer.address)).to.be.equal(expandTo18Decimals(300))
+      expect(await balleMaster.userDeposit(0, deployer.address)).to.be.equal(expandTo18Decimals(300))
+      expect(await balleMaster.depositTokens(0, deployer.address)).to.be.equal(expandTo18Decimals(300))
     })
 
     it('should add deposit from user 2', async () => {
       await expect(balleMaster.connect(test).deposit(0, expandTo18Decimals(200)))
         .to.emit(balleMaster, 'Deposit')
         .withArgs(test.address, 0, expandTo18Decimals(200), 0)
-      expect(await balleMaster.stakedTokens(0, test.address)).to.be.equal(expandTo18Decimals(400))
+      expect(await balleMaster.userDeposit(0, test.address)).to.be.equal(expandTo18Decimals(400))
+      expect(await balleMaster.depositTokens(0, test.address)).to.be.equal(expandTo18Decimals(400))
     })
 
     it('should withdraw both tokens from user 1', async () => {
       await expect(balleMaster.connect(deployer).withdraw(0, expandTo18Decimals(300)))
         .to.emit(balleMaster, 'Withdraw')
         .withArgs(deployer.address, 0, expandTo18Decimals(300), 0)
-      expect(await balleMaster.stakedTokens(0, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.userDeposit(0, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.depositTokens(0, deployer.address)).to.be.equal(0)
     })
 
     it('should withdrawAll both tokens from user 2', async () => {
       await expect(balleMaster.connect(test).withdrawAll(0))
         .to.emit(balleMaster, 'Withdraw')
         .withArgs(test.address, 0, expandTo18Decimals(400), 0)
-      expect(await balleMaster.stakedTokens(0, test.address)).to.be.equal(0)
+      expect(await balleMaster.userDeposit(0, test.address)).to.be.equal(0)
+      expect(await balleMaster.depositTokens(0, test.address)).to.be.equal(0)
     })
   })
 
@@ -625,15 +636,16 @@ describe('BalleMaster', () => {
       await expect(balleMaster.connect(deployer).deposit(0, expandTo18Decimals(100)))
         .to.emit(balleMaster, 'Deposit')
         .withArgs(deployer.address, 0, expandTo18Decimals(100), 0)
-      expect(await balleMaster.stakedTokens(0, deployer.address)).to.be.equal(expandTo18Decimals(100))
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.userDeposit(0, deployer.address)).to.be.equal(expandTo18Decimals(100))
+      expect(await balleMaster.depositTokens(0, deployer.address)).to.be.equal(expandTo18Decimals(100))
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal(0)
     })
 
     it('should not give BALLE because not activated rewards on vault #0', async () => {
       mineBlock()
       mineBlock()
       mineBlock()
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal(0)
     })
 
     it('should activate vault #0 with 1x rewards', async () => {
@@ -649,15 +661,16 @@ describe('BalleMaster', () => {
     it('should give BALLE for user 1 on vault #0', async () => {
       mineBlock()
       // 1 block of accumulated rewards
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal(expandTo18Decimals(1))
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal(expandTo18Decimals(1))
     })
 
     it('should get rewards on add deposit with one vault and one user on vault #0', async () => {
       await expect(balleMaster.connect(deployer).deposit(0, expandTo18Decimals(100)))
         .to.emit(balleMaster, 'Deposit')
         .withArgs(deployer.address, 0, expandTo18Decimals(100), expandTo18Decimals(2))
-      expect(await balleMaster.stakedTokens(0, deployer.address)).to.be.equal(expandTo18Decimals(200))
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.userDeposit(0, deployer.address)).to.be.equal(expandTo18Decimals(200))
+      expect(await balleMaster.depositTokens(0, deployer.address)).to.be.equal(expandTo18Decimals(200))
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal(0)
       // check BALLE balance
       expect(await balle.balanceOf(deployer.address)).to.be.equal(expandTo18Decimals(2))
       expect(await balle.balanceOf(test.address)).to.be.equal(0)
@@ -667,41 +680,43 @@ describe('BalleMaster', () => {
       mineBlock()
       mineBlock()
       // 2 block of accumulated rewards
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal(expandTo18Decimals(2))
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal(expandTo18Decimals(2))
     })
 
     it('should deposit from user 2 on vault #0', async () => {
       await expect(balleMaster.connect(test).deposit(0, expandTo18Decimals(200)))
         .to.emit(balleMaster, 'Deposit')
         .withArgs(test.address, 0, expandTo18Decimals(200), 0)
-      expect(await balleMaster.stakedTokens(0, test.address)).to.be.equal(expandTo18Decimals(200))
-      expect(await balleMaster.pendingBalle(0, test.address)).to.be.equal(0)
+      expect(await balleMaster.userDeposit(0, test.address)).to.be.equal(expandTo18Decimals(200))
+      expect(await balleMaster.depositTokens(0, test.address)).to.be.equal(expandTo18Decimals(200))
+      expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal(0)
     })
 
     it('should accumulate BALLE on vault #0', async () => {
       mineBlock()
       mineBlock()
       // 2 block of accumulated rewards
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal(expandTo18Decimals(4))
-      expect(await balleMaster.pendingBalle(0, test.address)).to.be.equal(expandTo18Decimals(1))
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal(expandTo18Decimals(4))
+      expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal(expandTo18Decimals(1))
     })
 
     it('should add vault #1', async () => {
       await balleMaster.connect(deployer).addVault(testLP.address, testLP.address, localStrategy2.address)
       // check pending rewards
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal('4500000000000000000')
-      expect(await balleMaster.pendingBalle(0, test.address)).to.be.equal('1500000000000000000')
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal('4500000000000000000')
+      expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal('1500000000000000000')
     })
 
     it('should deposit from user 1 on vault #1', async () => {
       await expect(balleMaster.connect(deployer).deposit(1, expandTo18Decimals(100)))
         .to.emit(balleMaster, 'Deposit')
         .withArgs(deployer.address, 1, expandTo18Decimals(100), 0)
-      expect(await balleMaster.stakedTokens(1, deployer.address)).to.be.equal(expandTo18Decimals(100))
-      expect(await balleMaster.pendingBalle(1, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.userDeposit(1, deployer.address)).to.be.equal(expandTo18Decimals(100))
+      expect(await balleMaster.depositTokens(1, deployer.address)).to.be.equal(expandTo18Decimals(100))
+      expect(await balleMaster.pendingRewards(1, deployer.address)).to.be.equal(0)
       // check pending rewards
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal('5000000000000000000')
-      expect(await balleMaster.pendingBalle(0, test.address)).to.be.equal('2000000000000000000')
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal('5000000000000000000')
+      expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal('2000000000000000000')
     })
 
     it('should activate vault #1 with 3x rewards', async () => {
@@ -710,30 +725,31 @@ describe('BalleMaster', () => {
         .withArgs(1, 300)
       expect(await balleMaster.totalAllocPoint()).to.be.equal(400)
       // check pending rewards
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal('5500000000000000000')
-      expect(await balleMaster.pendingBalle(0, test.address)).to.be.equal('2500000000000000000')
-      expect(await balleMaster.pendingBalle(1, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal('5500000000000000000')
+      expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal('2500000000000000000')
+      expect(await balleMaster.pendingRewards(1, deployer.address)).to.be.equal(0)
     })
 
     it('should accumulate BALLE on vaults with new rate', async () => {
       mineBlock()
       mineBlock()
       // 2 block of accumulated rewards with new rate
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal('5750000000000000000')
-      expect(await balleMaster.pendingBalle(0, test.address)).to.be.equal('2750000000000000000')
-      expect(await balleMaster.pendingBalle(1, deployer.address)).to.be.equal('1500000000000000000')
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal('5750000000000000000')
+      expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal('2750000000000000000')
+      expect(await balleMaster.pendingRewards(1, deployer.address)).to.be.equal('1500000000000000000')
     })
 
     it('should get rewards to user 1 on add deposit on vault #1', async () => {
       await expect(balleMaster.connect(deployer).deposit(1, expandTo18Decimals(100)))
         .to.emit(balleMaster, 'Deposit')
         .withArgs(deployer.address, 1, expandTo18Decimals(100), '2250000000000000000')
-      expect(await balleMaster.stakedTokens(1, deployer.address)).to.be.equal(expandTo18Decimals(200))
-      expect(await balleMaster.pendingBalle(1, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.userDeposit(1, deployer.address)).to.be.equal(expandTo18Decimals(200))
+      expect(await balleMaster.depositTokens(1, deployer.address)).to.be.equal(expandTo18Decimals(200))
+      expect(await balleMaster.pendingRewards(1, deployer.address)).to.be.equal(0)
       // check pending rewards
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal('5875000000000000000')
-      expect(await balleMaster.pendingBalle(0, test.address)).to.be.equal('2875000000000000000')
-      expect(await balleMaster.pendingBalle(1, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal('5875000000000000000')
+      expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal('2875000000000000000')
+      expect(await balleMaster.pendingRewards(1, deployer.address)).to.be.equal(0)
       // check BALLE balance
       expect(await balle.balanceOf(deployer.address)).to.be.equal('4250000000000000000')
       expect(await balle.balanceOf(test.address)).to.be.equal(0)
@@ -743,21 +759,22 @@ describe('BalleMaster', () => {
       mineBlock()
       mineBlock()
       // 2 block of accumulated rewards
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal('6125000000000000000')
-      expect(await balleMaster.pendingBalle(0, test.address)).to.be.equal('3125000000000000000')
-      expect(await balleMaster.pendingBalle(1, deployer.address)).to.be.equal('1500000000000000000')
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal('6125000000000000000')
+      expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal('3125000000000000000')
+      expect(await balleMaster.pendingRewards(1, deployer.address)).to.be.equal('1500000000000000000')
     })
 
     it('should get rewards on partial withdraw with multiple vault and one user on vault #1', async () => {
       await expect(balleMaster.connect(deployer).withdraw(1, expandTo18Decimals(100)))
         .to.emit(balleMaster, 'Withdraw')
         .withArgs(deployer.address, 1, expandTo18Decimals(100), '2250000000000000000')
-      expect(await balleMaster.stakedTokens(1, deployer.address)).to.be.equal(expandTo18Decimals(100))
-      expect(await balleMaster.pendingBalle(1, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.userDeposit(1, deployer.address)).to.be.equal(expandTo18Decimals(100))
+      expect(await balleMaster.depositTokens(1, deployer.address)).to.be.equal(expandTo18Decimals(100))
+      expect(await balleMaster.pendingRewards(1, deployer.address)).to.be.equal(0)
       // check pending rewards
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal('6250000000000000000')
-      expect(await balleMaster.pendingBalle(0, test.address)).to.be.equal('3250000000000000000')
-      expect(await balleMaster.pendingBalle(1, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal('6250000000000000000')
+      expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal('3250000000000000000')
+      expect(await balleMaster.pendingRewards(1, deployer.address)).to.be.equal(0)
       // check BALLE balance
       expect(await balle.balanceOf(deployer.address)).to.be.equal('6500000000000000000')
       expect(await balle.balanceOf(test.address)).to.be.equal(0)
@@ -769,53 +786,55 @@ describe('BalleMaster', () => {
         .withArgs(0)
       expect(await balleMaster.totalAllocPoint()).to.be.equal(300)
       // check pending rewards
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal('6375000000000000000')
-      expect(await balleMaster.pendingBalle(0, test.address)).to.be.equal('3375000000000000000')
-      expect(await balleMaster.pendingBalle(1, deployer.address)).to.be.equal('750000000000000000')
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal('6375000000000000000')
+      expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal('3375000000000000000')
+      expect(await balleMaster.pendingRewards(1, deployer.address)).to.be.equal('750000000000000000')
     })
 
     it('should accumulate BALLE on vault #1', async () => {
       mineBlock()
       mineBlock()
       // 2 block of accumulated rewards, vault 0 does not acc, vault 1 gets all
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal('6375000000000000000')
-      expect(await balleMaster.pendingBalle(0, test.address)).to.be.equal('3375000000000000000')
-      expect(await balleMaster.pendingBalle(1, deployer.address)).to.be.equal('2750000000000000000')
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal('6375000000000000000')
+      expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal('3375000000000000000')
+      expect(await balleMaster.pendingRewards(1, deployer.address)).to.be.equal('2750000000000000000')
     })
 
     it('should deposit from user 2 on vault #1', async () => {
       await expect(balleMaster.connect(test).deposit(1, expandTo18Decimals(100)))
         .to.emit(balleMaster, 'Deposit')
         .withArgs(test.address, 1, expandTo18Decimals(100), 0)
-      expect(await balleMaster.stakedTokens(1, test.address)).to.be.equal(expandTo18Decimals(100))
-      expect(await balleMaster.pendingBalle(1, test.address)).to.be.equal(0)
+      expect(await balleMaster.userDeposit(1, test.address)).to.be.equal(expandTo18Decimals(100))
+      expect(await balleMaster.depositTokens(1, test.address)).to.be.equal(expandTo18Decimals(100))
+      expect(await balleMaster.pendingRewards(1, test.address)).to.be.equal(0)
       // check pending rewards
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal('6375000000000000000')
-      expect(await balleMaster.pendingBalle(0, test.address)).to.be.equal('3375000000000000000')
-      expect(await balleMaster.pendingBalle(1, deployer.address)).to.be.equal('3750000000000000000')
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal('6375000000000000000')
+      expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal('3375000000000000000')
+      expect(await balleMaster.pendingRewards(1, deployer.address)).to.be.equal('3750000000000000000')
     })
 
     it('should accumulate BALLE for on vault #1', async () => {
       mineBlock()
       mineBlock()
       // 2 block of accumulated rewards, vault 0 does not acc, vault 1 gets all
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal('6375000000000000000')
-      expect(await balleMaster.pendingBalle(0, test.address)).to.be.equal('3375000000000000000')
-      expect(await balleMaster.pendingBalle(1, deployer.address)).to.be.equal('4750000000000000000')
-      expect(await balleMaster.pendingBalle(1, test.address)).to.be.equal('1000000000000000000')
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal('6375000000000000000')
+      expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal('3375000000000000000')
+      expect(await balleMaster.pendingRewards(1, deployer.address)).to.be.equal('4750000000000000000')
+      expect(await balleMaster.pendingRewards(1, test.address)).to.be.equal('1000000000000000000')
     })
 
     it('should get rewards on add deposit with multiple vault and multiple user on vault #1', async () => {
       await expect(balleMaster.connect(test).deposit(1, expandTo18Decimals(200)))
         .to.emit(balleMaster, 'Deposit')
         .withArgs(test.address, 1, expandTo18Decimals(200), '1500000000000000000')
-      expect(await balleMaster.stakedTokens(1, test.address)).to.be.equal(expandTo18Decimals(300))
-      expect(await balleMaster.pendingBalle(1, test.address)).to.be.equal(0)
+      expect(await balleMaster.userDeposit(1, test.address)).to.be.equal(expandTo18Decimals(300))
+      expect(await balleMaster.depositTokens(1, test.address)).to.be.equal(expandTo18Decimals(300))
+      expect(await balleMaster.pendingRewards(1, test.address)).to.be.equal(0)
       // check pending rewards
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal('6375000000000000000')
-      expect(await balleMaster.pendingBalle(0, test.address)).to.be.equal('3375000000000000000')
-      expect(await balleMaster.pendingBalle(1, deployer.address)).to.be.equal('5250000000000000000')
-      expect(await balleMaster.pendingBalle(1, test.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal('6375000000000000000')
+      expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal('3375000000000000000')
+      expect(await balleMaster.pendingRewards(1, deployer.address)).to.be.equal('5250000000000000000')
+      expect(await balleMaster.pendingRewards(1, test.address)).to.be.equal(0)
       // check BALLE balance
       expect(await balle.balanceOf(deployer.address)).to.be.equal('6500000000000000000')
       expect(await balle.balanceOf(test.address)).to.be.equal('1500000000000000000')
@@ -825,10 +844,10 @@ describe('BalleMaster', () => {
       mineBlock()
       mineBlock()
       // 2 block of accumulated rewards, vault 0 does not acc, vault 1 gets all
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal('6375000000000000000')
-      expect(await balleMaster.pendingBalle(0, test.address)).to.be.equal('3375000000000000000')
-      expect(await balleMaster.pendingBalle(1, deployer.address)).to.be.equal('5750000000000000000')
-      expect(await balleMaster.pendingBalle(1, test.address)).to.be.equal('1500000000000000000')
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal('6375000000000000000')
+      expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal('3375000000000000000')
+      expect(await balleMaster.pendingRewards(1, deployer.address)).to.be.equal('5750000000000000000')
+      expect(await balleMaster.pendingRewards(1, test.address)).to.be.equal('1500000000000000000')
       // check BALLE balance
       expect(await balle.balanceOf(deployer.address)).to.be.equal('6500000000000000000')
       expect(await balle.balanceOf(test.address)).to.be.equal('1500000000000000000')
@@ -838,13 +857,14 @@ describe('BalleMaster', () => {
       await expect(balleMaster.connect(deployer).withdrawAll(1))
         .to.emit(balleMaster, 'Withdraw')
         .withArgs(deployer.address, 1, expandTo18Decimals(100), '6000000000000000000')
-      expect(await balleMaster.stakedTokens(1, deployer.address)).to.be.equal(0)
-      expect(await balleMaster.pendingBalle(1, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.userDeposit(1, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.depositTokens(1, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(1, deployer.address)).to.be.equal(0)
       // check pending rewards
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal('6375000000000000000')
-      expect(await balleMaster.pendingBalle(0, test.address)).to.be.equal('3375000000000000000')
-      expect(await balleMaster.pendingBalle(1, deployer.address)).to.be.equal(0)
-      expect(await balleMaster.pendingBalle(1, test.address)).to.be.equal('2250000000000000000')
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal('6375000000000000000')
+      expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal('3375000000000000000')
+      expect(await balleMaster.pendingRewards(1, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(1, test.address)).to.be.equal('2250000000000000000')
       // check BALLE balance
       expect(await balle.balanceOf(deployer.address)).to.be.equal('12500000000000000000')
       expect(await balle.balanceOf(test.address)).to.be.equal('1500000000000000000')
@@ -854,10 +874,10 @@ describe('BalleMaster', () => {
       mineBlock()
       mineBlock()
       // 2 block of accumulated rewards, vault 0 does not acc, vault 1 gets all
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal('6375000000000000000')
-      expect(await balleMaster.pendingBalle(0, test.address)).to.be.equal('3375000000000000000')
-      expect(await balleMaster.pendingBalle(1, deployer.address)).to.be.equal(0)
-      expect(await balleMaster.pendingBalle(1, test.address)).to.be.equal('4249999999800000000') // rounding issue (this happens!)
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal('6375000000000000000')
+      expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal('3375000000000000000')
+      expect(await balleMaster.pendingRewards(1, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(1, test.address)).to.be.equal('4249999999800000000') // rounding issue (this happens!)
       // check BALLE balance
       expect(await balle.balanceOf(deployer.address)).to.be.equal('12500000000000000000')
       expect(await balle.balanceOf(test.address)).to.be.equal('1500000000000000000')
@@ -869,10 +889,10 @@ describe('BalleMaster', () => {
         .withArgs(1, 500)
       expect(await balleMaster.totalAllocPoint()).to.be.equal(500)
       // check pending rewards (has no effect because only one active vault, so, gets all anyway)
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal('6375000000000000000')
-      expect(await balleMaster.pendingBalle(0, test.address)).to.be.equal('3375000000000000000')
-      expect(await balleMaster.pendingBalle(1, deployer.address)).to.be.equal(0)
-      expect(await balleMaster.pendingBalle(1, test.address)).to.be.equal('5250000000000000000') // rounding resolved (this happens too!)
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal('6375000000000000000')
+      expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal('3375000000000000000')
+      expect(await balleMaster.pendingRewards(1, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(1, test.address)).to.be.equal('5250000000000000000') // rounding resolved (this happens too!)
       // check BALLE balance
       expect(await balle.balanceOf(deployer.address)).to.be.equal('12500000000000000000')
       expect(await balle.balanceOf(test.address)).to.be.equal('1500000000000000000')
@@ -882,10 +902,10 @@ describe('BalleMaster', () => {
       mineBlock()
       mineBlock()
       // 2 block of accumulated rewards, vault 0 does not acc, vault 1 gets all
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal('6375000000000000000')
-      expect(await balleMaster.pendingBalle(0, test.address)).to.be.equal('3375000000000000000')
-      expect(await balleMaster.pendingBalle(1, deployer.address)).to.be.equal(0)
-      expect(await balleMaster.pendingBalle(1, test.address)).to.be.equal('7249999999800000000') // rounding again
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal('6375000000000000000')
+      expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal('3375000000000000000')
+      expect(await balleMaster.pendingRewards(1, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(1, test.address)).to.be.equal('7249999999800000000') // rounding again
       // check BALLE balance
       expect(await balle.balanceOf(deployer.address)).to.be.equal('12500000000000000000')
       expect(await balle.balanceOf(test.address)).to.be.equal('1500000000000000000')
@@ -895,13 +915,14 @@ describe('BalleMaster', () => {
       await expect(balleMaster.connect(test).withdraw(1, 0))
         .to.emit(balleMaster, 'Withdraw')
         .withArgs(test.address, 1, 0, '8250000000000000000') // rounding resolved again
-      expect(await balleMaster.stakedTokens(1, test.address)).to.be.equal(expandTo18Decimals(300))
-      expect(await balleMaster.pendingBalle(1, test.address)).to.be.equal(0)
+      expect(await balleMaster.userDeposit(1, test.address)).to.be.equal(expandTo18Decimals(300))
+      expect(await balleMaster.depositTokens(1, test.address)).to.be.equal(expandTo18Decimals(300))
+      expect(await balleMaster.pendingRewards(1, test.address)).to.be.equal(0)
       // check pending rewards
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal('6375000000000000000')
-      expect(await balleMaster.pendingBalle(0, test.address)).to.be.equal('3375000000000000000')
-      expect(await balleMaster.pendingBalle(1, deployer.address)).to.be.equal(0)
-      expect(await balleMaster.pendingBalle(1, test.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal('6375000000000000000')
+      expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal('3375000000000000000')
+      expect(await balleMaster.pendingRewards(1, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(1, test.address)).to.be.equal(0)
       // check BALLE balance
       expect(await balle.balanceOf(deployer.address)).to.be.equal('12500000000000000000')
       expect(await balle.balanceOf(test.address)).to.be.equal('9750000000000000000')
@@ -914,10 +935,10 @@ describe('BalleMaster', () => {
         mineBlock()
       }
       // 18 block of accumulated rewards, vault 0 does not acc, vault 1 gets all
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal('6375000000000000000')
-      expect(await balleMaster.pendingBalle(0, test.address)).to.be.equal('3375000000000000000')
-      expect(await balleMaster.pendingBalle(1, deployer.address)).to.be.equal(0)
-      expect(await balleMaster.pendingBalle(1, test.address)).to.be.equal(expandTo18Decimals(18))
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal('6375000000000000000')
+      expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal('3375000000000000000')
+      expect(await balleMaster.pendingRewards(1, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(1, test.address)).to.be.equal(expandTo18Decimals(18))
       // check BALLE balance
       expect(await balle.balanceOf(deployer.address)).to.be.equal('12500000000000000000')
       expect(await balle.balanceOf(test.address)).to.be.equal('9750000000000000000')
@@ -927,10 +948,10 @@ describe('BalleMaster', () => {
       mineBlock()
       mineBlock()
       // no more rewards left
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal('6375000000000000000')
-      expect(await balleMaster.pendingBalle(0, test.address)).to.be.equal('3375000000000000000')
-      expect(await balleMaster.pendingBalle(1, deployer.address)).to.be.equal(0)
-      expect(await balleMaster.pendingBalle(1, test.address)).to.be.equal(expandTo18Decimals(18))
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal('6375000000000000000')
+      expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal('3375000000000000000')
+      expect(await balleMaster.pendingRewards(1, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(1, test.address)).to.be.equal(expandTo18Decimals(18))
       // check BALLE balance
       expect(await balle.balanceOf(deployer.address)).to.be.equal('12500000000000000000')
       expect(await balle.balanceOf(test.address)).to.be.equal('9750000000000000000')
@@ -940,13 +961,14 @@ describe('BalleMaster', () => {
       await expect(balleMaster.connect(deployer).withdrawAll(0))
         .to.emit(balleMaster, 'Withdraw')
         .withArgs(deployer.address, 0, expandTo18Decimals(200), '6375000000000000000')
-      expect(await balleMaster.stakedTokens(0, deployer.address)).to.be.equal(0)
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.userDeposit(0, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.depositTokens(0, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal(0)
       // check pending rewards
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal(0)
-      expect(await balleMaster.pendingBalle(0, test.address)).to.be.equal('3375000000000000000')
-      expect(await balleMaster.pendingBalle(1, deployer.address)).to.be.equal(0)
-      expect(await balleMaster.pendingBalle(1, test.address)).to.be.equal(expandTo18Decimals(18))
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal('3375000000000000000')
+      expect(await balleMaster.pendingRewards(1, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(1, test.address)).to.be.equal(expandTo18Decimals(18))
       // check BALLE balance
       expect(await balle.balanceOf(deployer.address)).to.be.equal('18875000000000000000')
       expect(await balle.balanceOf(test.address)).to.be.equal('9750000000000000000')
@@ -956,13 +978,14 @@ describe('BalleMaster', () => {
       await expect(balleMaster.connect(test).withdrawAll(0))
         .to.emit(balleMaster, 'Withdraw')
         .withArgs(test.address, 0, expandTo18Decimals(200), '3375000000000000000')
-      expect(await balleMaster.stakedTokens(0, test.address)).to.be.equal(0)
-      expect(await balleMaster.pendingBalle(0, test.address)).to.be.equal(0)
+      expect(await balleMaster.userDeposit(0, test.address)).to.be.equal(0)
+      expect(await balleMaster.depositTokens(0, test.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal(0)
       // check pending rewards
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal(0)
-      expect(await balleMaster.pendingBalle(0, test.address)).to.be.equal(0)
-      expect(await balleMaster.pendingBalle(1, deployer.address)).to.be.equal(0)
-      expect(await balleMaster.pendingBalle(1, test.address)).to.be.equal(expandTo18Decimals(18))
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(1, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(1, test.address)).to.be.equal(expandTo18Decimals(18))
       // check BALLE balance
       expect(await balle.balanceOf(deployer.address)).to.be.equal('18875000000000000000')
       expect(await balle.balanceOf(test.address)).to.be.equal('13125000000000000000')
@@ -972,27 +995,32 @@ describe('BalleMaster', () => {
       await expect(balleMaster.connect(test).withdrawAll(1))
         .to.emit(balleMaster, 'Withdraw')
         .withArgs(test.address, 1, expandTo18Decimals(300), expandTo18Decimals(18))
-      expect(await balleMaster.stakedTokens(1, test.address)).to.be.equal(0)
-      expect(await balleMaster.pendingBalle(1, test.address)).to.be.equal(0)
+      expect(await balleMaster.userDeposit(1, test.address)).to.be.equal(0)
+      expect(await balleMaster.depositTokens(1, test.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(1, test.address)).to.be.equal(0)
       // check pending rewards
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal(0)
-      expect(await balleMaster.pendingBalle(0, test.address)).to.be.equal(0)
-      expect(await balleMaster.pendingBalle(1, deployer.address)).to.be.equal(0)
-      expect(await balleMaster.pendingBalle(1, test.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(1, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(1, test.address)).to.be.equal(0)
       // check BALLE balance
       expect(await balle.balanceOf(deployer.address)).to.be.equal('18875000000000000000')
       expect(await balle.balanceOf(test.address)).to.be.equal('31125000000000000000')
     })
 
-    it('should be all vaults empty', async () => {
-      expect(await balleMaster.stakedTokens(0, deployer.address)).to.be.equal(0)
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal(0)
-      expect(await balleMaster.stakedTokens(0, test.address)).to.be.equal(0)
-      expect(await balleMaster.pendingBalle(0, test.address)).to.be.equal(0)
-      expect(await balleMaster.stakedTokens(1, deployer.address)).to.be.equal(0)
-      expect(await balleMaster.pendingBalle(1, deployer.address)).to.be.equal(0)
-      expect(await balleMaster.stakedTokens(1, test.address)).to.be.equal(0)
-      expect(await balleMaster.pendingBalle(1, test.address)).to.be.equal(0)
+    it('should all vaults be empty', async () => {
+      expect(await balleMaster.userDeposit(0, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.depositTokens(0, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.userDeposit(0, test.address)).to.be.equal(0)
+      expect(await balleMaster.depositTokens(0, test.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal(0)
+      expect(await balleMaster.userDeposit(1, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.depositTokens(1, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(1, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.userDeposit(1, test.address)).to.be.equal(0)
+      expect(await balleMaster.depositTokens(1, test.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(1, test.address)).to.be.equal(0)
       expect(await testLP.balanceOf(deployer.address)).to.be.equal(expandTo18Decimals(500))
       expect(await testLP.balanceOf(test.address)).to.be.equal(expandTo18Decimals(500))
       expect(await balle.balanceOf(deployer.address)).to.be.equal('18875000000000000000')
@@ -1025,7 +1053,8 @@ describe('BalleMaster', () => {
       await expect(balleMaster.connect(deployer).deposit(0, expandTo18Decimals(300)))
         .to.emit(balleMaster, 'Deposit')
         .withArgs(deployer.address, 0, expandTo18Decimals(300), 0)
-      expect(await balleMaster.stakedTokens(0, deployer.address)).to.be.equal(expandTo18Decimals(300))
+      expect(await balleMaster.userDeposit(0, deployer.address)).to.be.equal(expandTo18Decimals(300))
+      expect(await balleMaster.depositTokens(0, deployer.address)).to.be.equal(expandTo18Decimals(300))
       // check LP balance
       expect(await testLP.balanceOf(testStrategy.address)).to.be.equal(expandTo18Decimals(300))
       expect(await testLP.balanceOf(deployer.address)).to.be.equal(expandTo18Decimals(200))
@@ -1035,7 +1064,8 @@ describe('BalleMaster', () => {
       await expect(balleMaster.connect(test).deposit(0, expandTo18Decimals(300)))
         .to.emit(balleMaster, 'Deposit')
         .withArgs(test.address, 0, expandTo18Decimals(300), 0)
-      expect(await balleMaster.stakedTokens(0, test.address)).to.be.equal(expandTo18Decimals(300))
+      expect(await balleMaster.userDeposit(0, test.address)).to.be.equal(expandTo18Decimals(300))
+      expect(await balleMaster.depositTokens(0, test.address)).to.be.equal(expandTo18Decimals(300))
       // check LP balance
       expect(await testLP.balanceOf(testStrategy.address)).to.be.equal(expandTo18Decimals(600))
       expect(await testLP.balanceOf(test.address)).to.be.equal(expandTo18Decimals(200))
@@ -1045,8 +1075,9 @@ describe('BalleMaster', () => {
       await expect(balleMaster.connect(deployer).emergencyWithdraw(0))
         .to.emit(balleMaster, 'EmergencyWithdraw')
         .withArgs(deployer.address, 0, expandTo18Decimals(300))
-      expect(await balleMaster.stakedTokens(0, deployer.address)).to.be.equal(0)
-      expect(await balleMaster.pendingBalle(0, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.userDeposit(0, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.depositTokens(0, deployer.address)).to.be.equal(0)
+      expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal(0)
       // check LP balance
       expect(await testLP.balanceOf(testStrategy.address)).to.be.equal(expandTo18Decimals(300))
       expect(await testLP.balanceOf(deployer.address)).to.be.equal(expandTo18Decimals(500))

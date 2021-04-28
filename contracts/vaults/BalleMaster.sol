@@ -35,6 +35,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
 
     // Info of each user
     struct UserInfo {
+        uint256 deposit; // User deposit amount.
         uint256 shares; // User shares of the vault.
         uint256 rewardDebt; // Reward debt. See explanation below.
         //
@@ -329,9 +330,9 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev View function to see pending BALLE on frontend.
+     * @dev View function to see pending BALLE rewards on frontend.
      */
-    function pendingBalle(uint256 _vid, address _user) external view returns (uint256) {
+    function pendingRewards(uint256 _vid, address _user) external view returns (uint256) {
         VaultInfo storage vault = vaultInfo[_vid];
         UserInfo storage user = userInfo[_vid][_user];
         uint256 accBallePerShare = vault.accBallePerShare;
@@ -345,9 +346,17 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev View function to see staked (LP) tokens on frontend.
+     * @dev View function to see user's deposited tokens on frontend.
+     * This is useful to show the earnings: depositTokens() - userDeposit()
      */
-    function stakedTokens(uint256 _vid, address _user) external view returns (uint256) {
+    function userDeposit(uint256 _vid, address _user) external view returns (uint256) {
+        return userInfo[_vid][_user].deposit;
+    }
+
+    /**
+     * @dev View function to see user's deposit tokens on frontend.
+     */
+    function depositTokens(uint256 _vid, address _user) external view returns (uint256) {
         VaultInfo storage vault = vaultInfo[_vid];
         UserInfo storage user = userInfo[_vid][_user];
 
@@ -415,7 +424,10 @@ contract BalleMaster is Ownable, ReentrancyGuard {
             vault.depositToken.safeTransferFrom(address(msg.sender), address(this), _amount);
             vault.depositToken.safeIncreaseAllowance(vault.strat, _amount);
             uint256 sharesAdded = IStrategy(vaultInfo[_vid].strat).deposit(_amount);
+            uint256 sharesTotal = IStrategy(vault.strat).sharesTotal();
+            uint256 depositTotal = IStrategy(vault.strat).depositTotal();
             user.shares = user.shares + sharesAdded;
+            user.deposit = (user.shares * depositTotal) / sharesTotal;
         }
         user.rewardDebt = (user.shares * vault.accBallePerShare) / 1e12;
         emit Deposit(msg.sender, _vid, _amount, pending);
@@ -466,10 +478,12 @@ contract BalleMaster is Ownable, ReentrancyGuard {
             (uint256 sharesRemoved, uint256 depositRemoved, uint256 wantRemoved) =
                 IStrategy(vault.strat).withdraw(_amount);
 
-            if (sharesRemoved > user.shares) {
+            if (sharesRemoved >= user.shares) {
                 user.shares = 0;
+                user.deposit = 0;
             } else {
                 user.shares = user.shares - sharesRemoved;
+                user.deposit = (user.shares * (depositTotal - depositRemoved)) / (sharesTotal - sharesRemoved);
             }
 
             uint256 depositBal = IERC20(vault.depositToken).balanceOf(address(this));
@@ -515,6 +529,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         uint256 sharesTotal = IStrategy(vault.strat).sharesTotal();
         uint256 amount = (user.shares * depositTotal) / sharesTotal;
         user.shares = 0;
+        user.deposit = 0;
         user.rewardDebt = 0;
 
         // TODO consider implementing emergencyWithdraw on strategy too.
