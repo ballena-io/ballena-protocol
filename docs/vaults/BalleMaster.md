@@ -14,16 +14,21 @@ Regarding vault information, there is an array of vaults (indexed by vault id) w
 
 - `depositToken`: blockchain address of the token deposited by user.
 - `wantToken`: blockchain address of the token the strategy maximizes.
-- `rewardsActive`: rewards are being distributed for this vault.
+- `strat`: blockchain address of the strategy contract implementation.
+- `proposedStrat`: blockchain address of the proposed strategy contract to upgrade.
 - `allocPoint`: rewards allocation points assigned to the vault.
 - `lastRewardBlock`: last block number that BALLEs distribution occurred in the vault.
 - `accBallePerShare`: accumulated BALLEs per share, times 1e12.
-- `strat`: blockchain address of the strategy contract implementation.
+- `proposedTime`: time of the proposed strategy upgrade.
+- `rewardsActive`: rewards are being distributed for this vault.
+- `paused`: the vault's strategy is paused.
+- `retired`: the vault is retired.
 
 ### User information
 
 There is a mapping to store user participation and rewards debt for each vault. This is stored in an structure of `UserInfo` type with the following contents:
 
+- `deposit`: user deposited tokens of the corresponding vault.
 - `shares`: user shares of the corresponding vault.
 - `rewardDebt`: reward debt of the user in this vault.
 
@@ -117,9 +122,11 @@ The status information from the vault useful for frontend can be read from `vaul
 - `paused`: the strategy is paused.
 - `retired`: the strategy is retired.
 
-To get the staked tokens of the user (will include benefits in case of an autocompounding strategy): `stakedTokens(VAULT_ID, WALLET_ADDRESS)`
+To get the deposit made by the user: `userDeposit(VAULT_ID, WALLET_ADDRESS)`
 
-To get pending BALLE rewards of the user: `pendingBalle(VAULT_ID, WALLET_ADDRESS)`
+To get the deposit tokens of the user (will include benefits in case of an autocompounding strategy): `depositTokens(VAULT_ID, WALLET_ADDRESS)`
+
+To get pending BALLE rewards of the user: `pendingRewards(VAULT_ID, WALLET_ADDRESS)`
 
 ## Vault states
 
