@@ -5,10 +5,14 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts } = hre
   const { deploy } = deployments
   const { deployer } = await getNamedAccounts()
+  const BalleMaster = await deployments.get('BalleMaster')
+  const TokenA = await deployments.get('TokenA')
+  const TokenB = await deployments.get('TokenB')
 
-  await deploy('TokenB', {
+  await deploy('TestStratSingleAsset2Token', {
+    contract: 'TestStrategy',
     from: deployer,
-    args: [],
+    args: [BalleMaster.address, TokenA.address, TokenB.address],
     log: true,
     deterministicDeployment: false,
   })
@@ -18,7 +22,7 @@ deploy.skip = async (hre: HardhatRuntimeEnvironment) => {
   const { network } = hre
 
   if (network.name == 'hardhat') {
-    // deploy only for tests
+    // deploy for tests
     return false
   }
   if (network.name == 'bsc_testnet') {
@@ -27,5 +31,6 @@ deploy.skip = async (hre: HardhatRuntimeEnvironment) => {
   }
   return true
 }
-deploy.tags = ['TokenB']
+deploy.tags = ['TestStratSingleAsset2Token']
+deploy.dependencies = ['TokenA', 'TokenB', 'BalleMaster']
 export default deploy

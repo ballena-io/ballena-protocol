@@ -146,7 +146,8 @@ contract BalleMaster is Ownable, ReentrancyGuard {
      * @dev Function to activate vault rewards. Can only be called by the owner.
      */
     function activateVaultRewards(uint256 _vid, uint256 _allocPoint) public onlyOwner vaultExists(_vid) {
-        require(!vaultInfo[_vid].rewardsActive, "active");
+        VaultInfo storage vault = vaultInfo[_vid];
+        require(!vault.rewardsActive, "active");
         require(_allocPoint > 0, "!allocpoint");
 
         massUpdateVaults();
@@ -158,10 +159,10 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         uint256 lastRewardBlock = block.number;
         totalAllocPoint = totalAllocPoint + _allocPoint;
 
-        vaultInfo[_vid].allocPoint = _allocPoint;
-        vaultInfo[_vid].lastRewardBlock = lastRewardBlock;
-        vaultInfo[_vid].rewardsActive = true;
-        vaultInfo[_vid].accBallePerShare = 0;
+        vault.allocPoint = _allocPoint;
+        vault.lastRewardBlock = lastRewardBlock;
+        vault.rewardsActive = true;
+        vault.accBallePerShare = 0;
 
         emit ActivateRewards(_vid, _allocPoint);
     }
@@ -170,13 +171,14 @@ contract BalleMaster is Ownable, ReentrancyGuard {
      * @dev Function to modify vault rewards. Can only be called by the owner.
      */
     function modifyVaultRewards(uint256 _vid, uint256 _allocPoint) public onlyOwner vaultExists(_vid) {
-        require(vaultInfo[_vid].rewardsActive, "!active");
+        VaultInfo storage vault = vaultInfo[_vid];
+        require(vault.rewardsActive, "!active");
         require(_allocPoint > 0, "!allocpoint");
 
         massUpdateVaults();
 
-        totalAllocPoint = totalAllocPoint - vaultInfo[_vid].allocPoint + _allocPoint;
-        vaultInfo[_vid].allocPoint = _allocPoint;
+        totalAllocPoint = totalAllocPoint - vault.allocPoint + _allocPoint;
+        vault.allocPoint = _allocPoint;
 
         emit ModifyRewards(_vid, _allocPoint);
     }
@@ -185,13 +187,14 @@ contract BalleMaster is Ownable, ReentrancyGuard {
      * @dev Function to deactivate vault rewards. Can only be called by the owner.
      */
     function deactivateVaultRewards(uint256 _vid) public onlyOwner vaultExists(_vid) {
-        require(vaultInfo[_vid].rewardsActive, "!active");
+        VaultInfo storage vault = vaultInfo[_vid];
+        require(vault.rewardsActive, "!active");
 
         massUpdateVaults();
 
-        totalAllocPoint = totalAllocPoint - vaultInfo[_vid].allocPoint;
-        vaultInfo[_vid].allocPoint = 0;
-        vaultInfo[_vid].rewardsActive = false;
+        totalAllocPoint = totalAllocPoint - vault.allocPoint;
+        vault.allocPoint = 0;
+        vault.rewardsActive = false;
 
         emit DeactivateRewards(_vid);
     }
@@ -201,10 +204,11 @@ contract BalleMaster is Ownable, ReentrancyGuard {
      */
     function proposeStratUpgrade(uint256 _vid, address _strat) public onlyOwner vaultExists(_vid) {
         require(_strat != address(0), "!strat");
+        VaultInfo storage vault = vaultInfo[_vid];
 
-        vaultInfo[_vid].proposedStrat = _strat;
+        vault.proposedStrat = _strat;
         // solhint-disable-next-line not-rely-on-time
-        vaultInfo[_vid].proposedTime = block.timestamp;
+        vault.proposedTime = block.timestamp;
 
         emit ProposeStratUpgrade(_vid, _strat);
     }
@@ -258,10 +262,11 @@ contract BalleMaster is Ownable, ReentrancyGuard {
      * @dev Function to pause vault strategy. Can only be called by the owner.
      */
     function pauseVault(uint256 _vid) public onlyOwner vaultExists(_vid) {
-        require(!vaultInfo[_vid].paused, "!active");
+        VaultInfo storage vault = vaultInfo[_vid];
+        require(!vault.paused, "!active");
 
-        IStrategy(vaultInfo[_vid].strat).pause();
-        vaultInfo[_vid].paused = true;
+        IStrategy(vault.strat).pause();
+        vault.paused = true;
 
         emit PauseVault(_vid);
     }
@@ -270,10 +275,11 @@ contract BalleMaster is Ownable, ReentrancyGuard {
      * @dev Function to unpause vault strategy. Can only be called by the owner.
      */
     function unpauseVault(uint256 _vid) public onlyOwner vaultExists(_vid) {
-        require(vaultInfo[_vid].paused, "!paused");
+        VaultInfo storage vault = vaultInfo[_vid];
+        require(vault.paused, "!paused");
 
-        IStrategy(vaultInfo[_vid].strat).unpause();
-        vaultInfo[_vid].paused = false;
+        IStrategy(vault.strat).unpause();
+        vault.paused = false;
 
         emit UnpauseVault(_vid);
     }
@@ -282,10 +288,11 @@ contract BalleMaster is Ownable, ReentrancyGuard {
      * @dev Function to panic vault strategy. Can only be called by the owner.
      */
     function panicVault(uint256 _vid) public onlyOwner vaultExists(_vid) {
-        require(!vaultInfo[_vid].paused, "!active");
+        VaultInfo storage vault = vaultInfo[_vid];
+        require(!vault.paused, "!active");
 
-        IStrategy(vaultInfo[_vid].strat).panic();
-        vaultInfo[_vid].paused = true;
+        IStrategy(vault.strat).panic();
+        vault.paused = true;
 
         emit PanicVault(_vid);
     }
@@ -294,13 +301,14 @@ contract BalleMaster is Ownable, ReentrancyGuard {
      * @dev Function to retire vault strategy. Can only be called by the owner.
      */
     function retireVault(uint256 _vid) public onlyOwner vaultExists(_vid) {
-        require(!vaultInfo[_vid].retired, "!active");
+        VaultInfo storage vault = vaultInfo[_vid];
+        require(!vault.retired, "!active");
 
-        IStrategy(vaultInfo[_vid].strat).retire();
-        vaultInfo[_vid].retired = true;
+        IStrategy(vault.strat).retire();
+        vault.retired = true;
 
         // Make sure rewards are deactivated
-        if (vaultInfo[_vid].rewardsActive) {
+        if (vault.rewardsActive) {
             deactivateVaultRewards(_vid);
         }
 
@@ -335,6 +343,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     function pendingRewards(uint256 _vid, address _user) external view returns (uint256) {
         VaultInfo storage vault = vaultInfo[_vid];
         UserInfo storage user = userInfo[_vid][_user];
+
         uint256 accBallePerShare = vault.accBallePerShare;
         uint256 sharesTotal = IStrategy(vault.strat).sharesTotal();
         if (vault.rewardsActive && block.number > vault.lastRewardBlock && sharesTotal != 0) {
@@ -383,6 +392,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
      */
     function updateVault(uint256 _vid) internal {
         VaultInfo storage vault = vaultInfo[_vid];
+
         if (!vault.rewardsActive) {
             return;
         }
@@ -532,7 +542,6 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         user.deposit = 0;
         user.rewardDebt = 0;
 
-        // TODO consider implementing emergencyWithdraw on strategy too.
         IStrategy(vault.strat).withdraw(amount);
 
         uint256 lpBal = IERC20(vault.depositToken).balanceOf(address(this));
@@ -550,6 +559,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
      */
     function safeBalleTransfer(address _to, uint256 _amount) internal {
         uint256 balleBal = balle.balanceOf(address(this));
+
         if (_amount > balleBal) {
             if (balleToMint > 0) {
                 balle.mint(address(this), balleToMint);
