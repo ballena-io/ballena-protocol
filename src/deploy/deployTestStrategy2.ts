@@ -11,7 +11,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   await deploy('TestStrategy2', {
     contract: 'TestStrategy',
     from: deployer,
-    args: [BalleMaster.address, TestLP.address, TestLP.address],
+    args: [BalleMaster.address, TestLP.address],
     log: true,
     deterministicDeployment: false,
   })

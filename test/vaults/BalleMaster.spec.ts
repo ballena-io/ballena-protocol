@@ -53,7 +53,7 @@ describe('BalleMaster', () => {
       balleMaster = await ethers.getContract('BalleMaster')
       testStrategy = await ethers.getContract('TestStrategy')
       testLP = await ethers.getContract('TestLP')
-      localStrategy1 = await LocalStrategy.deploy(balleMaster.address, testLP.address, testLP.address)
+      localStrategy1 = await LocalStrategy.deploy(balleMaster.address, testLP.address)
       await localStrategy1.deployed()
     })
 
@@ -92,7 +92,7 @@ describe('BalleMaster', () => {
     })
 
     it('should add new vault #0', async () => {
-      await balleMaster.connect(deployer).addVault(testLP.address, testLP.address, testStrategy.address)
+      await balleMaster.connect(deployer).addVault(testLP.address, testStrategy.address)
     })
 
     it('should revert if try to propose strategy upgrade with zero address', async () => {
@@ -147,14 +147,14 @@ describe('BalleMaster', () => {
       )
       await balleMaster.deployed()
       testLP = await ethers.getContract('TestLP')
-      localStrategy1 = await LocalStrategy.deploy(balleMaster.address, testLP.address, testLP.address)
+      localStrategy1 = await LocalStrategy.deploy(balleMaster.address, testLP.address)
       await localStrategy1.deployed()
-      localStrategy2 = await LocalStrategy.deploy(balleMaster.address, testLP.address, testLP.address)
+      localStrategy2 = await LocalStrategy.deploy(balleMaster.address, testLP.address)
       await localStrategy2.deployed()
     })
 
     it('should add new vault #0', async () => {
-      await balleMaster.connect(deployer).addVault(testLP.address, testLP.address, localStrategy1.address)
+      await balleMaster.connect(deployer).addVault(testLP.address, localStrategy1.address)
     })
 
     it('should propose strat upgrade', async () => {
@@ -185,15 +185,14 @@ describe('BalleMaster', () => {
       )
       await balleMaster.deployed()
       testLP = await ethers.getContract('TestLP')
-      tokenA = await ethers.getContract('TokenA')
-      localStrategy1 = await LocalStrategy.deploy(balleMaster.address, testLP.address, tokenA.address)
+      localStrategy1 = await LocalStrategy.deploy(balleMaster.address, testLP.address)
       await localStrategy1.deployed()
-      localStrategy2 = await LocalStrategy.deploy(balleMaster.address, testLP.address, tokenA.address)
+      localStrategy2 = await LocalStrategy.deploy(balleMaster.address, testLP.address)
       await localStrategy2.deployed()
     })
 
     it('should add new vault #0', async () => {
-      await balleMaster.connect(deployer).addVault(testLP.address, tokenA.address, localStrategy1.address)
+      await balleMaster.connect(deployer).addVault(testLP.address, localStrategy1.address)
     })
 
     it('should propose strat upgrade', async () => {
@@ -225,31 +224,23 @@ describe('BalleMaster', () => {
     })
 
     it('should revert if anyone (not owner) try to add new vault', async () => {
-      await expect(
-        balleMaster.connect(test).addVault(testLP.address, testLP.address, testStrategy.address),
-      ).to.be.revertedWith('Ownable: caller is not the owner')
+      await expect(balleMaster.connect(test).addVault(testLP.address, testStrategy.address)).to.be.revertedWith(
+        'Ownable: caller is not the owner',
+      )
     })
 
     it('should revert if zero address strat on add new vault', async () => {
-      await expect(
-        balleMaster.connect(deployer).addVault(testLP.address, testLP.address, ZERO_ADDRESS),
-      ).to.be.revertedWith('!strat')
+      await expect(balleMaster.connect(deployer).addVault(testLP.address, ZERO_ADDRESS)).to.be.revertedWith('!strat')
     })
 
     it('should revert if deposit token does not match strat deposit token on add new vault', async () => {
-      await expect(
-        balleMaster.connect(deployer).addVault(tokenA.address, testLP.address, testStrategy.address),
-      ).to.be.revertedWith('!depositToken')
-    })
-
-    it('should revert if want token does not match strat want token on add new vault', async () => {
-      await expect(
-        balleMaster.connect(deployer).addVault(testLP.address, tokenA.address, testStrategy.address),
-      ).to.be.revertedWith('!wantToken')
+      await expect(balleMaster.connect(deployer).addVault(tokenA.address, testStrategy.address)).to.be.revertedWith(
+        '!depositToken',
+      )
     })
 
     it('should add new vault #0', async () => {
-      await balleMaster.connect(deployer).addVault(testLP.address, testLP.address, testStrategy.address)
+      await balleMaster.connect(deployer).addVault(testLP.address, testStrategy.address)
     })
 
     it('should get total vault count', async () => {
@@ -285,7 +276,7 @@ describe('BalleMaster', () => {
     })
 
     it('should add new vault #1', async () => {
-      await balleMaster.connect(deployer).addVault(testLP.address, testLP.address, testStrategy.address)
+      await balleMaster.connect(deployer).addVault(testLP.address, testStrategy.address)
     })
 
     it('should revert if try to modify rewards on non active vault', async () => {
@@ -456,7 +447,7 @@ describe('BalleMaster', () => {
       testLP.connect(deployer).approve(balleMaster.address, MaxUint256)
       testLP.connect(test).approve(balleMaster.address, MaxUint256)
       // create new vault
-      balleMaster.connect(deployer).addVault(testLP.address, testLP.address, testStrategy.address)
+      balleMaster.connect(deployer).addVault(testLP.address, testStrategy.address)
     })
 
     it('should revert if deposit to non existent vault', async () => {
@@ -530,86 +521,15 @@ describe('BalleMaster', () => {
     })
   })
 
-  describe('Deposit & Withdraw when wantToken != depositToken', () => {
-    before('Deploy contracts', async () => {
-      await deployments.fixture()
-      balle = await ethers.getContract('BALLEv2')
-      balleMaster = await ethers.getContract('BalleMaster')
-      testLP = await ethers.getContract('TestLP')
-      tokenA = await ethers.getContract('TokenA')
-      localStrategy1 = await LocalStrategy.deploy(balleMaster.address, testLP.address, tokenA.address)
-      await localStrategy1.deployed()
-
-      // setup TEST_LP balance
-      await testLP.mint(deployer.address, expandTo18Decimals(500))
-      await testLP.mint(test.address, expandTo18Decimals(500))
-      expect(await testLP.balanceOf(deployer.address)).to.be.equal(expandTo18Decimals(500))
-      expect(await testLP.balanceOf(test.address)).to.be.equal(expandTo18Decimals(500))
-      // approve TEST_LP allowances to BalleMaster contract
-      testLP.connect(deployer).approve(balleMaster.address, MaxUint256)
-      testLP.connect(test).approve(balleMaster.address, MaxUint256)
-      // create new vault
-      balleMaster.connect(deployer).addVault(testLP.address, tokenA.address, localStrategy1.address)
-    })
-
-    it('should deposit from user 1', async () => {
-      await expect(balleMaster.connect(deployer).deposit(0, expandTo18Decimals(400)))
-        .to.emit(balleMaster, 'Deposit')
-        .withArgs(deployer.address, 0, expandTo18Decimals(400), 0)
-      expect(await balleMaster.userDeposit(0, deployer.address)).to.be.equal(expandTo18Decimals(400))
-      expect(await balleMaster.depositTokens(0, deployer.address)).to.be.equal(expandTo18Decimals(400))
-    })
-
-    it('should deposit from user 2', async () => {
-      await expect(balleMaster.connect(test).deposit(0, expandTo18Decimals(200)))
-        .to.emit(balleMaster, 'Deposit')
-        .withArgs(test.address, 0, expandTo18Decimals(200), 0)
-      expect(await balleMaster.userDeposit(0, test.address)).to.be.equal(expandTo18Decimals(200))
-      expect(await balleMaster.depositTokens(0, test.address)).to.be.equal(expandTo18Decimals(200))
-    })
-
-    it('should partial withdraw both tokens from user 1', async () => {
-      await expect(balleMaster.connect(deployer).withdraw(0, expandTo18Decimals(100)))
-        .to.emit(balleMaster, 'Withdraw')
-        .withArgs(deployer.address, 0, expandTo18Decimals(100), 0)
-      expect(await balleMaster.userDeposit(0, deployer.address)).to.be.equal(expandTo18Decimals(300))
-      expect(await balleMaster.depositTokens(0, deployer.address)).to.be.equal(expandTo18Decimals(300))
-    })
-
-    it('should add deposit from user 2', async () => {
-      await expect(balleMaster.connect(test).deposit(0, expandTo18Decimals(200)))
-        .to.emit(balleMaster, 'Deposit')
-        .withArgs(test.address, 0, expandTo18Decimals(200), 0)
-      expect(await balleMaster.userDeposit(0, test.address)).to.be.equal(expandTo18Decimals(400))
-      expect(await balleMaster.depositTokens(0, test.address)).to.be.equal(expandTo18Decimals(400))
-    })
-
-    it('should withdraw both tokens from user 1', async () => {
-      await expect(balleMaster.connect(deployer).withdraw(0, expandTo18Decimals(300)))
-        .to.emit(balleMaster, 'Withdraw')
-        .withArgs(deployer.address, 0, expandTo18Decimals(300), 0)
-      expect(await balleMaster.userDeposit(0, deployer.address)).to.be.equal(0)
-      expect(await balleMaster.depositTokens(0, deployer.address)).to.be.equal(0)
-    })
-
-    it('should withdrawAll both tokens from user 2', async () => {
-      await expect(balleMaster.connect(test).withdrawAll(0))
-        .to.emit(balleMaster, 'Withdraw')
-        .withArgs(test.address, 0, expandTo18Decimals(400), 0)
-      expect(await balleMaster.userDeposit(0, test.address)).to.be.equal(0)
-      expect(await balleMaster.depositTokens(0, test.address)).to.be.equal(0)
-    })
-  })
-
   describe('Rewards calculation', () => {
     before('Deploy contracts', async () => {
       await deployments.fixture()
       balle = await ethers.getContract('BALLEv2')
       balleMaster = await ethers.getContract('BalleMaster')
       testLP = await ethers.getContract('TestLP')
-      localStrategy1 = await LocalStrategy.deploy(balleMaster.address, testLP.address, testLP.address)
+      localStrategy1 = await LocalStrategy.deploy(balleMaster.address, testLP.address)
       await localStrategy1.deployed()
-      localStrategy2 = await LocalStrategy.deploy(balleMaster.address, testLP.address, testLP.address)
+      localStrategy2 = await LocalStrategy.deploy(balleMaster.address, testLP.address)
       await localStrategy2.deployed()
 
       // setup TEST_LP balance
@@ -629,7 +549,7 @@ describe('BalleMaster', () => {
     })
 
     it('should add vault #0', async () => {
-      await balleMaster.connect(deployer).addVault(testLP.address, testLP.address, localStrategy1.address)
+      await balleMaster.connect(deployer).addVault(testLP.address, localStrategy1.address)
     })
 
     it('should deposit from user 1 on vault #0', async () => {
@@ -701,7 +621,7 @@ describe('BalleMaster', () => {
     })
 
     it('should add vault #1', async () => {
-      await balleMaster.connect(deployer).addVault(testLP.address, testLP.address, localStrategy2.address)
+      await balleMaster.connect(deployer).addVault(testLP.address, localStrategy2.address)
       // check pending rewards
       expect(await balleMaster.pendingRewards(0, deployer.address)).to.be.equal('4500000000000000000')
       expect(await balleMaster.pendingRewards(0, test.address)).to.be.equal('1500000000000000000')
@@ -1046,7 +966,7 @@ describe('BalleMaster', () => {
       testLP.connect(deployer).approve(balleMaster.address, MaxUint256)
       testLP.connect(test).approve(balleMaster.address, MaxUint256)
       // create new vault
-      balleMaster.connect(deployer).addVault(testLP.address, testLP.address, testStrategy.address)
+      balleMaster.connect(deployer).addVault(testLP.address, testStrategy.address)
     })
 
     it('should deposit from user 1', async () => {
