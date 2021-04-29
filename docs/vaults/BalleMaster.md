@@ -13,7 +13,6 @@ This contract is the central information repository for all vaults and the user 
 Regarding vault information, there is an array of vaults (indexed by vault id) wich stores an structure of `VaultInfo` type with the following contents (for each vault):
 
 - `depositToken`: blockchain address of the token deposited by user.
-- `wantToken`: blockchain address of the token the strategy maximizes.
 - `strat`: blockchain address of the strategy contract implementation.
 - `proposedStrat`: blockchain address of the proposed strategy contract to upgrade.
 - `allocPoint`: rewards allocation points assigned to the vault.
@@ -135,5 +134,6 @@ Any vault can be in one of the following states:
 - `new`: the vault is created but still not working. No BALLE rewards. No visible on frontend. Indicated by `lastRewardBlock = 0`
 - `active`: the vault is working and receiving BALLE rewards. Normal state in frontend. Indicated by `rewardsActive = true`. For visibility on frontend is better to use `lastRewardBlock > 0` because if the reward multiplicator is set to 0 any time later, the vault should be still active, but without rewards, so, `rewardsActive` will be set to `false`.
 - `paused`: the vault is temporarily paused, no tokens deposited on destination farm. Balle rewards will be distributed normally. Will be indicated on frontend and deposit button deactivated. Indicated by `paused = true`.
-- `upgrade timelock period`: the vault's stategy can be upgraded when the timelock expires. Will be indicated on frontend (maybe a countdown?), a link to the new contract could be very helpfull. Indicated by `proposedStrat != 0x0000000000000000000000000000000000000000 and proposedTime != 0`
 - `retired`: the vault is retired, no tokens deposited on destination farm. Balle rewards will be stopped. Will be indicated on frontend and deposit button deactivated. Indicated by `retired = true`.
+
+A vault's strategy smart contract can be upgraded after a 24h timelock. This 24h period is called `upgrade timelock period` and the vault's stategy can be upgraded when the timelock expires. Will be indicated on frontend (maybe a countdown?), a link to the new contract could be very helpfull. Indicated by `proposedStrat != 0x0000000000000000000000000000000000000000 and proposedTime != 0`

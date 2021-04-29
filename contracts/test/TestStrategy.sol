@@ -12,11 +12,9 @@ contract TestStrategy is Ownable {
 
     address public balleMaster;
     address public depositToken;
-    address public wantToken;
     address public govAddress;
     uint256 public depositTotal = 0;
     uint256 public sharesTotal = 0;
-    uint256 public wantTotal = 0;
     // Not needed variables, only for this testing strategy to work
     bool public paused = false;
     bool public retired = false;
@@ -27,14 +25,9 @@ contract TestStrategy is Ownable {
      * It's very simple to facilitate testing. Every time it's harvested, it will add 1% to TEST_LP balance.
      * Will be improved to test fee distribution, etc.
      */
-    constructor(
-        address _balleMaster,
-        address _depositToken,
-        address _wantToken
-    ) {
+    constructor(address _balleMaster, address _depositToken) {
         balleMaster = _balleMaster;
         depositToken = _depositToken;
-        wantToken = _wantToken;
 
         govAddress = msg.sender;
         transferOwnership(_balleMaster);
@@ -52,22 +45,17 @@ contract TestStrategy is Ownable {
         }
 
         uint256 earned = IERC20(depositToken).balanceOf(address(this)) / 100;
-        if (depositToken == wantToken) {
-            // autocompounding strategy
-            depositTotal = depositTotal + earned;
-            IMintableERC20(depositToken).mint(address(this), earned);
-        } else {
-            // wantToken maximizer strategy
-            wantTotal = wantTotal + earned;
-            IMintableERC20(wantToken).mint(address(this), earned);
-        }
+        // autocompounding strategy
+        depositTotal = depositTotal + earned;
+        IMintableERC20(depositToken).mint(address(this), earned);
     }
 
     /**
      * @dev Function to transfer tokens BalleMaster -> strategy and put it to work.
      * It will leave the tokens here, strategy only for testing purpouses.
      */
-    function deposit(uint256 _amount) public onlyOwner returns (uint256) {
+    function deposit(address _user, uint256 _amount) public onlyOwner returns (uint256) {
+        require(_user != address(0), "!user");
         require(_amount > 0, "!amount");
 
         IERC20(depositToken).safeTransferFrom(address(msg.sender), address(this), _amount);
@@ -84,15 +72,8 @@ contract TestStrategy is Ownable {
     /**
      * @dev Function to transfer tokens strategy -> BalleMaster.
      */
-    function withdraw(uint256 _amount)
-        public
-        onlyOwner
-        returns (
-            uint256,
-            uint256,
-            uint256
-        )
-    {
+    function withdraw(address _user, uint256 _amount) public onlyOwner returns (uint256, uint256) {
+        require(_user != address(0), "!user");
         require(_amount > 0, "!amount");
 
         uint256 depositAmt = IERC20(depositToken).balanceOf(address(this));
@@ -108,68 +89,36 @@ contract TestStrategy is Ownable {
         if (sharesRemoved > sharesTotal) {
             sharesRemoved = sharesTotal;
         }
-        uint256 wantAmount = (wantTotal * sharesRemoved) / sharesTotal;
         sharesTotal = sharesTotal - sharesRemoved;
         depositTotal = depositTotal - _amount;
-        wantTotal = wantTotal - wantAmount;
 
         IERC20(depositToken).safeTransfer(msg.sender, _amount);
-        if (depositToken != wantToken) {
-            IERC20(wantToken).safeTransfer(msg.sender, wantAmount);
-        }
 
-        return (sharesRemoved, _amount, wantAmount);
+        return (sharesRemoved, _amount);
     }
 
-    function upgradeTo(address _strat)
-        external
-        onlyOwner
-        returns (
-            uint256,
-            uint256,
-            uint256
-        )
-    {
+    function upgradeTo(address _strat) external onlyOwner returns (uint256, uint256) {
         require(_strat != address(0), "!strat");
         // A real strategy would prepare to upgrade (remove tokens from farm)
         // Set allowance for new strat contract
         uint256 depositAmt = IERC20(depositToken).balanceOf(address(this));
-        uint256 wantAmt;
         IERC20(depositToken).safeIncreaseAllowance(_strat, depositAmt);
-        if (depositToken != wantToken) {
-            wantAmt = IERC20(wantToken).balanceOf(address(this));
-            IERC20(wantToken).safeIncreaseAllowance(_strat, wantAmt);
-        }
-        return (sharesTotal, depositAmt, wantAmt);
+        return (sharesTotal, depositAmt);
     }
 
-    function emergencyUpgradeTo(address _strat)
-        external
-        onlyOwner
-        returns (
-            uint256,
-            uint256,
-            uint256
-        )
-    {
+    function emergencyUpgradeTo(address _strat) external onlyOwner returns (uint256, uint256) {
         require(_strat != address(0), "!strat");
         // A real strategy would prepare to upgrade (remove tokens from farm)
         // Set allowance for new strat contract
         uint256 depositAmt = IERC20(depositToken).balanceOf(address(this));
-        uint256 wantAmt;
         IERC20(depositToken).safeIncreaseAllowance(_strat, depositAmt);
-        if (depositToken != wantToken) {
-            wantAmt = IERC20(wantToken).balanceOf(address(this));
-            IERC20(wantToken).safeIncreaseAllowance(_strat, wantAmt);
-        }
-        return (sharesTotal, depositAmt, wantAmt);
+        return (sharesTotal, depositAmt);
     }
 
     function upgradeFrom(
         address _strat,
         uint256 _sharesTotal,
-        uint256 _depositAmt,
-        uint256 _wantAmt
+        uint256 _depositAmt
     ) external onlyOwner {
         require(_strat != address(0), "!strat");
         // A real strategy would prepare to upgrade (remove tokens from farm)
@@ -177,11 +126,6 @@ contract TestStrategy is Ownable {
 
         IERC20(depositToken).safeTransferFrom(_strat, address(this), _depositAmt);
         depositTotal = IERC20(depositToken).balanceOf(address(this));
-
-        if (_wantAmt > 0) {
-            IERC20(wantToken).safeTransferFrom(_strat, address(this), _wantAmt);
-            wantTotal = IERC20(wantToken).balanceOf(address(this));
-        }
 
         sharesTotal = _sharesTotal;
 
@@ -235,7 +179,6 @@ contract TestStrategy is Ownable {
         address _to
     ) public {
         require(msg.sender == govAddress, "!gov");
-        require(_token != wantToken, "!safe");
         require(_token != depositToken, "!safe");
         IERC20(_token).safeTransfer(_to, _amount);
     }

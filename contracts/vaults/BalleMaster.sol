@@ -21,8 +21,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     // Info of each vault
     struct VaultInfo {
         IERC20 depositToken; // Address of deposited token contract.
-        IERC20 wantToken; // Address of the token to maximize.
-        address strat; // Address of the strategy contract that will maximize want tokens.
+        address strat; // Address of the strategy contract.
         address proposedStrat; // Address of the proposed strategy contract to upgrade.
         uint256 allocPoint; // How many allocation points assigned to this vault. BALLEs to distribute per block.
         uint256 lastRewardBlock; // Last block number that BALLEs distribution occurs.
@@ -117,18 +116,12 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     /**
      * @dev Function to add a new vault configuration. Can only be called by the owner.
      */
-    function addVault(
-        address _depositToken,
-        address _wantToken,
-        address _strat
-    ) public onlyOwner {
+    function addVault(address _depositToken, address _strat) public onlyOwner {
         require(_strat != address(0), "!strat");
         require(_depositToken == IStrategy(_strat).depositToken(), "!depositToken");
-        require(_wantToken == IStrategy(_strat).wantToken(), "!wantToken");
         vaultInfo.push(
             VaultInfo({
                 depositToken: IERC20(_depositToken),
-                wantToken: IERC20(_wantToken),
                 strat: _strat,
                 proposedStrat: address(0),
                 allocPoint: 0,
@@ -224,9 +217,8 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         // solhint-disable-next-line not-rely-on-time
         require(vault.proposedTime + approvalDelay < block.timestamp, "!timelock");
 
-        (uint256 sharesAmt, uint256 depositAmt, uint256 wantAmt) =
-            IStrategy(vault.strat).upgradeTo(vault.proposedStrat);
-        IStrategy(vault.proposedStrat).upgradeFrom(vault.strat, sharesAmt, depositAmt, wantAmt);
+        (uint256 sharesAmt, uint256 depositAmt) = IStrategy(vault.strat).upgradeTo(vault.proposedStrat);
+        IStrategy(vault.proposedStrat).upgradeFrom(vault.strat, sharesAmt, depositAmt);
 
         vault.strat = vault.proposedStrat;
         vault.proposedStrat = address(0);
@@ -247,9 +239,8 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         // solhint-disable-next-line not-rely-on-time
         require(vault.proposedTime + approvalDelay < block.timestamp, "!timelock");
 
-        (uint256 sharesAmt, uint256 depositAmt, uint256 wantAmt) =
-            IStrategy(vault.strat).emergencyUpgradeTo(vault.proposedStrat);
-        IStrategy(vault.proposedStrat).upgradeFrom(vault.strat, sharesAmt, depositAmt, wantAmt);
+        (uint256 sharesAmt, uint256 depositAmt) = IStrategy(vault.strat).emergencyUpgradeTo(vault.proposedStrat);
+        IStrategy(vault.proposedStrat).upgradeFrom(vault.strat, sharesAmt, depositAmt);
 
         vault.strat = vault.proposedStrat;
         vault.proposedStrat = address(0);
@@ -433,7 +424,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         if (_amount > 0 && !vault.paused && !vault.retired) {
             vault.depositToken.safeTransferFrom(address(msg.sender), address(this), _amount);
             vault.depositToken.safeIncreaseAllowance(vault.strat, _amount);
-            uint256 sharesAdded = IStrategy(vaultInfo[_vid].strat).deposit(_amount);
+            uint256 sharesAdded = IStrategy(vaultInfo[_vid].strat).deposit(msg.sender, _amount);
             uint256 sharesTotal = IStrategy(vault.strat).sharesTotal();
             uint256 depositTotal = IStrategy(vault.strat).depositTotal();
             user.shares = user.shares + sharesAdded;
@@ -485,8 +476,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
             _amount = amount;
         }
         if (_amount > 0) {
-            (uint256 sharesRemoved, uint256 depositRemoved, uint256 wantRemoved) =
-                IStrategy(vault.strat).withdraw(_amount);
+            (uint256 sharesRemoved, uint256 depositRemoved) = IStrategy(vault.strat).withdraw(msg.sender, _amount);
 
             if (sharesRemoved >= user.shares) {
                 user.shares = 0;
@@ -501,16 +491,9 @@ contract BalleMaster is Ownable, ReentrancyGuard {
                 depositRemoved = depositBal;
             }
             vault.depositToken.safeTransfer(address(msg.sender), depositRemoved);
-
-            if (vault.depositToken != vault.wantToken) {
-                uint256 wantBal = IERC20(vault.wantToken).balanceOf(address(this));
-                if (wantBal < wantRemoved) {
-                    wantRemoved = wantBal;
-                }
-                vault.wantToken.safeTransfer(address(msg.sender), wantRemoved);
-            }
         }
         user.rewardDebt = (user.shares * vault.accBallePerShare) / 1e12;
+
         emit Withdraw(msg.sender, _vid, _amount, pending);
     }
 
@@ -542,7 +525,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         user.deposit = 0;
         user.rewardDebt = 0;
 
-        IStrategy(vault.strat).withdraw(amount);
+        IStrategy(vault.strat).withdraw(msg.sender, amount);
 
         uint256 lpBal = IERC20(vault.depositToken).balanceOf(address(this));
         if (lpBal < amount) {
