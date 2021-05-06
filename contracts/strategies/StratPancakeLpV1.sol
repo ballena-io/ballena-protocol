@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/IPancakeswapFarm.sol";
 import "../interfaces/IPancakeRouter01.sol";
 
-abstract contract StratPancakeLpV1 is Ownable {
+contract StratPancakeLpV1 is Ownable {
     using SafeERC20 for IERC20;
 
     // PancakeSwap's MasterChef address.
@@ -443,8 +443,6 @@ abstract contract StratPancakeLpV1 is Ownable {
 
         return (sharesTotal, depositAmt, earnedAmt);
     }
-
-    // TODO: Delete emergencyUpgradeTo(address _strat) from BalleMaster
 
     function upgradeFrom(
         address _strat,
