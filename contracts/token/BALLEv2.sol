@@ -1,6 +1,6 @@
 // contracts/token/BALLEv2.sol
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.3;
+pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
