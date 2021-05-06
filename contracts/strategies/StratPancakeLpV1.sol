@@ -1,4 +1,4 @@
-// contracts/strategies/StratPancakeBase.sol
+// contracts/strategies/StratPancakeLpV1.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/IPancakeswapFarm.sol";
 import "../interfaces/IPancakeRouter01.sol";
 
-contract StratPancakeBase is Ownable {
+abstract contract StratPancakeLpV1 is Ownable {
     using SafeERC20 for IERC20;
 
     // PancakeSwap's MasterChef address.
@@ -88,59 +88,37 @@ contract StratPancakeBase is Ownable {
         uint256 minEarnedToReinvest
     );
     event SetGovernance(address indexed addr);
-    event AddHarvester(address indexed addr);
-    event RemoveHarvester(address indexed addr);
 
+    /**
+     * @dev Implementation of PancakeSwap LP autocompounding strategy.
+     */
     constructor(
-        address _wbnb,
-        address _depositToken,
-        address _token0,
-        address _token1,
-        address _cake,
-        address _balle,
-        address _router,
-        address _masterChef,
-        address _balleMaster,
-        address _rewards,
-        address _treasury,
-        uint256 _pid
+        address[] memory _addresses,
+        uint256 _pid,
+        address[] memory _cakeToBallePath,
+        address[] memory _cakeToToken0Path,
+        address[] memory _cakeToToken1Path
     ) {
-        require(_wbnb != address(0), "WBNB address not valid");
-        require(_depositToken != address(0), "Deposit token address not valid");
-        require(_token0 != address(0), "Token0 address not valid");
-        require(_token1 != address(0), "Token1 address not valid");
-        require(_cake != address(0), "CAKE address not valid");
-        require(_balle != address(0), "BALLE address not valid");
-        require(_router != address(0), "Router address not valid");
-        require(_masterChef != address(0), "MasterChef address not valid");
-        require(_balleMaster != address(0), "BalleMaster address not valid");
-        require(_rewards != address(0), "Rewards address not valid");
-        require(_treasury != address(0), "Treasury address not valid");
+        require(_pid > 0, "pid!");
 
-        depositToken = _depositToken;
-        token0 = _token0;
-        token1 = _token1;
-        cake = _cake;
-
-        rewards = _rewards;
-        treasury = _treasury;
-        router = _router;
-        masterChef = _masterChef;
+        depositToken = _addresses[0];
+        token0 = _addresses[1];
+        token1 = _addresses[2];
+        cake = _addresses[3];
+        router = _addresses[4];
+        masterChef = _addresses[5];
         pid = _pid;
 
-        cakeToBallePath = [_cake, _wbnb, _balle];
-        if (_token0 == _wbnb) {
-            cakeToToken0Path = [_cake, _token0];
-        } else {
-            cakeToToken0Path = [_cake, _wbnb, _token0];
-        }
-        if (_token1 == _wbnb) {
-            cakeToToken1Path = [_cake, _token1];
-        } else {
-            cakeToToken1Path = [_cake, _wbnb, _token1];
-        }
+        governance = msg.sender;
+        harvesters[_addresses[7]] = true;
+        rewards = _addresses[8];
+        treasury = _addresses[9];
 
-        transferOwnership(_balleMaster);
+        cakeToBallePath = _cakeToBallePath;
+        cakeToToken0Path = _cakeToToken0Path;
+        cakeToToken1Path = _cakeToToken1Path;
+
+        transferOwnership(_addresses[6]);
     }
 
     /**
@@ -201,24 +179,7 @@ contract StratPancakeBase is Ownable {
         depositTotal = depositTotal + amount;
         IERC20(depositToken).safeIncreaseAllowance(masterChef, amount);
 
-        if (pid == 0) {
-            // For CAKE staking use enterStaking()
-            IPancakeswapFarm(masterChef).enterStaking(amount);
-        } else {
-            IPancakeswapFarm(masterChef).deposit(pid, amount);
-        }
-    }
-
-    /**
-     * @dev Function to get depositTokens from farm.
-     */
-    function unfarm(uint256 _amount) internal {
-        if (pid == 0) {
-            // For CAKE staking use leaveStaking()
-            IPancakeswapFarm(masterChef).leaveStaking(_amount);
-        } else {
-            IPancakeswapFarm(masterChef).withdraw(pid, _amount);
-        }
+        IPancakeswapFarm(masterChef).deposit(pid, amount);
     }
 
     /**
@@ -234,7 +195,7 @@ contract StratPancakeBase is Ownable {
         }
         sharesTotal = sharesTotal - sharesRemoved;
 
-        unfarm(_amount);
+        IPancakeswapFarm(masterChef).withdraw(pid, _amount);
 
         uint256 balance = IERC20(depositToken).balanceOf(address(this));
         if (_amount > balance) {
@@ -257,22 +218,15 @@ contract StratPancakeBase is Ownable {
      */
     function harvest() public onlyHarvester whenNotPaused {
         // Harvest farm tokens
-        unfarm(0);
-
-        // Converts farm tokens into want tokens
+        IPancakeswapFarm(masterChef).withdraw(pid, 0);
         uint256 earnedAmt = IERC20(cake).balanceOf(address(this));
-
         if (earnedAmt < minEarnedToReinvest) {
             return;
         }
 
         earnedAmt = distributeFees(earnedAmt);
 
-        if (pid == 0) {
-            farm();
-            return;
-        }
-
+        // Converts farm tokens into want tokens
         IERC20(cake).safeApprove(router, 0);
         IERC20(cake).safeIncreaseAllowance(router, earnedAmt);
 
@@ -479,57 +433,30 @@ contract StratPancakeBase is Ownable {
         require(_strat != address(0), "!strat");
 
         // remove LP from farm.
-        unfarm(depositTotal);
+        IPancakeswapFarm(masterChef).withdraw(pid, depositTotal);
 
         // Set allowance for new strat contract.
         uint256 depositAmt = IERC20(depositToken).balanceOf(address(this));
+        uint256 earnedAmt = IERC20(cake).balanceOf(address(this));
         IERC20(depositToken).safeIncreaseAllowance(_strat, depositAmt);
-        uint256 earnedAmt = 0;
-        if (pid != 0) {
-            // For CAKE staking earned = deposit, so, not enter here.
-            earnedAmt = IERC20(cake).balanceOf(address(this));
-            IERC20(cake).safeIncreaseAllowance(_strat, earnedAmt);
-        }
+        IERC20(cake).safeIncreaseAllowance(_strat, earnedAmt);
 
-        return (sharesTotal, depositAmt, earnedAmt); // TODO: Add earnedAmt to BalleMaster.
+        return (sharesTotal, depositAmt, earnedAmt);
     }
 
-    function emergencyUpgradeTo(address _strat)
-        external
-        onlyOwner
-        returns (
-            uint256,
-            uint256,
-            uint256
-        )
-    {
-        require(_strat != address(0), "!strat");
-
-        // Emergency withdraw.
-        IPancakeswapFarm(masterChef).emergencyWithdraw(pid);
-
-        // Set allowance for new strat contract.
-        uint256 depositAmt = IERC20(depositToken).balanceOf(address(this));
-        IERC20(depositToken).safeIncreaseAllowance(_strat, depositAmt);
-        uint256 earnedAmt = 0;
-        if (pid != 0) {
-            // For CAKE staking earned = deposit, so, not enter here.
-            earnedAmt = IERC20(cake).balanceOf(address(this));
-            IERC20(cake).safeIncreaseAllowance(_strat, earnedAmt);
-        }
-
-        return (sharesTotal, depositAmt, earnedAmt); // TODO: Add earnedAmt to BalleMaster.
-    }
+    // TODO: Delete emergencyUpgradeTo(address _strat) from BalleMaster
 
     function upgradeFrom(
         address _strat,
         uint256 _sharesTotal,
         uint256 _depositAmt,
-        uint256 _earnedAmt // TODO: Add earnedAmt to BalleMaster.
+        uint256 _earnedAmt
     ) external onlyOwner {
         require(_strat != address(0), "!strat");
 
-        IERC20(depositToken).safeTransferFrom(_strat, address(this), _depositAmt);
+        if (_depositAmt > 0) {
+            IERC20(depositToken).safeTransferFrom(_strat, address(this), _depositAmt);
+        }
         if (_earnedAmt > 0) {
             IERC20(cake).safeTransferFrom(_strat, address(this), _earnedAmt);
         }
@@ -541,7 +468,7 @@ contract StratPancakeBase is Ownable {
     function pause() external onlyOwner whenNotPaused {
         harvest();
         // Remove tokens from farm.
-        unfarm(depositTotal);
+        IPancakeswapFarm(masterChef).withdraw(pid, depositTotal);
         // TODO: Clear allowances of third party contracts.
         paused = true;
     }
@@ -563,10 +490,10 @@ contract StratPancakeBase is Ownable {
     function retire() external onlyOwner {
         if (!paused) {
             harvest();
-            unfarm(depositTotal);
+            IPancakeswapFarm(masterChef).withdraw(pid, depositTotal);
             paused = true;
+            // TODO: Clear allowances of third party contracts.
         }
-        // TODO: Clear allowances of third party contracts.
-        // TODO: Send remaining earningTokens to treasury (not converted on last harvest).
+        // TODO: Send remaining earningTokens to treasury (if not converted on last harvest because not reach minimun).
     }
 }

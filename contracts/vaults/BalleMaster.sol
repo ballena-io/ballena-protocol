@@ -217,36 +217,15 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         // solhint-disable-next-line not-rely-on-time
         require(vault.proposedTime + approvalDelay < block.timestamp, "!timelock");
 
-        (uint256 sharesAmt, uint256 depositAmt) = IStrategy(vault.strat).upgradeTo(vault.proposedStrat);
-        IStrategy(vault.proposedStrat).upgradeFrom(vault.strat, sharesAmt, depositAmt);
+        (uint256 sharesAmt, uint256 depositAmt, uint256 earnedAmt) =
+            IStrategy(vault.strat).upgradeTo(vault.proposedStrat);
+        IStrategy(vault.proposedStrat).upgradeFrom(vault.strat, sharesAmt, depositAmt, earnedAmt);
 
         vault.strat = vault.proposedStrat;
         vault.proposedStrat = address(0);
         vault.proposedTime = 0;
 
         emit StratUpgrade(_vid, _strat);
-    }
-
-    /**
-     * @dev It switches the active strat for the strat candidate. After upgrading, the
-     * candidate implementation is set to the 0x0 address, and proposedTime to 0.
-     * Emergency function, used only when not a regular upgrade can be performed.
-     */
-    function emergencyStratUpgrade(uint256 _vid, address _strat) external onlyOwner vaultExists(_vid) {
-        require(_strat != address(0), "!strat");
-        VaultInfo storage vault = vaultInfo[_vid];
-        require(vault.proposedStrat == _strat, "!strat");
-        // solhint-disable-next-line not-rely-on-time
-        require(vault.proposedTime + approvalDelay < block.timestamp, "!timelock");
-
-        (uint256 sharesAmt, uint256 depositAmt) = IStrategy(vault.strat).emergencyUpgradeTo(vault.proposedStrat);
-        IStrategy(vault.proposedStrat).upgradeFrom(vault.strat, sharesAmt, depositAmt);
-
-        vault.strat = vault.proposedStrat;
-        vault.proposedStrat = address(0);
-        vault.proposedTime = 0;
-
-        emit EmergencyStratUpgrade(_vid, _strat);
     }
 
     /**

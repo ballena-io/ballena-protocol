@@ -79,18 +79,6 @@ describe('BalleMaster', () => {
       await expect(balleMaster.connect(deployer).stratUpgrade(0, localStrategy1.address)).to.be.revertedWith('!vault')
     })
 
-    it('should revert if anyone (not owner) try to emergency strategy upgrade', async () => {
-      await expect(balleMaster.connect(test).emergencyStratUpgrade(0, localStrategy1.address)).to.be.revertedWith(
-        'Ownable: caller is not the owner',
-      )
-    })
-
-    it('should revert if try to emergency strategy upgrade non existent vault', async () => {
-      await expect(balleMaster.connect(deployer).emergencyStratUpgrade(0, localStrategy1.address)).to.be.revertedWith(
-        '!vault',
-      )
-    })
-
     it('should add new vault #0', async () => {
       await balleMaster.connect(deployer).addVault(testLP.address, testStrategy.address)
     })
@@ -109,30 +97,14 @@ describe('BalleMaster', () => {
       await expect(balleMaster.connect(deployer).stratUpgrade(0, ZERO_ADDRESS)).to.be.revertedWith('!strat')
     })
 
-    it('should revert if try to emergency strategy upgrade with zero address', async () => {
-      await expect(balleMaster.connect(deployer).emergencyStratUpgrade(0, ZERO_ADDRESS)).to.be.revertedWith('!strat')
-    })
-
     it('should revert if try to strategy upgrade and timelock not expired', async () => {
       await expect(balleMaster.connect(deployer).stratUpgrade(0, localStrategy1.address)).to.be.revertedWith(
         '!timelock',
       )
     })
 
-    it('should revert if try to emergency strategy upgrade and timelock not expired', async () => {
-      await expect(balleMaster.connect(deployer).emergencyStratUpgrade(0, localStrategy1.address)).to.be.revertedWith(
-        '!timelock',
-      )
-    })
-
     it('should revert if try to strategy upgrade with a different strat', async () => {
       await expect(balleMaster.connect(deployer).stratUpgrade(0, testStrategy.address)).to.be.revertedWith('!strat')
-    })
-
-    it('should revert if try to emergency strategy upgrade with a different strat', async () => {
-      await expect(balleMaster.connect(deployer).emergencyStratUpgrade(0, testStrategy.address)).to.be.revertedWith(
-        '!strat',
-      )
     })
   })
 
@@ -171,46 +143,6 @@ describe('BalleMaster', () => {
 
     it('should revert if try to strategy upgrade again', async () => {
       await expect(balleMaster.connect(deployer).stratUpgrade(0, localStrategy2.address)).to.be.revertedWith('!strat')
-    })
-  })
-
-  describe('Test emergency strategy upgrade', () => {
-    before('Deploy contracts', async () => {
-      await deployments.fixture()
-      balleMaster = await BalleMaster.deploy(
-        balle.address,
-        BigNumber.from('228310502283105'),
-        expandTo18Decimals(24000),
-        0,
-      )
-      await balleMaster.deployed()
-      testLP = await ethers.getContract('TestLP')
-      localStrategy1 = await LocalStrategy.deploy(balleMaster.address, testLP.address)
-      await localStrategy1.deployed()
-      localStrategy2 = await LocalStrategy.deploy(balleMaster.address, testLP.address)
-      await localStrategy2.deployed()
-    })
-
-    it('should add new vault #0', async () => {
-      await balleMaster.connect(deployer).addVault(testLP.address, localStrategy1.address)
-    })
-
-    it('should propose strat upgrade', async () => {
-      await expect(balleMaster.connect(deployer).proposeStratUpgrade(0, localStrategy2.address))
-        .to.emit(balleMaster, 'ProposeStratUpgrade')
-        .withArgs(0, localStrategy2.address)
-    })
-
-    it('should strat upgrade', async () => {
-      await expect(balleMaster.connect(deployer).emergencyStratUpgrade(0, localStrategy2.address))
-        .to.emit(balleMaster, 'EmergencyStratUpgrade')
-        .withArgs(0, localStrategy2.address)
-    })
-
-    it('should revert if try to strategy upgrade again', async () => {
-      await expect(balleMaster.connect(deployer).emergencyStratUpgrade(0, localStrategy2.address)).to.be.revertedWith(
-        '!strat',
-      )
     })
   })
 

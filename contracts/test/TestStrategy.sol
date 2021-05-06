@@ -97,28 +97,29 @@ contract TestStrategy is Ownable {
         return (sharesRemoved, _amount);
     }
 
-    function upgradeTo(address _strat) external onlyOwner returns (uint256, uint256) {
+    function upgradeTo(address _strat)
+        external
+        onlyOwner
+        returns (
+            uint256,
+            uint256,
+            uint256
+        )
+    {
         require(_strat != address(0), "!strat");
         // A real strategy would prepare to upgrade (remove tokens from farm)
         // Set allowance for new strat contract
         uint256 depositAmt = IERC20(depositToken).balanceOf(address(this));
         IERC20(depositToken).safeIncreaseAllowance(_strat, depositAmt);
-        return (sharesTotal, depositAmt);
-    }
 
-    function emergencyUpgradeTo(address _strat) external onlyOwner returns (uint256, uint256) {
-        require(_strat != address(0), "!strat");
-        // A real strategy would prepare to upgrade (remove tokens from farm)
-        // Set allowance for new strat contract
-        uint256 depositAmt = IERC20(depositToken).balanceOf(address(this));
-        IERC20(depositToken).safeIncreaseAllowance(_strat, depositAmt);
-        return (sharesTotal, depositAmt);
+        return (sharesTotal, depositAmt, 0);
     }
 
     function upgradeFrom(
         address _strat,
         uint256 _sharesTotal,
-        uint256 _depositAmt
+        uint256 _depositAmt,
+        uint256 _earnedAmt
     ) external onlyOwner {
         require(_strat != address(0), "!strat");
         // A real strategy would prepare to upgrade (remove tokens from farm)
@@ -126,6 +127,7 @@ contract TestStrategy is Ownable {
 
         IERC20(depositToken).safeTransferFrom(_strat, address(this), _depositAmt);
         depositTotal = IERC20(depositToken).balanceOf(address(this));
+        _earnedAmt = 0; // Test strategy does not have earnedToken, this is only to use the argument
 
         sharesTotal = _sharesTotal;
 
