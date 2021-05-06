@@ -6,5 +6,4 @@ export interface BalleNetworkConfig {
   deployerPrivateKey?: string
   testPrivateKey?: string
   test2PrivateKey?: string
-  harvestPrivateKey?: string
 }
