@@ -11,11 +11,10 @@ import 'solidity-coverage'
 function createHardhatNetworkConfig(
   fork: boolean,
   deployerPrivateKey?: string,
-  harvestPrivateKey?: string,
   testPrivateKey?: string,
   test2PrivateKey?: string,
 ): HardhatNetworkUserConfig {
-  if (fork && deployerPrivateKey && harvestPrivateKey && testPrivateKey && test2PrivateKey) {
+  if (fork && deployerPrivateKey && testPrivateKey && test2PrivateKey) {
     return {
       forking: {
         url: 'https://bsc-dataseed.binance.org/',
@@ -26,10 +25,6 @@ function createHardhatNetworkConfig(
       accounts: [
         {
           privateKey: deployerPrivateKey,
-          balance: '1000000000000000000000',
-        },
-        {
-          privateKey: harvestPrivateKey,
           balance: '1000000000000000000000',
         },
         {
@@ -50,7 +45,6 @@ function createHardhatNetworkConfig(
 
 function createBscTestnetConfig(
   deployerPrivateKey: string,
-  harvestPrivateKey: string,
   testPrivateKey: string,
   test2PrivateKey: string,
 ): NetworkUserConfig {
@@ -58,23 +52,22 @@ function createBscTestnetConfig(
     url: 'https://data-seed-prebsc-1-s1.binance.org:8545',
     chainId: 97,
     gasPrice: 20000000000,
-    accounts: [deployerPrivateKey, harvestPrivateKey, testPrivateKey, test2PrivateKey],
+    accounts: [deployerPrivateKey, testPrivateKey, test2PrivateKey],
   }
 }
 
-function createBscMainnetConfig(deployerPrivateKey: string, harvestPrivateKey: string): NetworkUserConfig {
+function createBscMainnetConfig(deployerPrivateKey: string): NetworkUserConfig {
   return {
     url: 'https://bsc-dataseed.binance.org/',
     chainId: 56,
     gasPrice: 20000000000,
-    accounts: [deployerPrivateKey, harvestPrivateKey],
+    accounts: [deployerPrivateKey],
   }
 }
 
 function configureNetworks(networkConfig: BalleNetworkConfig): NetworksUserConfig {
   if (
     networkConfig.deployerPrivateKey !== undefined &&
-    networkConfig.harvestPrivateKey !== undefined &&
     networkConfig.testPrivateKey !== undefined &&
     networkConfig.test2PrivateKey !== undefined &&
     networkConfig.hardhatFork !== undefined
@@ -83,17 +76,15 @@ function configureNetworks(networkConfig: BalleNetworkConfig): NetworksUserConfi
       hardhat: createHardhatNetworkConfig(
         networkConfig.hardhatFork,
         networkConfig.deployerPrivateKey,
-        networkConfig.harvestPrivateKey,
         networkConfig.testPrivateKey,
         networkConfig.test2PrivateKey,
       ),
       bsc_testnet: createBscTestnetConfig(
         networkConfig.deployerPrivateKey,
-        networkConfig.harvestPrivateKey,
         networkConfig.testPrivateKey,
         networkConfig.test2PrivateKey,
       ),
-      bsc_mainnet: createBscMainnetConfig(networkConfig.deployerPrivateKey, networkConfig.harvestPrivateKey),
+      bsc_mainnet: createBscMainnetConfig(networkConfig.deployerPrivateKey),
     }
   } else {
     return {
@@ -116,7 +107,7 @@ const config: HardhatUserConfig = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 500,
+        runs: 200,
       },
       metadata: {
         bytecodeHash: 'none',
@@ -136,13 +127,15 @@ const config: HardhatUserConfig = {
   },
   namedAccounts: {
     deployer: 0,
-    harvest: 1,
-    test: 2,
-    test2: 3,
+    test: 1,
+    test2: 2,
     balle: {
       default: '0x9f0D5f45CE8573f43E0BA17876329784be0fd700', // use mainnet address, because we use fork
       56: '0x9f0D5f45CE8573f43E0BA17876329784be0fd700',
       97: '0x8bD237e94CE369F6D78c7bb08B90efc5c6f27A4f',
+    },
+    harvester: {
+      default: '0xb25D37892305FE1b44c06F035139a0ED11EcA82d',
     },
   },
   etherscan: {
