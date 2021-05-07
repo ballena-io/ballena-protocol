@@ -58,7 +58,7 @@ contract MasterChef is Ownable {
 
     constructor(address _cake) {
         cake = _cake;
-        cakePerBlock = 40000000000000000000;
+        cakePerBlock = 400000000000000000;
         startBlock = block.number;
 
         // staking pool
