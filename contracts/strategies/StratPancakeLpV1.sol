@@ -99,7 +99,7 @@ contract StratPancakeLpV1 is Ownable {
         address[] memory _cakeToToken0Path,
         address[] memory _cakeToToken1Path
     ) {
-        require(_pid > 0, "pid!");
+        require(_pid > 0, "!pid");
 
         depositToken = _addresses[0];
         token0 = _addresses[1];
@@ -177,6 +177,7 @@ contract StratPancakeLpV1 is Ownable {
     function farm() internal {
         uint256 amount = IERC20(depositToken).balanceOf(address(this));
         depositTotal = depositTotal + amount;
+        IERC20(depositToken).safeApprove(masterChef, 0);
         IERC20(depositToken).safeIncreaseAllowance(masterChef, amount);
 
         IPancakeswapFarm(masterChef).deposit(pid, amount);
@@ -217,19 +218,29 @@ contract StratPancakeLpV1 is Ownable {
      * @dev Function to harvest earnings and reinvest.
      */
     function harvest() public onlyHarvester whenNotPaused {
+        _harvest(0);
+    }
+
+    /**
+     * @dev Internal function to harvest earnings and reinvest.
+     * If called with _amount > 0 will withdraw the LP indicated with the earned CAKE.
+     */
+    function _harvest(uint256 _amount) internal {
         // Harvest farm tokens
-        IPancakeswapFarm(masterChef).withdraw(pid, 0);
+        IPancakeswapFarm(masterChef).withdraw(pid, _amount);
         uint256 earnedAmt = IERC20(cake).balanceOf(address(this));
         if (earnedAmt < minEarnedToReinvest) {
             return;
         }
 
-        earnedAmt = distributeFees(earnedAmt);
-
-        // Converts farm tokens into want tokens
+        // Approve router to spend the tokens
         IERC20(cake).safeApprove(router, 0);
         IERC20(cake).safeIncreaseAllowance(router, earnedAmt);
 
+        // Distribute the fees
+        earnedAmt = distributeFees(earnedAmt);
+
+        // Converts farm tokens into want tokens
         if (cake != token0) {
             // Swap half earned to token0
             safeSwap(
@@ -260,6 +271,8 @@ contract StratPancakeLpV1 is Ownable {
         uint256 token0Amt = IERC20(token0).balanceOf(address(this));
         uint256 token1Amt = IERC20(token1).balanceOf(address(this));
         if (token0Amt > 0 && token1Amt > 0) {
+            IERC20(token0).safeApprove(router, 0);
+            IERC20(token1).safeApprove(router, 0);
             IERC20(token0).safeIncreaseAllowance(router, token0Amt);
             IERC20(token1).safeIncreaseAllowance(router, token1Amt);
             IPancakeRouter01(router).addLiquidity(
@@ -432,18 +445,23 @@ contract StratPancakeLpV1 is Ownable {
     {
         require(_strat != address(0), "!strat");
 
-        // remove LP from farm.
-        IPancakeswapFarm(masterChef).withdraw(pid, depositTotal);
+        // Stop vault.
+        _pause();
 
         // Set allowance for new strat contract.
         uint256 depositAmt = IERC20(depositToken).balanceOf(address(this));
         uint256 earnedAmt = IERC20(cake).balanceOf(address(this));
+        IERC20(depositToken).safeApprove(_strat, 0);
         IERC20(depositToken).safeIncreaseAllowance(_strat, depositAmt);
+        IERC20(cake).safeApprove(_strat, 0);
         IERC20(cake).safeIncreaseAllowance(_strat, earnedAmt);
 
         return (sharesTotal, depositAmt, earnedAmt);
     }
 
+    /**
+     * @dev Complete upgrade from the old strategy.
+     */
     function upgradeFrom(
         address _strat,
         uint256 _sharesTotal,
@@ -463,35 +481,67 @@ contract StratPancakeLpV1 is Ownable {
         farm();
     }
 
+    /**
+     * @dev Stop the vault.
+     */
     function pause() external onlyOwner whenNotPaused {
-        harvest();
-        // Remove tokens from farm.
-        IPancakeswapFarm(masterChef).withdraw(pid, depositTotal);
-        // TODO: Clear allowances of third party contracts.
-        paused = true;
+        _pause();
     }
 
+    /**
+     * @dev Internal function for stopping the vault.
+     */
+    function _pause() internal {
+        if (!paused) {
+            // Harvest with withdrawall.
+            _harvest(depositTotal);
+
+            // Clear allowances of third party contracts.
+            IERC20(depositToken).safeApprove(masterChef, 0);
+            IERC20(cake).safeApprove(router, 0);
+            IERC20(token0).safeApprove(router, 0);
+            IERC20(token1).safeApprove(router, 0);
+
+            paused = true;
+        }
+    }
+
+    /**
+     * @dev Restart the vault.
+     */
     function unpause() external onlyOwner whenPaused {
-        // TODO: Set allowances of third party contracts.
         depositTotal = 0; // It will be set back on farm().
         farm();
         paused = false;
     }
 
+    /**
+     * @dev Stop the vault with emergencyWithdraw from farm.
+     */
     function panic() external onlyOwner whenNotPaused {
         // Emergency withdraw.
         IPancakeswapFarm(masterChef).emergencyWithdraw(pid);
-        // TODO: Clear allowances of third party contracts.
+
+        // Clear allowances of third party contracts.
+        IERC20(depositToken).safeApprove(masterChef, 0);
+        IERC20(cake).safeApprove(router, 0);
+        IERC20(token0).safeApprove(router, 0);
+        IERC20(token1).safeApprove(router, 0);
+
         paused = true;
     }
 
+    /**
+     * @dev Retire the vault.
+     */
     function retire() external onlyOwner {
-        if (!paused) {
-            harvest();
-            IPancakeswapFarm(masterChef).withdraw(pid, depositTotal);
-            paused = true;
-            // TODO: Clear allowances of third party contracts.
+        // Stop vault
+        _pause();
+
+        // Send remaining earningTokens to treasury (if not converted on last harvest because not reach minimun).
+        uint256 earnedAmt = IERC20(cake).balanceOf(address(this));
+        if (earnedAmt > 0) {
+            IERC20(cake).safeTransfer(treasury, earnedAmt);
         }
-        // TODO: Send remaining earningTokens to treasury (if not converted on last harvest because not reach minimun).
     }
 }
