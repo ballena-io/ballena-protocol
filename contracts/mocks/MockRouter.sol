@@ -56,10 +56,11 @@ contract MockRouter {
      */
     function getAmountsOut(uint256 amountIn, address[] calldata path) external pure returns (uint256[] memory amounts) {
         require(path.length > 1, "!path");
-        uint256[] memory res;
-        res[0] = amountIn;
-        res[1] = amountIn;
-        return res;
+        amounts = new uint256[](path.length);
+        amounts[0] = amountIn;
+        for (uint256 i; i < path.length - 1; i++) {
+            amounts[i + 1] = amountIn;
+        }
     }
 
     /**
@@ -79,10 +80,11 @@ contract MockRouter {
         // Transfer tokens.
         IERC20(path[0]).safeTransferFrom(address(msg.sender), address(this), amountIn);
         IMintableERC20(path[path.length - 1]).mint(to, amountIn);
-        // Return.
-        uint256[] memory res;
-        res[0] = amountIn;
-        res[1] = amountIn;
-        return res;
+        // Return value.
+        amounts = new uint256[](path.length);
+        amounts[0] = amountIn;
+        for (uint256 i; i < path.length - 1; i++) {
+            amounts[i + 1] = amountIn;
+        }
     }
 }

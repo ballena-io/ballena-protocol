@@ -11,7 +11,6 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const CAKE = await deployments.get('CAKE')
   const MockRouter = await deployments.get('MockRouter')
   const MockMasterChef = await deployments.get('MockMasterChef')
-  const BalleMaster = await deployments.get('BalleMaster')
   const MockRewardPot = await deployments.get('MockRewardPot')
   const MockTreasury = await deployments.get('MockTreasury')
   const BALLE = await deployments.get('BALLEv2')
@@ -22,7 +21,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     CAKE.address,
     MockRouter.address,
     MockMasterChef.address,
-    BalleMaster.address,
+    deployer,
     deployer,
     MockRewardPot.address,
     MockTreasury.address,
@@ -56,7 +55,6 @@ deploy.dependencies = [
   'TestLP',
   'MockRouter',
   'MockMasterChef',
-  'BalleMaster',
   'MockRewardPot',
   'MockTreasury',
   'BALLEv2',

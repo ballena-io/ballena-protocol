@@ -99,7 +99,7 @@ contract StratPancakeLpV1 is Ownable {
         address[] memory _cakeToToken0Path,
         address[] memory _cakeToToken1Path
     ) {
-        require(_pid > 0, "pid!");
+        require(_pid > 0, "!pid");
 
         depositToken = _addresses[0];
         token0 = _addresses[1];

@@ -40,10 +40,10 @@ contract MockMasterChef {
 
         if (amount > 0) {
             uint256 pending = (block.number - lastBlock) * cakePerBlock;
+            lastBlock = block.number;
             if (pending > 0) {
                 safeCakeTransfer(msg.sender, pending);
             }
-            lastBlock = block.number;
         }
 
         if (_amount > 0) {
@@ -65,6 +65,7 @@ contract MockMasterChef {
 
         require(amount >= _amount, "!amount");
         uint256 pending = (block.number - lastBlock) * cakePerBlock;
+        lastBlock = block.number;
         if (pending > 0) {
             safeCakeTransfer(msg.sender, pending);
         }
