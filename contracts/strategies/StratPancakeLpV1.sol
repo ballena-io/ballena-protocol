@@ -196,7 +196,10 @@ contract StratPancakeLpV1 is Ownable {
         }
         sharesTotal = sharesTotal - sharesRemoved;
 
-        IPancakeswapFarm(masterChef).withdraw(pid, _amount);
+        // If paused, tokens are already here
+        if (!paused) {
+            IPancakeswapFarm(masterChef).withdraw(pid, _amount);
+        }
 
         uint256 balance = IERC20(depositToken).balanceOf(address(this));
         if (_amount > balance) {
