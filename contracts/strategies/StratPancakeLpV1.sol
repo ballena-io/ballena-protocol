@@ -68,8 +68,8 @@ contract StratPancakeLpV1 is Ownable {
     uint256 public minEarnedToReinvest = 1000000000000000000;
     // 0.1 CAKE min settable minimum to reinvest, LL = lowerlimit.
     uint256 public constant MIN_EARNED_TO_REINVEST_LL = 100000000000000000;
-    // 10 CAKE max settable minimum to reinvest, UL = upperlimit.
-    uint256 public constant MIN_EARNED_TO_REINVEST_UL = 10000000000000000000;
+    // 20 CAKE max settable minimum to reinvest, UL = upperlimit.
+    uint256 public constant MIN_EARNED_TO_REINVEST_UL = 20000000000000000000;
 
     // Swap routes
     address[] public cakeToBallePath;
@@ -175,10 +175,12 @@ contract StratPancakeLpV1 is Ownable {
      * @dev Function to send depositToken to farm.
      */
     function farm() internal {
+        if (depositTotal == 0) {
+            // On first farming, set allowances
+            setAllowances();
+        }
         uint256 amount = IERC20(depositToken).balanceOf(address(this));
         depositTotal = depositTotal + amount;
-        IERC20(depositToken).safeApprove(masterChef, 0);
-        IERC20(depositToken).safeIncreaseAllowance(masterChef, amount);
 
         IPancakeswapFarm(masterChef).deposit(pid, amount);
     }
@@ -236,10 +238,6 @@ contract StratPancakeLpV1 is Ownable {
             return;
         }
 
-        // Approve router to spend the tokens
-        IERC20(cake).safeApprove(router, 0);
-        IERC20(cake).safeIncreaseAllowance(router, earnedAmt);
-
         // Distribute the fees
         earnedAmt = distributeFees(earnedAmt);
 
@@ -274,10 +272,6 @@ contract StratPancakeLpV1 is Ownable {
         uint256 token0Amt = IERC20(token0).balanceOf(address(this));
         uint256 token1Amt = IERC20(token1).balanceOf(address(this));
         if (token0Amt > 0 && token1Amt > 0) {
-            IERC20(token0).safeApprove(router, 0);
-            IERC20(token1).safeApprove(router, 0);
-            IERC20(token0).safeIncreaseAllowance(router, token0Amt);
-            IERC20(token1).safeIncreaseAllowance(router, token1Amt);
             IPancakeRouter01(router).addLiquidity(
                 token0,
                 token1,
@@ -412,6 +406,28 @@ contract StratPancakeLpV1 is Ownable {
     }
 
     /**
+     * @dev Utility function for setting allowances with third party contracts.
+     */
+    function setAllowances() internal {
+        // Approve token transfers
+        IERC20(depositToken).safeApprove(masterChef, type(uint256).max);
+        IERC20(cake).safeApprove(router, type(uint256).max);
+        IERC20(token0).safeApprove(router, type(uint256).max);
+        IERC20(token1).safeApprove(router, type(uint256).max);
+    }
+
+    /**
+     * @dev Utility function for clearing allowances with third party contracts.
+     */
+    function clearAllowances() internal {
+        // Disapprove token transfers
+        IERC20(depositToken).safeApprove(masterChef, 0);
+        IERC20(cake).safeApprove(router, 0);
+        IERC20(token0).safeApprove(router, 0);
+        IERC20(token1).safeApprove(router, 0);
+    }
+
+    /**
      * @dev Utility function for safely swap tokens.
      */
     function safeSwap(
@@ -500,10 +516,7 @@ contract StratPancakeLpV1 is Ownable {
             _harvest(depositTotal);
 
             // Clear allowances of third party contracts.
-            IERC20(depositToken).safeApprove(masterChef, 0);
-            IERC20(cake).safeApprove(router, 0);
-            IERC20(token0).safeApprove(router, 0);
-            IERC20(token1).safeApprove(router, 0);
+            clearAllowances();
 
             paused = true;
         }
@@ -526,10 +539,7 @@ contract StratPancakeLpV1 is Ownable {
         IPancakeswapFarm(masterChef).emergencyWithdraw(pid);
 
         // Clear allowances of third party contracts.
-        IERC20(depositToken).safeApprove(masterChef, 0);
-        IERC20(cake).safeApprove(router, 0);
-        IERC20(token0).safeApprove(router, 0);
-        IERC20(token1).safeApprove(router, 0);
+        clearAllowances();
 
         paused = true;
     }
