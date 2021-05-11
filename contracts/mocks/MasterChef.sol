@@ -47,7 +47,7 @@ contract MasterChef is Ownable {
     PoolInfo[] public poolInfo;
     // Info of each user that stakes LP tokens.
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
-    // Total allocation poitns. Must be the sum of all allocation points in all pools.
+    // Total allocation points. Must be the sum of all allocation points in all pools.
     uint256 public totalAllocPoint = 0;
     // The block number when CAKE mining starts.
     uint256 public startBlock;
@@ -104,8 +104,8 @@ contract MasterChef is Ownable {
         if (_withUpdate) {
             massUpdatePools();
         }
-        totalAllocPoint = totalAllocPoint - poolInfo[_pid].allocPoint + _allocPoint;
         uint256 prevAllocPoint = poolInfo[_pid].allocPoint;
+        totalAllocPoint = totalAllocPoint - prevAllocPoint + _allocPoint;
         poolInfo[_pid].allocPoint = _allocPoint;
         if (prevAllocPoint != _allocPoint) {
             updateStakingPool();
@@ -139,7 +139,7 @@ contract MasterChef is Ownable {
         if (block.number > pool.lastRewardBlock && lpSupply != 0) {
             uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
             uint256 cakeReward = (multiplier * cakePerBlock * pool.allocPoint) / totalAllocPoint;
-            accCakePerShare = ((accCakePerShare + cakeReward) * 1e12) / lpSupply;
+            accCakePerShare = accCakePerShare + ((cakeReward * 1e12) / lpSupply);
         }
         return (user.amount * accCakePerShare) / 1e12 - user.rewardDebt;
     }
@@ -165,7 +165,7 @@ contract MasterChef is Ownable {
         }
         uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
         uint256 cakeReward = (multiplier * cakePerBlock * pool.allocPoint) / totalAllocPoint;
-        pool.accCakePerShare = ((pool.accCakePerShare + cakeReward) * 1e12) / lpSupply;
+        pool.accCakePerShare = pool.accCakePerShare + ((cakeReward * 1e12) / lpSupply);
         pool.lastRewardBlock = block.number;
     }
 
@@ -257,6 +257,12 @@ contract MasterChef is Ownable {
         emit EmergencyWithdraw(msg.sender, _pid, user.amount);
         user.amount = 0;
         user.rewardDebt = 0;
+    }
+
+    // allow admin update, no risk of rug pull
+    function updateCakePerBlock(uint256 _cakePerBlock) public onlyOwner {
+        require(msg.sender == owner(), "Owner-Only Function");
+        cakePerBlock = _cakePerBlock;
     }
 
     // Safe cake transfer function, just in case if rounding error causes pool to not have enough CAKEs.
