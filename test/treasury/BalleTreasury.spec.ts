@@ -69,7 +69,7 @@ describe('BalleTreasury', () => {
     })
   })
 
-  describe('Test withdrawBnb()', () => {
+  describe.only('Test withdrawBnb()', () => {
     before('Deploy contracts', async () => {
       await deployments.fixture()
       balleTreasury = await ethers.getContract('BalleTreasury')
@@ -87,17 +87,17 @@ describe('BalleTreasury', () => {
       // setup balances
       await deployer.sendTransaction({
         to: balleTreasury.address,
-        value: expandTo18Decimals(500),
+        value: expandTo18Decimals(50),
       })
-      expect(await test.getBalance()).to.be.equal(expandTo18Decimals(1000))
-      expect(await ethers.provider.getBalance(balleTreasury.address)).to.be.equal(expandTo18Decimals(500))
+      expect(await test.getBalance()).to.be.equal(expandTo18Decimals(100))
+      expect(await ethers.provider.getBalance(balleTreasury.address)).to.be.equal(expandTo18Decimals(50))
 
       // call function
-      await balleTreasury.withdrawBnb(test.address, expandTo18Decimals(100))
+      await balleTreasury.withdrawBnb(test.address, expandTo18Decimals(10))
 
       // check values
-      expect(await test.getBalance()).to.be.equal(expandTo18Decimals(1100))
-      expect(await ethers.provider.getBalance(balleTreasury.address)).to.be.equal(expandTo18Decimals(400))
+      expect(await test.getBalance()).to.be.equal(expandTo18Decimals(110))
+      expect(await ethers.provider.getBalance(balleTreasury.address)).to.be.equal(expandTo18Decimals(40))
     })
   })
 })
