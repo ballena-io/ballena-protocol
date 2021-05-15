@@ -8,7 +8,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const TokenB = await deployments.get('TokenB')
   const CAKE = await deployments.get('CAKE')
   const MasterChef = await deployments.get('MasterChef')
-  const MockRewardPot = await deployments.get('MockRewardPot')
+  const BalleRewardFund = await deployments.get('BalleRewardFund')
   const BalleTreasury = await deployments.get('BalleTreasury')
   const BALLE = await deployments.get('BALLEv2')
   const BalleMaster = await deployments.get('BalleMaster')
@@ -22,7 +22,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     MasterChef.address,
     BalleMaster.address,
     harvester,
-    MockRewardPot.address,
+    BalleRewardFund.address,
     BalleTreasury.address,
   ]
   const cakeToBallePath = [CAKE.address, wbnbAddress, BALLE.address]
@@ -48,5 +48,5 @@ deploy.skip = async (hre: HardhatRuntimeEnvironment) => {
   return true
 }
 deploy.tags = ['TestPlanStratTokenB-BNB']
-deploy.dependencies = ['TokenB', 'CAKE', 'MasterChef', 'MockRewardPot', 'BalleTreasury', 'BALLEv2']
+deploy.dependencies = ['TokenB', 'CAKE', 'MasterChef', 'BalleRewardFund', 'BalleTreasury', 'BALLEv2']
 export default deploy
