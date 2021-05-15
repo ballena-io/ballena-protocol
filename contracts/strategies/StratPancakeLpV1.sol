@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/IPancakeswapFarm.sol";
 import "../interfaces/IPancakeRouter01.sol";
+import "../interfaces/IStrategyUpgrade.sol";
 
 contract StratPancakeLpV1 is Ownable {
     using SafeERC20 for IERC20;
@@ -38,6 +39,7 @@ contract StratPancakeLpV1 is Ownable {
 
     uint256 public depositTotal = 0;
     uint256 public sharesTotal = 0;
+    address public upgradingTo = address(0);
 
     // 0.1% entrance fee. Goes to pool, prevents front-running.
     uint256 public entranceFee = 9990;
@@ -64,10 +66,10 @@ contract StratPancakeLpV1 is Ownable {
     // 10% max settable slippage tolerance, UL = upperlimit.
     uint256 public constant SLIPPAGE_UL = 990;
 
-    // Minimum earned amount to reinvest. Default 1 CAKE.
-    uint256 public minEarnedToReinvest = 1000000000000000000;
-    // 0.1 CAKE min settable minimum to reinvest, LL = lowerlimit.
-    uint256 public constant MIN_EARNED_TO_REINVEST_LL = 100000000000000000;
+    // Minimum earned amount to reinvest. Default 10 CAKE.
+    uint256 public minEarnedToReinvest = 10000000000000000000;
+    // 1 CAKE min settable minimum to reinvest, LL = lowerlimit.
+    uint256 public constant MIN_EARNED_TO_REINVEST_LL = 1000000000000000000;
     // 20 CAKE max settable minimum to reinvest, UL = upperlimit.
     uint256 public constant MIN_EARNED_TO_REINVEST_UL = 20000000000000000000;
 
@@ -399,7 +401,9 @@ contract StratPancakeLpV1 is Ownable {
         uint256 _amount,
         address _to
     ) public onlyGovernance {
-        require(_token != address(0), "zero address");
+        require(_token != address(0), "zero token address");
+        require(_to != address(0), "zero to address");
+        require(_amount > 0, "!amount");
         require(_token != cake, "!safe");
         require(_token != depositToken, "!safe");
         IERC20(_token).safeTransfer(_to, _amount);
@@ -474,6 +478,7 @@ contract StratPancakeLpV1 is Ownable {
         IERC20(depositToken).safeIncreaseAllowance(_strat, depositAmt);
         IERC20(cake).safeApprove(_strat, 0);
         IERC20(cake).safeIncreaseAllowance(_strat, earnedAmt);
+        upgradingTo = _strat;
 
         return (sharesTotal, depositAmt, earnedAmt);
     }
@@ -488,6 +493,7 @@ contract StratPancakeLpV1 is Ownable {
         uint256 _earnedAmt
     ) external onlyOwner {
         require(_strat != address(0), "!strat");
+        require(IStrategyUpgrade(_strat).upgradingTo() == address(this), "!upgrading");
 
         if (_depositAmt > 0) {
             IERC20(depositToken).safeTransferFrom(_strat, address(this), _depositAmt);
@@ -498,6 +504,18 @@ contract StratPancakeLpV1 is Ownable {
         sharesTotal = _sharesTotal;
 
         farm();
+
+        IStrategyUpgrade(_strat).upgradeCompleted();
+    }
+
+    /**
+     * @dev Confirmation that the upgrade was completed.
+     */
+    function upgradeCompleted() public {
+        require(msg.sender == upgradingTo, "!upgrading");
+        upgradingTo = address(0);
+        sharesTotal = 0;
+        depositTotal = 0;
     }
 
     /**
@@ -513,7 +531,9 @@ contract StratPancakeLpV1 is Ownable {
     function _pause() internal {
         if (!paused) {
             // Harvest with withdrawall.
-            _harvest(depositTotal);
+            if (depositTotal > 0) {
+                _harvest(depositTotal);
+            }
 
             // Clear allowances of third party contracts.
             clearAllowances();
@@ -526,6 +546,12 @@ contract StratPancakeLpV1 is Ownable {
      * @dev Restart the vault.
      */
     function unpause() external onlyOwner whenPaused {
+        if (upgradingTo != address(0)) {
+            // Cancel upgrade process
+            IERC20(depositToken).safeApprove(upgradingTo, 0);
+            IERC20(cake).safeApprove(upgradingTo, 0);
+            upgradingTo = address(0);
+        }
         depositTotal = 0; // It will be set back on farm().
         farm();
         paused = false;
