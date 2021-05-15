@@ -100,4 +100,5 @@ describe('BalleTreasury', () => {
       expect(await ethers.provider.getBalance(balleTreasury.address)).to.be.equal(expandTo18Decimals(40))
     })
   })
+  // Force Github tests refresh
 })
