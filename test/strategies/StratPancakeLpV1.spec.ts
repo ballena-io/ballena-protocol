@@ -643,10 +643,6 @@ describe('StratPancakeLpV1', () => {
       await expect(stratPancakeLpV1.connect(deployer).upgradeTo(ZERO_ADDRESS)).to.be.revertedWith('!strat')
     })
 
-    it('should revert calling upgradeCompleted', async () => {
-      await expect(stratPancakeLpV1.connect(deployer).upgradeCompleted()).to.be.revertedWith('!upgrading')
-    })
-
     it('should prepare strategy', async () => {
       // setup TEST_LP balance
       await testLP.mint(deployer.address, expandTo18Decimals(500))
@@ -707,59 +703,8 @@ describe('StratPancakeLpV1', () => {
 
       // Check values
       expect(await stratPancakeLpV1.paused()).to.be.equal(true)
-      expect(await stratPancakeLpV1.upgradingTo()).to.be.equal(stratPancakeLpV1Upgrade.address)
       // we get one more CAKE, because of a new block mining
       expect(await cake.balanceOf(stratPancakeLpV1.address)).to.be.equal(expandTo18Decimals(4))
-      expect(await testLP.balanceOf(masterChef.address)).to.be.equal(0)
-      expect(await testLP.balanceOf(stratPancakeLpV1.address)).to.be.equal('504800000000000000000')
-      expect(await stratPancakeLpV1.depositTotal()).to.be.equal('504800000000000000000')
-      expect(await stratPancakeLpV1.sharesTotal()).to.be.equal(expandTo18Decimals(500))
-    })
-
-    it('should cancel upgrade process', async () => {
-      // unpausing the strategy will cancel upgrade
-      await stratPancakeLpV1.connect(deployer).unpause()
-
-      // Check values
-      expect(await stratPancakeLpV1.paused()).to.be.equal(false)
-      expect(await stratPancakeLpV1.upgradingTo()).to.be.equal(ZERO_ADDRESS)
-      expect(await cake.balanceOf(stratPancakeLpV1.address)).to.be.equal(expandTo18Decimals(4))
-      expect(await testLP.balanceOf(masterChef.address)).to.be.equal('504800000000000000000')
-      expect(await testLP.balanceOf(stratPancakeLpV1.address)).to.be.equal(0)
-      expect(await stratPancakeLpV1.depositTotal()).to.be.equal('504800000000000000000')
-      expect(await stratPancakeLpV1.sharesTotal()).to.be.equal(expandTo18Decimals(500))
-    })
-
-    it('should revert calling upgradeFrom if upgrade cancelled', async () => {
-      await expect(
-        stratPancakeLpV1Upgrade
-          .connect(deployer)
-          .upgradeFrom(
-            stratPancakeLpV1.address,
-            expandTo18Decimals(500),
-            '504800000000000000000',
-            expandTo18Decimals(4),
-          ),
-      ).to.be.revertedWith('!upgrading')
-    })
-
-    it('should start upgrade process again', async () => {
-      // use callStatic to check return value of solidity function
-      const [shares, deposit, earned] = await stratPancakeLpV1
-        .connect(deployer)
-        .callStatic.upgradeTo(stratPancakeLpV1Upgrade.address)
-      expect(shares).to.be.equal(expandTo18Decimals(500))
-      expect(deposit).to.be.equal('504800000000000000000')
-      expect(earned).to.be.equal(expandTo18Decimals(6))
-
-      // prepare upgrade
-      await stratPancakeLpV1.connect(deployer).upgradeTo(stratPancakeLpV1Upgrade.address)
-
-      // Check values
-      expect(await stratPancakeLpV1.paused()).to.be.equal(true)
-      expect(await stratPancakeLpV1.upgradingTo()).to.be.equal(stratPancakeLpV1Upgrade.address)
-      // we get one more CAKE, because of a new block mining
-      expect(await cake.balanceOf(stratPancakeLpV1.address)).to.be.equal(expandTo18Decimals(7))
       expect(await testLP.balanceOf(masterChef.address)).to.be.equal(0)
       expect(await testLP.balanceOf(stratPancakeLpV1.address)).to.be.equal('504800000000000000000')
       expect(await stratPancakeLpV1.depositTotal()).to.be.equal('504800000000000000000')
@@ -770,18 +715,15 @@ describe('StratPancakeLpV1', () => {
       // complete upgrade
       await stratPancakeLpV1Upgrade
         .connect(deployer)
-        .upgradeFrom(stratPancakeLpV1.address, expandTo18Decimals(500), '504800000000000000000', expandTo18Decimals(7))
+        .upgradeFrom(stratPancakeLpV1.address, expandTo18Decimals(500), '504800000000000000000', expandTo18Decimals(4))
 
       // Check values
-      expect(await stratPancakeLpV1.upgradingTo()).to.be.equal(ZERO_ADDRESS)
       expect(await cake.balanceOf(stratPancakeLpV1.address)).to.be.equal(0)
-      expect(await cake.balanceOf(stratPancakeLpV1Upgrade.address)).to.be.equal(expandTo18Decimals(7))
+      expect(await cake.balanceOf(stratPancakeLpV1Upgrade.address)).to.be.equal(expandTo18Decimals(4))
       expect(await testLP.balanceOf(masterChef.address)).to.be.equal('504800000000000000000')
       expect(await testLP.balanceOf(stratPancakeLpV1.address)).to.be.equal(0)
       expect(await testLP.balanceOf(stratPancakeLpV1Upgrade.address)).to.be.equal(0)
-      expect(await stratPancakeLpV1.depositTotal()).to.be.equal(0)
       expect(await stratPancakeLpV1Upgrade.depositTotal()).to.be.equal('504800000000000000000')
-      expect(await stratPancakeLpV1.sharesTotal()).to.be.equal(0)
       expect(await stratPancakeLpV1Upgrade.sharesTotal()).to.be.equal(expandTo18Decimals(500))
     })
   })

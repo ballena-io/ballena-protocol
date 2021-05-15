@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/IPancakeswapFarm.sol";
 import "../interfaces/IPancakeRouter01.sol";
-import "../interfaces/IStrategyUpgrade.sol";
 
 contract StratPancakeLpV1 is Ownable {
     using SafeERC20 for IERC20;
@@ -39,7 +38,6 @@ contract StratPancakeLpV1 is Ownable {
 
     uint256 public depositTotal = 0;
     uint256 public sharesTotal = 0;
-    address public upgradingTo = address(0);
 
     // 0.1% entrance fee. Goes to pool, prevents front-running.
     uint256 public entranceFee = 9990;
@@ -478,7 +476,6 @@ contract StratPancakeLpV1 is Ownable {
         IERC20(depositToken).safeIncreaseAllowance(_strat, depositAmt);
         IERC20(cake).safeApprove(_strat, 0);
         IERC20(cake).safeIncreaseAllowance(_strat, earnedAmt);
-        upgradingTo = _strat;
 
         return (sharesTotal, depositAmt, earnedAmt);
     }
@@ -493,7 +490,6 @@ contract StratPancakeLpV1 is Ownable {
         uint256 _earnedAmt
     ) external onlyOwner {
         require(_strat != address(0), "!strat");
-        require(IStrategyUpgrade(_strat).upgradingTo() == address(this), "!upgrading");
 
         if (_depositAmt > 0) {
             IERC20(depositToken).safeTransferFrom(_strat, address(this), _depositAmt);
@@ -504,18 +500,6 @@ contract StratPancakeLpV1 is Ownable {
         sharesTotal = _sharesTotal;
 
         farm();
-
-        IStrategyUpgrade(_strat).upgradeCompleted();
-    }
-
-    /**
-     * @dev Confirmation that the upgrade was completed.
-     */
-    function upgradeCompleted() public {
-        require(msg.sender == upgradingTo, "!upgrading");
-        upgradingTo = address(0);
-        sharesTotal = 0;
-        depositTotal = 0;
     }
 
     /**
@@ -546,12 +530,6 @@ contract StratPancakeLpV1 is Ownable {
      * @dev Restart the vault.
      */
     function unpause() external onlyOwner whenPaused {
-        if (upgradingTo != address(0)) {
-            // Cancel upgrade process
-            IERC20(depositToken).safeApprove(upgradingTo, 0);
-            IERC20(cake).safeApprove(upgradingTo, 0);
-            upgradingTo = address(0);
-        }
         depositTotal = 0; // It will be set back on farm().
         farm();
         paused = false;
