@@ -17,12 +17,10 @@ contract BalleRewardFund is Ownable {
     /**
      * @dev Store of funds to be rewarded by BALLE staking pool.
      */
-    constructor(address _balle, address _rewarder) {
+    constructor(address _balle) {
         require(_balle != address(0), "!balle");
-        require(_rewarder != address(0), "!rewarder");
 
         balle = _balle;
-        rewarder = _rewarder;
     }
 
     /**
