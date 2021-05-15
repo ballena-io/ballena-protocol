@@ -27,9 +27,9 @@ contract StratPancakeLpV1 is Ownable {
     address public immutable router;
 
     // Address to send controller fee.
-    address public immutable rewards;
+    address public rewards;
     // Address to send treasury fee.
-    address public immutable treasury;
+    address public treasury;
 
     // Governance address
     address public governance;
@@ -373,6 +373,22 @@ contract StratPancakeLpV1 is Ownable {
         require(_governance != address(0), "zero address");
         governance = _governance;
         emit SetGovernance(_governance);
+    }
+
+    /**
+     * @dev Function to change the rewards address.
+     */
+    function setRewards(address _rewards) public onlyGovernance {
+        require(_rewards != address(0), "zero address");
+        rewards = _rewards;
+    }
+
+    /**
+     * @dev Function to change the treasury address.
+     */
+    function setTreasury(address _treasury) public onlyGovernance {
+        require(_treasury != address(0), "zero address");
+        treasury = _treasury;
     }
 
     /**

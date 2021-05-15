@@ -91,6 +91,14 @@ describe('StratPancakeLpV1', () => {
       await expect(stratPancakeLpV1.connect(test).setGovernance(ZERO_ADDRESS)).to.be.revertedWith('!governance')
     })
 
+    it('should revert if not governance address calls setRewards', async () => {
+      await expect(stratPancakeLpV1.connect(test).setRewards(ZERO_ADDRESS)).to.be.revertedWith('!governance')
+    })
+
+    it('should revert if not governance address calls setTreasury', async () => {
+      await expect(stratPancakeLpV1.connect(test).setTreasury(ZERO_ADDRESS)).to.be.revertedWith('!governance')
+    })
+
     it('should revert if not governance address calls addHarvester', async () => {
       await expect(stratPancakeLpV1.connect(test).addHarvester(ZERO_ADDRESS)).to.be.revertedWith('!governance')
     })
@@ -134,10 +142,28 @@ describe('StratPancakeLpV1', () => {
     })
   })
 
-  describe('Test setGovernance()', () => {
+  describe('Test setRewards(), setTreasury() and setGovernance()', () => {
     before('Deploy contracts', async () => {
       await deployments.fixture()
       stratPancakeLpV1 = await ethers.getContract('StratPancakeLpV1')
+    })
+
+    it('should revert if set zero address', async () => {
+      await expect(stratPancakeLpV1.connect(deployer).setRewards(ZERO_ADDRESS)).to.be.revertedWith('zero address')
+    })
+
+    it('should set new rewards address', async () => {
+      await stratPancakeLpV1.connect(deployer).setRewards(test.address)
+      expect(await stratPancakeLpV1.rewards()).to.be.equal(test.address)
+    })
+
+    it('should revert if set zero address', async () => {
+      await expect(stratPancakeLpV1.connect(deployer).setTreasury(ZERO_ADDRESS)).to.be.revertedWith('zero address')
+    })
+
+    it('should set new treasury address', async () => {
+      await stratPancakeLpV1.connect(deployer).setTreasury(test.address)
+      expect(await stratPancakeLpV1.treasury()).to.be.equal(test.address)
     })
 
     it('should revert if set zero address', async () => {
