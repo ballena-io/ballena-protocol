@@ -69,7 +69,7 @@ describe('BalleTreasury', () => {
     })
   })
 
-  describe.only('Test withdrawBnb()', () => {
+  describe('Test withdrawBnb()', () => {
     before('Deploy contracts', async () => {
       await deployments.fixture()
       balleTreasury = await ethers.getContract('BalleTreasury')
