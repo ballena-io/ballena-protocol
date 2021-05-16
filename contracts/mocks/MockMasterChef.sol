@@ -57,6 +57,15 @@ contract MockMasterChef {
     }
 
     /**
+     * @dev Mock view function to see pending CAKEs on frontend.
+     */
+    function pendingCake(uint256 _pid, address _user) external view returns (uint256) {
+        require(_pid != 0, "!pid");
+        require(_user != address(0), "!user");
+        return (block.number - lastBlock) * cakePerBlock;
+    }
+
+    /**
      * @dev Mock withdraw function. Transfer LP Token to msg.sender.
      * Send pending CAKE if any.
      */

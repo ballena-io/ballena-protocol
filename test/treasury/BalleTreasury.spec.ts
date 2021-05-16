@@ -90,7 +90,6 @@ describe('BalleTreasury', () => {
         value: expandTo18Decimals(50),
       })
 
-      // Force Github tests refresh again
       expect(await test.getBalance()).to.be.equal(expandTo18Decimals(100))
       expect(await ethers.provider.getBalance(balleTreasury.address)).to.be.equal(expandTo18Decimals(50))
 
