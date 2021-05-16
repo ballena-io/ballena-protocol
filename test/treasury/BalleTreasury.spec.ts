@@ -90,14 +90,14 @@ describe('BalleTreasury', () => {
         value: expandTo18Decimals(50),
       })
 
-      // expect(await test.getBalance()).to.be.equal(expandTo18Decimals(100))
+      expect(await test.getBalance()).to.be.equal(expandTo18Decimals(10000))
       expect(await ethers.provider.getBalance(balleTreasury.address)).to.be.equal(expandTo18Decimals(50))
 
       // call function
       await balleTreasury.withdrawBnb(test.address, expandTo18Decimals(10))
 
       // check values
-      expect(await test.getBalance()).to.be.equal(expandTo18Decimals(110))
+      expect(await test.getBalance()).to.be.equal(expandTo18Decimals(10010))
       expect(await ethers.provider.getBalance(balleTreasury.address)).to.be.equal(expandTo18Decimals(40))
     })
   })
