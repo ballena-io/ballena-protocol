@@ -5,27 +5,16 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts } = hre
   const { deploy } = deployments
   const { deployer } = await getNamedAccounts()
+  const BalleV2 = await deployments.get('BALLEv2')
 
-  await deploy('MockRewardPot', {
+  await deploy('BalleRewardFund', {
     from: deployer,
-    args: [],
+    args: [BalleV2.address],
     log: true,
     deterministicDeployment: false,
   })
 }
 
-deploy.skip = async (hre: HardhatRuntimeEnvironment) => {
-  const { network } = hre
-
-  if (network.name == 'hardhat') {
-    // deploy for tests
-    return false
-  }
-  if (network.name == 'bsc_testnet') {
-    // deploy to testnet
-    return false
-  }
-  return true
-}
-deploy.tags = ['MockRewardPot']
+deploy.tags = ['BalleRewardFund']
+deploy.dependencies = ['BALLEv2']
 export default deploy
