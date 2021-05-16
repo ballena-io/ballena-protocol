@@ -27,9 +27,9 @@ contract StratPancakeLpV1 is Ownable {
     address public immutable router;
 
     // Address to send controller fee.
-    address public immutable rewards;
+    address public rewards;
     // Address to send treasury fee.
-    address public immutable treasury;
+    address public treasury;
 
     // Governance address
     address public governance;
@@ -64,10 +64,10 @@ contract StratPancakeLpV1 is Ownable {
     // 10% max settable slippage tolerance, UL = upperlimit.
     uint256 public constant SLIPPAGE_UL = 990;
 
-    // Minimum earned amount to reinvest. Default 1 CAKE.
-    uint256 public minEarnedToReinvest = 1000000000000000000;
-    // 0.1 CAKE min settable minimum to reinvest, LL = lowerlimit.
-    uint256 public constant MIN_EARNED_TO_REINVEST_LL = 100000000000000000;
+    // Minimum earned amount to reinvest. Default 10 CAKE.
+    uint256 public minEarnedToReinvest = 10000000000000000000;
+    // 1 CAKE min settable minimum to reinvest, LL = lowerlimit.
+    uint256 public constant MIN_EARNED_TO_REINVEST_LL = 1000000000000000000;
     // 20 CAKE max settable minimum to reinvest, UL = upperlimit.
     uint256 public constant MIN_EARNED_TO_REINVEST_UL = 20000000000000000000;
 
@@ -376,6 +376,22 @@ contract StratPancakeLpV1 is Ownable {
     }
 
     /**
+     * @dev Function to change the rewards address.
+     */
+    function setRewards(address _rewards) public onlyGovernance {
+        require(_rewards != address(0), "zero address");
+        rewards = _rewards;
+    }
+
+    /**
+     * @dev Function to change the treasury address.
+     */
+    function setTreasury(address _treasury) public onlyGovernance {
+        require(_treasury != address(0), "zero address");
+        treasury = _treasury;
+    }
+
+    /**
      * @dev Add a harvester address from Governance GNOSIS Safe.
      */
     function addHarvester(address _harvester) external onlyGovernance {
@@ -399,7 +415,9 @@ contract StratPancakeLpV1 is Ownable {
         uint256 _amount,
         address _to
     ) public onlyGovernance {
-        require(_token != address(0), "zero address");
+        require(_token != address(0), "zero token address");
+        require(_to != address(0), "zero to address");
+        require(_amount > 0, "!amount");
         require(_token != cake, "!safe");
         require(_token != depositToken, "!safe");
         IERC20(_token).safeTransfer(_to, _amount);
@@ -513,7 +531,9 @@ contract StratPancakeLpV1 is Ownable {
     function _pause() internal {
         if (!paused) {
             // Harvest with withdrawall.
-            _harvest(depositTotal);
+            if (depositTotal > 0) {
+                _harvest(depositTotal);
+            }
 
             // Clear allowances of third party contracts.
             clearAllowances();
