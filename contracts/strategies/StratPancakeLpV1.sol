@@ -87,6 +87,8 @@ contract StratPancakeLpV1 is Ownable {
         uint256 slippage,
         uint256 minEarnedToReinvest
     );
+    event Harvest(uint256 amount);
+    event DistributeFees(uint256 rewardsAmount, uint256 treasuryAmount);
     event SetGovernance(address indexed addr);
 
     /**
@@ -151,6 +153,13 @@ contract StratPancakeLpV1 is Ownable {
     modifier whenPaused() {
         require(paused, "!paused");
         _;
+    }
+
+    /**
+     * @dev View function to see pending CAKEs on farm.
+     */
+    function pendingCake() external view returns (uint256) {
+        return IPancakeswapFarm(masterChef).pendingCake(pid, address(this));
     }
 
     /**
@@ -238,6 +247,8 @@ contract StratPancakeLpV1 is Ownable {
             return;
         }
 
+        emit Harvest(earnedAmt);
+
         // Distribute the fees
         earnedAmt = distributeFees(earnedAmt);
 
@@ -321,6 +332,8 @@ contract StratPancakeLpV1 is Ownable {
                 );
 
                 _earnedAmt = _earnedAmt - totalFee;
+
+                emit DistributeFees(rewardsFee, treasuryFee);
             }
         }
 

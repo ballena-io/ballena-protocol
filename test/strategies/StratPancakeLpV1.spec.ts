@@ -427,7 +427,7 @@ describe('StratPancakeLpV1', () => {
       // this harvest is not reinvested, earned CAKE remains in strategy contract
       expect(await cake.balanceOf(stratPancakeLpV1.address)).to.be.equal(expandTo18Decimals(1))
 
-      // Wait 8 more block, to earn 10 CAKE
+      // Wait 8 more block
       mineBlock()
       mineBlock()
       mineBlock()
@@ -437,8 +437,15 @@ describe('StratPancakeLpV1', () => {
       mineBlock()
       mineBlock()
 
+      // check pending CAKE
+      expect(await stratPancakeLpV1.pendingCake()).to.be.equal(expandTo18Decimals(8))
+
       // make harvest
-      await stratPancakeLpV1.connect(deployer).harvest()
+      await expect(stratPancakeLpV1.connect(deployer).harvest())
+        .to.emit(stratPancakeLpV1, 'Harvest')
+        .withArgs(expandTo18Decimals(10))
+        .emit(stratPancakeLpV1, 'DistributeFees')
+        .withArgs('300000000000000000', '100000000000000000')
 
       // Check values
       expect(await cake.balanceOf(stratPancakeLpV1.address)).to.be.equal(0)
@@ -469,8 +476,15 @@ describe('StratPancakeLpV1', () => {
       mineBlock()
       mineBlock()
 
+      // check pending CAKE
+      expect(await stratPancakeLpV1.pendingCake()).to.be.equal(expandTo18Decimals(14))
+
       // make harvest
-      await stratPancakeLpV1.connect(deployer).harvest()
+      await expect(stratPancakeLpV1.connect(deployer).harvest())
+        .to.emit(stratPancakeLpV1, 'Harvest')
+        .withArgs(expandTo18Decimals(15))
+        .emit(stratPancakeLpV1, 'DistributeFees')
+        .withArgs('450000000000000000', '150000000000000000')
 
       // Check values
       expect(await cake.balanceOf(stratPancakeLpV1.address)).to.be.equal(0)
@@ -695,8 +709,15 @@ describe('StratPancakeLpV1', () => {
       mineBlock()
       mineBlock()
 
+      // check pending CAKE
+      expect(await stratPancakeLpV1.pendingCake()).to.be.equal(expandTo18Decimals(9))
+
       // make harvest
-      await stratPancakeLpV1.connect(deployer).harvest()
+      await expect(stratPancakeLpV1.connect(deployer).harvest())
+        .to.emit(stratPancakeLpV1, 'Harvest')
+        .withArgs(expandTo18Decimals(10))
+        .emit(stratPancakeLpV1, 'DistributeFees')
+        .withArgs('300000000000000000', '100000000000000000')
 
       // Check values
       expect(await cake.balanceOf(stratPancakeLpV1.address)).to.be.equal(0)
