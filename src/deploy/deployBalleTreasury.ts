@@ -6,26 +6,12 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deploy } = deployments
   const { deployer } = await getNamedAccounts()
 
-  await deploy('MockTreasury', {
+  await deploy('BalleTreasury', {
     from: deployer,
-    args: [],
     log: true,
     deterministicDeployment: false,
   })
 }
 
-deploy.skip = async (hre: HardhatRuntimeEnvironment) => {
-  const { network } = hre
-
-  if (network.name == 'hardhat') {
-    // deploy for tests
-    return false
-  }
-  if (network.name == 'bsc_testnet') {
-    // deploy to testnet
-    return false
-  }
-  return true
-}
-deploy.tags = ['MockTreasury']
+deploy.tags = ['BalleTreasury']
 export default deploy

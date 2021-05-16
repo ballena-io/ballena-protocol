@@ -402,7 +402,7 @@ describe('StratPancakeLpV1', () => {
       masterChef = await ethers.getContract('MockMasterChef')
       stratPancakeLpV1 = await ethers.getContract('StratPancakeLpV1')
       rewardPot = await ethers.getContract('MockRewardPot')
-      treasury = await ethers.getContract('MockTreasury')
+      treasury = await ethers.getContract('BalleTreasury')
       // Our special mockRouter needs to mint BALLE
       router = await ethers.getContract('MockRouter')
       balle = await ethers.getContract('BALLEv2')
@@ -493,7 +493,7 @@ describe('StratPancakeLpV1', () => {
       masterChef = await ethers.getContract('MockMasterChef')
       stratPancakeLpV1 = await ethers.getContract('StratPancakeLpV1')
       rewardPot = await ethers.getContract('MockRewardPot')
-      treasury = await ethers.getContract('MockTreasury')
+      treasury = await ethers.getContract('BalleTreasury')
       // Our special mockRouter needs to mint BALLE
       router = await ethers.getContract('MockRouter')
       balle = await ethers.getContract('BALLEv2')
@@ -630,7 +630,7 @@ describe('StratPancakeLpV1', () => {
       masterChef = await ethers.getContract('MockMasterChef')
       stratPancakeLpV1 = await ethers.getContract('StratPancakeLpV1')
       rewardPot = await ethers.getContract('MockRewardPot')
-      treasury = await ethers.getContract('MockTreasury')
+      treasury = await ethers.getContract('BalleTreasury')
       // Our special mockRouter needs to mint BALLE
       router = await ethers.getContract('MockRouter')
       balle = await ethers.getContract('BALLEv2')
