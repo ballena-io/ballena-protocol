@@ -89,6 +89,7 @@ describe('BalleTreasury', () => {
         to: balleTreasury.address,
         value: expandTo18Decimals(50),
       })
+
       expect(await test.getBalance()).to.be.equal(expandTo18Decimals(100))
       expect(await ethers.provider.getBalance(balleTreasury.address)).to.be.equal(expandTo18Decimals(50))
 
