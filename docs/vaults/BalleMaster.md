@@ -87,8 +87,6 @@ The vault's strategy smart contract can be upgraded if any change on it should b
 If the strategy needs to be upgraded, a new smart contract will be deployed to the blockchain and the `proposeStratUpgrade()` method of the BalleMaster smart contract will be called from our Gnosis Management Safe. This will mark the vault as _Strategy upgrade timelock period_ that will end 24 hours later. Then a new call, this time to `stratUpgrade()` from the Gnosis Management Safe on the same vault will change the active strategy to the new smart contract.
 If the strategy can work normally while in _upgrade timelock period_, it will do, but in case it needs to stop working, the vault will be paused. That way, deposits will be not enabled, but withdrawals can allways be made normally.
 
-There will be an alternative method for upgrading the strategy, in case the `emergencyWithdraw` method present in most farms needs to be used for some reason (something not working with farm). This method, usually, allows to withdraw the deposited LP's without the generated rewards. So, the rewards from last successfull harvest to this point will be ignored, but the LP's can be withdrawn. This BalleMaster method will be `emergencyStratUpgrade()` and will be called from our Gnosis Management Safe too.
-
 For any upgrade method to work, the `proposeStratUpgrade()` should be called 24 hour before.
 
 ### Pause / Unpause
