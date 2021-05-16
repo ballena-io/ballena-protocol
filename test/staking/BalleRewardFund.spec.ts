@@ -41,14 +41,16 @@ describe('BalleRewardFund', () => {
       balleRewardFund = await ethers.getContract('BalleRewardFund')
     })
 
-    it('should revert if not owner address calls setRewarder()', async () => {
-      await expect(balleRewardFund.connect(test).setRewarder(ZERO_ADDRESS)).to.be.revertedWith(
+    it('should revert if not owner address calls setRewardDistribution()', async () => {
+      await expect(balleRewardFund.connect(test).setRewardDistribution(ZERO_ADDRESS)).to.be.revertedWith(
         'Ownable: caller is not the owner',
       )
     })
 
-    it('should revert if not rewarder address calls sendReward()', async () => {
-      await expect(balleRewardFund.connect(test).sendReward(expandTo18Decimals(0))).to.be.revertedWith('!rewarder')
+    it('should revert if not rewardDistribution address calls sendRewardAmount()', async () => {
+      await expect(
+        balleRewardFund.connect(test).sendRewardAmount(ZERO_ADDRESS, expandTo18Decimals(0)),
+      ).to.be.revertedWith('!rewardDistribution')
     })
 
     it('should revert if not owner address calls inCaseTokensGetStuck()', async () => {
@@ -58,23 +60,31 @@ describe('BalleRewardFund', () => {
     })
   })
 
-  describe('Test setRewarder()', () => {
+  describe('Test setRewardDistribution()', () => {
     before('Deploy contracts', async () => {
       await deployments.fixture()
       balleRewardFund = await ethers.getContract('BalleRewardFund')
     })
 
     it('should revert if zero address', async () => {
-      await expect(balleRewardFund.connect(deployer).setRewarder(ZERO_ADDRESS)).to.be.revertedWith('zero address')
+      await expect(balleRewardFund.connect(deployer).setRewardDistribution(ZERO_ADDRESS)).to.be.revertedWith(
+        'zero address',
+      )
     })
 
-    it('should set new rewarder address', async () => {
-      await balleRewardFund.connect(deployer).setRewarder(test.address)
-      expect(await balleRewardFund.rewarder()).to.be.equal(test.address)
+    it('should set new rewardDistribution address', async () => {
+      await balleRewardFund.connect(deployer).setRewardDistribution(test.address)
+      expect(await balleRewardFund.rewardDistribution()).to.be.equal(test.address)
+    })
+
+    it('should allow to call sendRewardAmount', async () => {
+      await expect(
+        balleRewardFund.connect(test).sendRewardAmount(ZERO_ADDRESS, expandTo18Decimals(0)),
+      ).to.be.revertedWith('!rewarder')
     })
   })
 
-  describe('Test sendReward()', () => {
+  describe('Test sendRewardAmount()', () => {
     before('Deploy contracts', async () => {
       await deployments.fixture()
       balleRewardFund = await ethers.getContract('BalleRewardFund')
@@ -82,21 +92,27 @@ describe('BalleRewardFund', () => {
       // setup BALLE balance
       await balle.mint(balleRewardFund.address, expandTo18Decimals(500))
       expect(await balle.balanceOf(balleRewardFund.address)).to.be.equal(expandTo18Decimals(500))
-      // set rewarder
-      await balleRewardFund.connect(deployer).setRewarder(deployer.address)
-      expect(await balleRewardFund.rewarder()).to.be.equal(deployer.address)
+      expect(await balle.balanceOf(test.address)).to.be.equal(0)
+    })
+
+    it('should revert if zero address', async () => {
+      await expect(
+        balleRewardFund.connect(deployer).sendRewardAmount(ZERO_ADDRESS, expandTo18Decimals(0)),
+      ).to.be.revertedWith('!rewarder')
     })
 
     it('should revert if zero amount', async () => {
-      await expect(balleRewardFund.connect(deployer).sendReward(expandTo18Decimals(0))).to.be.revertedWith('!amount')
+      await expect(
+        balleRewardFund.connect(deployer).sendRewardAmount(test.address, expandTo18Decimals(0)),
+      ).to.be.revertedWith('!amount')
     })
 
     it('should sendReward', async () => {
-      await balleRewardFund.connect(deployer).sendReward(expandTo18Decimals(100))
+      await balleRewardFund.connect(deployer).sendRewardAmount(test.address, expandTo18Decimals(100))
 
       // check values
       expect(await balle.balanceOf(balleRewardFund.address)).to.be.equal(expandTo18Decimals(400))
-      expect(await balle.balanceOf(deployer.address)).to.be.equal(expandTo18Decimals(100))
+      expect(await balle.balanceOf(test.address)).to.be.equal(expandTo18Decimals(100))
     })
   })
 

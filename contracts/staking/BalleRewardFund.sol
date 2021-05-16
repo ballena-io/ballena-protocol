@@ -11,8 +11,8 @@ contract BalleRewardFund is Ownable {
 
     // BALLE token address
     address public balle;
-    // Rewarder contract address
-    address public rewarder;
+    // The reward distribution contract.
+    address public rewardDistribution;
 
     /**
      * @dev Store of funds to be rewarded by BALLE staking pool.
@@ -24,25 +24,26 @@ contract BalleRewardFund is Ownable {
     }
 
     /**
-     * @dev Function to change the rewarder address.
+     * @dev Modifier to check the caller is the owner address or the rewardDistribution.
      */
-    function setRewarder(address _rewarder) public onlyOwner {
-        require(_rewarder != address(0), "zero address");
-        rewarder = _rewarder;
+    modifier onlyRewardDistribution() {
+        require(msg.sender == owner() || msg.sender == rewardDistribution, "!rewardDistribution");
+        _;
     }
 
     /**
-     * @dev Modifier to check the caller is the rewarder address.
+     * @dev Function to change the rewardDistribution address.
      */
-    modifier onlyRewarder() {
-        require(msg.sender == rewarder, "!rewarder");
-        _;
+    function setRewardDistribution(address _rewardDistribution) public onlyOwner {
+        require(_rewardDistribution != address(0), "zero address");
+        rewardDistribution = _rewardDistribution;
     }
 
     /**
      * @dev Function to transfer tokens to the rewarder.
      */
-    function sendReward(uint256 _amount) public onlyRewarder returns (uint256) {
+    function sendRewardAmount(address _rewarder, uint256 _amount) public onlyRewardDistribution returns (uint256) {
+        require(_rewarder != address(0), "!rewarder");
         require(_amount > 0, "!amount");
 
         uint256 balance = IERC20(balle).balanceOf(address(this));
@@ -50,7 +51,7 @@ contract BalleRewardFund is Ownable {
             _amount = balance;
         }
 
-        IERC20(balle).safeTransfer(address(msg.sender), _amount);
+        IERC20(balle).safeTransfer(_rewarder, _amount);
 
         return _amount;
     }
