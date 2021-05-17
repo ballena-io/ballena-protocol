@@ -107,7 +107,9 @@ contract BalleRewardDistribution is Ownable {
         require(_duration >= 24 hours, "!min duration");
         require(_duration <= 7 days, "!max duration");
         require(_baseRewardAmount > 0, "!baseRewardAmount");
-        require(_multiplier > 0, "!multiplier");
+        require(_multiplier >= 100, "!multiplier");
+        require(stakingPool != address(0), "!stakingPool");
+        require(rewarder != address(0), "!rewarder");
 
         // Check if rewardFund has balance.
         uint256 rewardFundBalance = IERC20(balle).balanceOf(rewardFund);
