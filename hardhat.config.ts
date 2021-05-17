@@ -25,15 +25,15 @@ function createHardhatNetworkConfig(
       accounts: [
         {
           privateKey: deployerPrivateKey,
-          balance: '100000000000000000000',
+          balance: '10000000000000000000000',
         },
         {
           privateKey: testPrivateKey,
-          balance: '100000000000000000000',
+          balance: '10000000000000000000000',
         },
         {
           privateKey: test2PrivateKey,
-          balance: '100000000000000000000',
+          balance: '10000000000000000000000',
         },
       ],
     }
