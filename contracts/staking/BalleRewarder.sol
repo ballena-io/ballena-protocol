@@ -1,4 +1,4 @@
-// contracts/staking/BalleRewardFund.sol
+// contracts/staking/BalleRewarder.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
@@ -6,44 +6,46 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract BalleRewardFund is Ownable {
+contract BalleRewarder is Ownable {
     using SafeERC20 for IERC20;
 
     // BALLE token address.
     address public immutable balle;
-    // The reward distribution contract.
-    address public rewardDistribution;
+    // The staking pool contract.
+    address public stakingPool;
 
     /**
-     * @dev Store of funds to be rewarded by BALLE staking pool.
+     * @dev Stores BALLE funds for the current period and sends them to users.
      */
-    constructor(address _balle) {
+    constructor(address _balle, address _stakingPool) {
         require(_balle != address(0), "!balle");
+        require(_stakingPool != address(0), "!stakingPool");
 
         balle = _balle;
+        stakingPool = _stakingPool;
     }
 
     /**
-     * @dev Modifier to check the caller is the owner address or the rewardDistribution.
+     * @dev Modifier to check the caller is the owner address or the stakingPool.
      */
-    modifier onlyRewardDistribution() {
-        require(msg.sender == owner() || msg.sender == rewardDistribution, "!rewardDistribution");
+    modifier onlyStakingPool() {
+        require(msg.sender == owner() || msg.sender == stakingPool, "!stakingPool");
         _;
     }
 
     /**
-     * @dev Function to change the rewardDistribution address.
+     * @dev Function to change the stakingPool address.
      */
-    function setRewardDistribution(address _rewardDistribution) external onlyOwner {
-        require(_rewardDistribution != address(0), "zero address");
-        rewardDistribution = _rewardDistribution;
+    function setStakingPool(address _stakingPool) external onlyOwner {
+        require(_stakingPool != address(0), "zero address");
+        stakingPool = _stakingPool;
     }
 
     /**
-     * @dev Function to transfer tokens to the rewarder.
+     * @dev Function to send tokens to the user.
      */
-    function sendRewardAmount(address _rewarder, uint256 _amount) external onlyRewardDistribution returns (uint256) {
-        require(_rewarder != address(0), "!rewarder");
+    function sendReward(address _user, uint256 _amount) external onlyStakingPool returns (uint256) {
+        require(_user != address(0), "!user");
         require(_amount > 0, "!amount");
 
         uint256 balance = IERC20(balle).balanceOf(address(this));
@@ -51,7 +53,7 @@ contract BalleRewardFund is Ownable {
             _amount = balance;
         }
 
-        IERC20(balle).safeTransfer(_rewarder, _amount);
+        IERC20(balle).safeTransfer(_user, _amount);
 
         return _amount;
     }
