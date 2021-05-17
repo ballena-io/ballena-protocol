@@ -67,6 +67,7 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
         require(_stakedToken != address(0), "!stakedToken");
         require(_rewardToken != address(0), "!rewardToken");
         require(_rewardDistribution != address(0), "!rewardDistribution");
+        require(_governance != address(0), "!governance");
 
         stakedToken = _stakedToken;
         rewardToken = _rewardToken;
