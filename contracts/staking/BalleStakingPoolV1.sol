@@ -31,6 +31,8 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
     uint256 public rewardPerBlock;
     // The extra reward multiplier applied over the amount from fees (100 = 1).
     uint256 public extraRewardMultiplier;
+    // Total staked tokens amount.
+    uint256 private totalSupply;
 
     // Info of each user that stakes tokens (stakedToken).
     mapping(address => UserInfo) public userInfo;
@@ -65,6 +67,7 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
         require(_stakedToken != address(0), "!stakedToken");
         require(_rewardToken != address(0), "!rewardToken");
         require(_rewardDistribution != address(0), "!rewardDistribution");
+        require(_governance != address(0), "!governance");
 
         stakedToken = _stakedToken;
         rewardToken = _rewardToken;
@@ -119,6 +122,7 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
 
         if (_amount > 0) {
             user.amount = user.amount + _amount;
+            totalSupply = totalSupply + _amount;
             IERC20(stakedToken).safeTransferFrom(address(msg.sender), address(this), _amount);
         }
 
@@ -142,7 +146,16 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
         uint256 pending = (user.amount * accTokenPerShare) / 1e12 - user.rewardDebt;
 
         if (_amount > 0) {
-            user.amount = user.amount - _amount;
+            // Take care of rounding issues.
+            uint256 bal = IERC20(stakedToken).balanceOf(address(this));
+            if (bal < _amount) {
+                _amount = bal;
+                user.amount = 0;
+                totalSupply = 0;
+            } else {
+                user.amount = user.amount - _amount;
+                totalSupply = totalSupply - _amount;
+            }
             IERC20(stakedToken).safeTransfer(address(msg.sender), _amount);
         }
 
@@ -165,6 +178,11 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
         user.rewardDebt = 0;
 
         if (amountToTransfer > 0) {
+            // Take care of rounding issues.
+            uint256 bal = IERC20(stakedToken).balanceOf(address(this));
+            if (bal < amountToTransfer) {
+                amountToTransfer = bal;
+            }
             IERC20(stakedToken).safeTransfer(address(msg.sender), amountToTransfer);
         }
 
@@ -181,6 +199,15 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
         require(_tokenAddress != address(stakedToken), "staked token");
 
         IERC20(_tokenAddress).safeTransfer(address(msg.sender), _tokenAmount);
+    }
+
+    /**
+     * @dev View function to see total staked value on frontend.
+     * @param _user: user address.
+     * @return Total staked for a given user.
+     */
+    function balanceOf(address _user) external view returns (uint256) {
+        return userInfo[_user].amount;
     }
 
     /**
@@ -209,16 +236,16 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
             return;
         }
 
-        uint256 stakedTokenSupply = IERC20(stakedToken).balanceOf(address(this));
+        totalSupply = IERC20(stakedToken).balanceOf(address(this));
 
-        if (stakedTokenSupply == 0) {
+        if (totalSupply == 0) {
             lastRewardBlock = block.number;
             return;
         }
 
         uint256 multiplier = getBlockMultiplier(lastRewardBlock, block.number);
         uint256 reward = multiplier * rewardPerBlock;
-        accTokenPerShare = accTokenPerShare + (reward * 1e12) / stakedTokenSupply;
+        accTokenPerShare = accTokenPerShare + (reward * 1e12) / totalSupply;
         lastRewardBlock = block.number;
     }
 
