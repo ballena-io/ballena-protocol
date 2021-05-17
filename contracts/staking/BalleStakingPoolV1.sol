@@ -55,7 +55,7 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
      * @dev BALLE Rewards staking pool.
      * @param _stakedToken: staked token address.
      * @param _rewardToken: reward token address.
-     * @param _rewardDistribution: rewarder contract address.
+     * @param _rewardDistribution: reward distribution contract address.
      * @param _governance: governance address with ownership.
      */
     constructor(
@@ -81,7 +81,7 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
      * @dev Function to change the rewarder address.
      */
     function setRewarder(address _rewarder) external onlyOwner {
-        require(_rewarder != address(0), "!rewarder");
+        require(_rewarder != address(0), "zero address");
         rewarder = _rewarder;
     }
 
@@ -192,13 +192,18 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
     /**
      * @dev Function to use from Governance GNOSIS Safe only.
      * It allows to recover wrong tokens sent to the contract.
-     * @param _tokenAddress: the address of the token to withdraw.
-     * @param _tokenAmount: the number of tokens to withdraw.
      */
-    function inCaseTokensGetStuck(address _tokenAddress, uint256 _tokenAmount) external onlyOwner {
-        require(_tokenAddress != address(stakedToken), "staked token");
+    function inCaseTokensGetStuck(
+        address _token,
+        uint256 _amount,
+        address _to
+    ) external onlyOwner {
+        require(_token != address(0), "zero token address");
+        require(_to != address(0), "zero to address");
+        require(_amount > 0, "!amount");
+        require(_token != stakedToken, "!safe");
 
-        IERC20(_tokenAddress).safeTransfer(address(msg.sender), _tokenAmount);
+        IERC20(_token).safeTransfer(_to, _amount);
     }
 
     /**
