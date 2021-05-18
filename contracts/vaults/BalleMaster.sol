@@ -66,6 +66,10 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     uint256 public balleToMint = 0;
     // The minimum time it has to pass before a strat candidate can be approved.
     uint256 public immutable approvalDelay;
+    // Operations multisig wallet.
+    address public operationsWallet;
+    // Security multisig wallet.
+    address public securityWallet;
 
     // Info of each vault.
     VaultInfo[] public vaultInfo;
@@ -99,6 +103,38 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     }
 
     /**
+     * @dev Function to change the operations multisig wallet. Can only be changed from DAO multisig.
+     */
+    function setOperationsWallet(address _operationsWallet) external onlyOwner {
+        require(_operationsWallet != address(0), "zero address");
+        operationsWallet = _operationsWallet;
+    }
+
+    /**
+     * @dev Function to change the security multisig wallet. Can only be changed from DAO multisig.
+     */
+    function setSecurityWallet(address _securityWallet) external onlyOwner {
+        require(_securityWallet != address(0), "zero address");
+        securityWallet = _securityWallet;
+    }
+
+    /**
+     * @dev Modifier to check the caller is the owner address or the operationsWallet multisig.
+     */
+    modifier onlyOperations() {
+        require(msg.sender == operationsWallet || msg.sender == owner(), "!operations");
+        _;
+    }
+
+    /**
+     * @dev Modifier to check the caller is the owner address, the operationsWallet or the securityWallet multisig.
+     */
+    modifier onlySecurity() {
+        require(msg.sender == operationsWallet || msg.sender == owner() || msg.sender == securityWallet, "!security");
+        _;
+    }
+
+    /**
      * @dev Modifier to check if the vault exists.
      */
     modifier vaultExists(uint256 pid) {
@@ -116,7 +152,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     /**
      * @dev Function to add a new vault configuration. Can only be called by the owner.
      */
-    function addVault(address _depositToken, address _strat) public onlyOwner {
+    function addVault(address _depositToken, address _strat) public onlyOperations {
         require(_strat != address(0), "!strat");
         require(_depositToken == IStrategy(_strat).depositToken(), "!depositToken");
         vaultInfo.push(
@@ -138,7 +174,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     /**
      * @dev Function to activate vault rewards. Can only be called by the owner.
      */
-    function activateVaultRewards(uint256 _vid, uint256 _allocPoint) public onlyOwner vaultExists(_vid) {
+    function activateVaultRewards(uint256 _vid, uint256 _allocPoint) public onlyOperations vaultExists(_vid) {
         VaultInfo storage vault = vaultInfo[_vid];
         require(!vault.rewardsActive, "active");
         require(_allocPoint > 0, "!allocpoint");
@@ -163,7 +199,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     /**
      * @dev Function to modify vault rewards. Can only be called by the owner.
      */
-    function modifyVaultRewards(uint256 _vid, uint256 _allocPoint) public onlyOwner vaultExists(_vid) {
+    function modifyVaultRewards(uint256 _vid, uint256 _allocPoint) public onlyOperations vaultExists(_vid) {
         VaultInfo storage vault = vaultInfo[_vid];
         require(vault.rewardsActive, "!active");
         require(_allocPoint > 0, "!allocpoint");
@@ -179,7 +215,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     /**
      * @dev Function to deactivate vault rewards. Can only be called by the owner.
      */
-    function deactivateVaultRewards(uint256 _vid) public onlyOwner vaultExists(_vid) {
+    function deactivateVaultRewards(uint256 _vid) public onlyOperations vaultExists(_vid) {
         VaultInfo storage vault = vaultInfo[_vid];
         require(vault.rewardsActive, "!active");
 
@@ -210,7 +246,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
      * @dev It switches the active strat for the strat candidate. After upgrading, the
      * candidate implementation is set to the 0x0 address, and proposedTime to 0.
      */
-    function stratUpgrade(uint256 _vid, address _strat) external onlyOwner vaultExists(_vid) {
+    function stratUpgrade(uint256 _vid, address _strat) external onlyOperations vaultExists(_vid) {
         require(_strat != address(0), "!strat");
         VaultInfo storage vault = vaultInfo[_vid];
         require(vault.proposedStrat == _strat, "!strat");
@@ -231,7 +267,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     /**
      * @dev Function to pause vault strategy. Can only be called by the owner.
      */
-    function pauseVault(uint256 _vid) public onlyOwner vaultExists(_vid) {
+    function pauseVault(uint256 _vid) public onlySecurity vaultExists(_vid) {
         VaultInfo storage vault = vaultInfo[_vid];
         require(!vault.paused, "!active");
 
@@ -244,7 +280,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     /**
      * @dev Function to unpause vault strategy. Can only be called by the owner.
      */
-    function unpauseVault(uint256 _vid) public onlyOwner vaultExists(_vid) {
+    function unpauseVault(uint256 _vid) public onlyOperations vaultExists(_vid) {
         VaultInfo storage vault = vaultInfo[_vid];
         require(vault.paused, "!paused");
 
@@ -257,7 +293,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     /**
      * @dev Function to panic vault strategy. Can only be called by the owner.
      */
-    function panicVault(uint256 _vid) public onlyOwner vaultExists(_vid) {
+    function panicVault(uint256 _vid) public onlySecurity vaultExists(_vid) {
         VaultInfo storage vault = vaultInfo[_vid];
         require(!vault.paused, "!active");
 
@@ -270,7 +306,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     /**
      * @dev Function to retire vault strategy. Can only be called by the owner.
      */
-    function retireVault(uint256 _vid) public onlyOwner vaultExists(_vid) {
+    function retireVault(uint256 _vid) public onlyOperations vaultExists(_vid) {
         VaultInfo storage vault = vaultInfo[_vid];
         require(!vault.retired, "!active");
 
@@ -289,9 +325,6 @@ contract BalleMaster is Ownable, ReentrancyGuard {
      * @dev View function to calculate the reward multiplier over the given _from to _to block.
      */
     function getBlockMultiplier(uint256 _from, uint256 _to) public view returns (uint256) {
-        if (_to < _from) {
-            return 0;
-        }
         if (_to < startBlock) {
             return 0;
         }
@@ -401,7 +434,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
             }
         }
         if (_amount > 0 && !vault.paused && !vault.retired) {
-            vault.depositToken.safeTransferFrom(address(msg.sender), address(this), _amount);
+            vault.depositToken.safeTransferFrom(msg.sender, address(this), _amount);
             vault.depositToken.safeIncreaseAllowance(vault.strat, _amount);
             uint256 sharesAdded = IStrategy(vaultInfo[_vid].strat).deposit(msg.sender, _amount);
             uint256 sharesTotal = IStrategy(vault.strat).sharesTotal();
@@ -469,7 +502,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
             if (depositBal < depositRemoved) {
                 depositRemoved = depositBal;
             }
-            vault.depositToken.safeTransfer(address(msg.sender), depositRemoved);
+            vault.depositToken.safeTransfer(msg.sender, depositRemoved);
         }
         user.rewardDebt = (user.shares * vault.accBallePerShare) / 1e12;
 
@@ -510,7 +543,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         if (lpBal < amount) {
             amount = lpBal;
         }
-        vault.depositToken.safeTransfer(address(msg.sender), amount);
+        vault.depositToken.safeTransfer(msg.sender, amount);
 
         emit EmergencyWithdraw(msg.sender, _vid, amount);
     }
