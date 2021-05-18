@@ -80,15 +80,19 @@ describe('StratPancakeLpV1', () => {
     })
 
     it('should revert if not harvester address calls harvest()', async () => {
-      await expect(stratPancakeLpV1.connect(test).harvest()).to.be.revertedWith('!governance && !harvester')
+      await expect(stratPancakeLpV1.connect(test).harvest()).to.be.revertedWith('!harvester')
     })
 
-    it('should revert if not governance address calls setSettings()', async () => {
-      await expect(stratPancakeLpV1.connect(test).setSettings(0, 0, 0, 0, 0, 0)).to.be.revertedWith('!governance')
+    it('should revert if not operations address calls setSettings()', async () => {
+      await expect(stratPancakeLpV1.connect(test).setSettings(0, 0, 0, 0, 0, 0)).to.be.revertedWith('!operations')
     })
 
     it('should revert if not governance address calls setGovernance', async () => {
       await expect(stratPancakeLpV1.connect(test).setGovernance(ZERO_ADDRESS)).to.be.revertedWith('!governance')
+    })
+
+    it('should revert if not governance address calls setOperations', async () => {
+      await expect(stratPancakeLpV1.connect(test).setOperations(ZERO_ADDRESS)).to.be.revertedWith('!governance')
     })
 
     it('should revert if not governance address calls setRewards', async () => {
@@ -99,12 +103,12 @@ describe('StratPancakeLpV1', () => {
       await expect(stratPancakeLpV1.connect(test).setTreasury(ZERO_ADDRESS)).to.be.revertedWith('!governance')
     })
 
-    it('should revert if not governance address calls addHarvester', async () => {
-      await expect(stratPancakeLpV1.connect(test).addHarvester(ZERO_ADDRESS)).to.be.revertedWith('!governance')
+    it('should revert if not operations address calls addHarvester', async () => {
+      await expect(stratPancakeLpV1.connect(test).addHarvester(ZERO_ADDRESS)).to.be.revertedWith('!operations')
     })
 
-    it('should revert if not governance address calls removeHarvester', async () => {
-      await expect(stratPancakeLpV1.connect(test).removeHarvester(ZERO_ADDRESS)).to.be.revertedWith('!governance')
+    it('should revert if not operations address calls removeHarvester', async () => {
+      await expect(stratPancakeLpV1.connect(test).removeHarvester(ZERO_ADDRESS)).to.be.revertedWith('!operations')
     })
 
     it('should revert if not governance address calls inCaseTokensGetStuck', async () => {
@@ -142,7 +146,7 @@ describe('StratPancakeLpV1', () => {
     })
   })
 
-  describe('Test setRewards(), setTreasury() and setGovernance()', () => {
+  describe('Test setRewards(), setTreasury(), setOperations() and setGovernance()', () => {
     before('Deploy contracts', async () => {
       await deployments.fixture()
       stratPancakeLpV1 = await ethers.getContract('StratPancakeLpV1')
@@ -164,6 +168,15 @@ describe('StratPancakeLpV1', () => {
     it('should set new treasury address', async () => {
       await stratPancakeLpV1.connect(deployer).setTreasury(test.address)
       expect(await stratPancakeLpV1.treasury()).to.be.equal(test.address)
+    })
+
+    it('should revert if set zero address', async () => {
+      await expect(stratPancakeLpV1.connect(deployer).setOperations(ZERO_ADDRESS)).to.be.revertedWith('zero address')
+    })
+
+    it('should set new treasury address', async () => {
+      await stratPancakeLpV1.connect(deployer).setOperations(test.address)
+      expect(await stratPancakeLpV1.operations()).to.be.equal(test.address)
     })
 
     it('should revert if set zero address', async () => {
@@ -200,7 +213,7 @@ describe('StratPancakeLpV1', () => {
     it('should remove harvester', async () => {
       await expect(stratPancakeLpV1.connect(deployer).removeHarvester(test.address))
       expect(await stratPancakeLpV1.harvesters(test.address)).to.be.equal(false)
-      await expect(stratPancakeLpV1.connect(test).harvest()).to.be.revertedWith('!governance && !harvester')
+      await expect(stratPancakeLpV1.connect(test).harvest()).to.be.revertedWith('!harvester')
     })
   })
 

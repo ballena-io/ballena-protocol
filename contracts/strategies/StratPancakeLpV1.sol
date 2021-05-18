@@ -31,8 +31,10 @@ contract StratPancakeLpV1 is Ownable {
     // Address to send treasury fee.
     address public treasury;
 
-    // Governance address
+    // Governance multisig address
     address public governance;
+    // Operations multisig address
+    address public operations;
     // Harvest addresses
     mapping(address => bool) public harvesters;
 
@@ -120,6 +122,7 @@ contract StratPancakeLpV1 is Ownable {
         cakeToToken0Path = _cakeToToken0Path;
         cakeToToken1Path = _cakeToToken1Path;
 
+        // The owner of the strategy contract is the BalleMaster contract
         transferOwnership(_addresses[6]);
     }
 
@@ -132,10 +135,18 @@ contract StratPancakeLpV1 is Ownable {
     }
 
     /**
-     * @dev Modifier to check the caller is the governance address or an authorized harvester.
+     * @dev Modifier to check the caller is the governance or the operations address.
+     */
+    modifier onlyOperations() {
+        require(msg.sender == operations || msg.sender == governance, "!operations");
+        _;
+    }
+
+    /**
+     * @dev Modifier to check the caller is the governance or operations address or an authorized harvester.
      */
     modifier onlyHarvester() {
-        require(msg.sender == governance || harvesters[msg.sender], "!governance && !harvester");
+        require(harvesters[msg.sender] || msg.sender == operations || msg.sender == governance, "!harvester");
         _;
     }
 
@@ -350,7 +361,7 @@ contract StratPancakeLpV1 is Ownable {
         uint256 _treasuryFeeFactor,
         uint256 _slippage,
         uint256 _minEarnedToReinvest
-    ) public onlyGovernance {
+    ) public onlyOperations {
         require(_entranceFee >= ENTRANCE_FEE_LL, "!entranceFeeLL");
         require(_entranceFee <= ENTRANCE_FEE_MAX, "!entranceFeeMax");
         entranceFee = _entranceFee;
@@ -389,6 +400,14 @@ contract StratPancakeLpV1 is Ownable {
     }
 
     /**
+     * @dev Function to change the operations address.
+     */
+    function setOperations(address _operations) public onlyGovernance {
+        require(_operations != address(0), "zero address");
+        operations = _operations;
+    }
+
+    /**
      * @dev Function to change the rewards address.
      */
     function setRewards(address _rewards) public onlyGovernance {
@@ -405,17 +424,17 @@ contract StratPancakeLpV1 is Ownable {
     }
 
     /**
-     * @dev Add a harvester address from Governance GNOSIS Safe.
+     * @dev Add a harvester address from Operations GNOSIS Safe.
      */
-    function addHarvester(address _harvester) external onlyGovernance {
+    function addHarvester(address _harvester) external onlyOperations {
         require(_harvester != address(0), "zero address");
         harvesters[_harvester] = true;
     }
 
     /**
-     * @dev Remove a harvester address from Governance GNOSIS Safe.
+     * @dev Remove a harvester address from Operations GNOSIS Safe.
      */
-    function removeHarvester(address _harvester) external onlyGovernance {
+    function removeHarvester(address _harvester) external onlyOperations {
         require(_harvester != address(0), "zero address");
         harvesters[_harvester] = false;
     }
