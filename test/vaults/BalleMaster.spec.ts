@@ -36,14 +36,14 @@ describe('BalleMaster', () => {
         balle.address,
         BigNumber.from('228310502283105'),
         expandTo18Decimals(24000),
-        86400000,
+        86400,
       )
       await balleMaster.deployed()
 
       expect(await balleMaster.balle()).to.be.equal(balle.address)
       expect(await balleMaster.ballePerBlock()).to.be.equal(BigNumber.from('228310502283105'))
       expect(await balleMaster.balleTotalRewards()).to.be.equal(expandTo18Decimals(24000))
-      expect(await balleMaster.approvalDelay()).to.be.equal(86400000)
+      expect(await balleMaster.approvalDelay()).to.be.equal(86400)
     })
   })
 
@@ -69,10 +69,8 @@ describe('BalleMaster', () => {
       )
     })
 
-    it('should revert if anyone (not owner) try to strategy upgrade', async () => {
-      await expect(balleMaster.connect(test).stratUpgrade(0, localStrategy1.address)).to.be.revertedWith(
-        'Ownable: caller is not the owner',
-      )
+    it('should revert if anyone (not operations wallet or owner) try to strategy upgrade', async () => {
+      await expect(balleMaster.connect(test).stratUpgrade(0, localStrategy1.address)).to.be.revertedWith('!operations')
     })
 
     it('should revert if try to strategy upgrade non existent vault', async () => {
@@ -155,9 +153,9 @@ describe('BalleMaster', () => {
       tokenA = await ethers.getContract('TokenA')
     })
 
-    it('should revert if anyone (not owner) try to add new vault', async () => {
+    it('should revert if anyone (not owner or operations wallet) try to add new vault', async () => {
       await expect(balleMaster.connect(test).addVault(testLP.address, testStrategy.address)).to.be.revertedWith(
-        'Ownable: caller is not the owner',
+        '!operations',
       )
     })
 
@@ -179,10 +177,8 @@ describe('BalleMaster', () => {
       expect(await balleMaster.vaultLength()).to.be.equal(1)
     })
 
-    it('should revert if anyone (not owner) try to activate vault #0 rewards', async () => {
-      await expect(balleMaster.connect(test).activateVaultRewards(0, 100)).to.be.revertedWith(
-        'Ownable: caller is not the owner',
-      )
+    it('should revert if anyone (not owner or operations wallet) try to activate vault #0 rewards', async () => {
+      await expect(balleMaster.connect(test).activateVaultRewards(0, 100)).to.be.revertedWith('!operations')
     })
 
     it('should revert if try to activate rewards on non existent vault', async () => {
@@ -225,10 +221,8 @@ describe('BalleMaster', () => {
       expect(await balleMaster.totalAllocPoint()).to.be.equal(300)
     })
 
-    it('should revert if anyone (not owner) try to modify vault #1 rewards', async () => {
-      await expect(balleMaster.connect(test).modifyVaultRewards(1, 100)).to.be.revertedWith(
-        'Ownable: caller is not the owner',
-      )
+    it('should revert if anyone (not owner or operations wallet) try to modify vault #1 rewards', async () => {
+      await expect(balleMaster.connect(test).modifyVaultRewards(1, 100)).to.be.revertedWith('!operations')
     })
 
     it('should revert if try to modify rewards on non existent vault', async () => {
@@ -249,10 +243,8 @@ describe('BalleMaster', () => {
       expect(await balleMaster.totalAllocPoint()).to.be.equal(600)
     })
 
-    it('should revert if anyone (not owner) try to deactivate vault #1 rewards', async () => {
-      await expect(balleMaster.connect(test).deactivateVaultRewards(1)).to.be.revertedWith(
-        'Ownable: caller is not the owner',
-      )
+    it('should revert if anyone (not owner or operations wallet) try to deactivate vault #1 rewards', async () => {
+      await expect(balleMaster.connect(test).deactivateVaultRewards(1)).to.be.revertedWith('!operations')
     })
 
     it('should revert if try to deactivate rewards on non existent vault', async () => {
@@ -274,23 +266,22 @@ describe('BalleMaster', () => {
     })
 
     it('should check getBlockMultiplier()', async () => {
-      expect(await balleMaster.getBlockMultiplier(endBlock, startBlock)).to.be.equal(0)
       expect(await balleMaster.getBlockMultiplier(startBlock - 1, startBlock - 1)).to.be.equal(0)
       expect(await balleMaster.getBlockMultiplier(endBlock + 1, endBlock + 2)).to.be.equal(0)
       expect(await balleMaster.getBlockMultiplier(0, startBlock + 3)).to.be.equal(3)
       expect(await balleMaster.getBlockMultiplier(startBlock, startBlock + 5)).to.be.equal(5)
     })
 
-    it('should revert if anyone (not owner) try to pause vault', async () => {
-      await expect(balleMaster.connect(test).pauseVault(1)).to.be.revertedWith('Ownable: caller is not the owner')
+    it('should revert if anyone (not owner, operations or security wallet) try to pause vault', async () => {
+      await expect(balleMaster.connect(test).pauseVault(1)).to.be.revertedWith('!security')
     })
 
     it('should revert if try to pause non existent vault', async () => {
       await expect(balleMaster.connect(deployer).pauseVault(99)).to.be.revertedWith('!vault')
     })
 
-    it('should revert if anyone (not owner) try to unpause vault', async () => {
-      await expect(balleMaster.connect(test).unpauseVault(1)).to.be.revertedWith('Ownable: caller is not the owner')
+    it('should revert if anyone (not owner or operations wallet) try to unpause vault', async () => {
+      await expect(balleMaster.connect(test).unpauseVault(1)).to.be.revertedWith('!operations')
     })
 
     it('should revert if try to unpause non existent vault', async () => {
@@ -309,8 +300,8 @@ describe('BalleMaster', () => {
       await expect(balleMaster.connect(deployer).pauseVault(1)).to.be.revertedWith('!active')
     })
 
-    it('should revert if anyone (not owner) try to panic vault', async () => {
-      await expect(balleMaster.connect(test).panicVault(1)).to.be.revertedWith('Ownable: caller is not the owner')
+    it('should revert if anyone (not owner, operations or security) try to panic vault', async () => {
+      await expect(balleMaster.connect(test).panicVault(1)).to.be.revertedWith('!security')
     })
 
     it('should revert if try to panic non existent vault', async () => {
@@ -333,8 +324,8 @@ describe('BalleMaster', () => {
       await expect(balleMaster.connect(deployer).unpauseVault(1)).to.emit(balleMaster, 'UnpauseVault').withArgs(1)
     })
 
-    it('should revert if anyone (not owner) try to retire vault', async () => {
-      await expect(balleMaster.connect(test).retireVault(1)).to.be.revertedWith('Ownable: caller is not the owner')
+    it('should revert if anyone (not owner or operations) try to retire vault', async () => {
+      await expect(balleMaster.connect(test).retireVault(1)).to.be.revertedWith('!operations')
     })
 
     it('should revert if try to retire non existent vault', async () => {
@@ -958,6 +949,43 @@ describe('BalleMaster', () => {
       await balleMaster.connect(deployer).inCaseTokensGetStuck(testLP.address, expandTo18Decimals(100))
       expect(await testLP.balanceOf(balleMaster.address)).to.be.equal(expandTo18Decimals(0))
       expect(await testLP.balanceOf(deployer.address)).to.be.equal(expandTo18Decimals(500))
+    })
+  })
+
+  describe('Set wallet addresses', () => {
+    before('Deploy contracts', async () => {
+      await deployments.fixture()
+      balleMaster = await ethers.getContract('BalleMaster')
+    })
+
+    it('should revert if anyone (not owner) try to change operations wallet', async () => {
+      await expect(balleMaster.connect(test).setOperationsWallet(ZERO_ADDRESS)).to.be.revertedWith(
+        'Ownable: caller is not the owner',
+      )
+    })
+
+    it('should revert if try to change operations wallet to zero address', async () => {
+      await expect(balleMaster.connect(deployer).setOperationsWallet(ZERO_ADDRESS)).to.be.revertedWith('zero address')
+    })
+
+    it('should set operations wallet', async () => {
+      await balleMaster.connect(deployer).setOperationsWallet(test.address)
+      expect(await balleMaster.operationsWallet()).to.be.equal(test.address)
+    })
+
+    it('should revert if anyone (not owner) try to change security wallet', async () => {
+      await expect(balleMaster.connect(test).setSecurityWallet(ZERO_ADDRESS)).to.be.revertedWith(
+        'Ownable: caller is not the owner',
+      )
+    })
+
+    it('should revert if try to change security wallet to zero address', async () => {
+      await expect(balleMaster.connect(deployer).setSecurityWallet(ZERO_ADDRESS)).to.be.revertedWith('zero address')
+    })
+
+    it('should set security wallet', async () => {
+      await balleMaster.connect(deployer).setSecurityWallet(test.address)
+      expect(await balleMaster.securityWallet()).to.be.equal(test.address)
     })
   })
 })
