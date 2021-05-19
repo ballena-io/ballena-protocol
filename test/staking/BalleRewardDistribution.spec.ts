@@ -102,7 +102,7 @@ describe('BalleRewardDistribution', () => {
     })
 
     it('should revert if not owner address calls distributeReward()', async () => {
-      await expect(rewardDistribution.connect(test).distributeReward(0, 0, 0)).to.be.revertedWith(
+      await expect(rewardDistribution.connect(test).distributeReward(0, 0, 0, 0)).to.be.revertedWith(
         'Ownable: caller is not the owner',
       )
     })
@@ -199,30 +199,32 @@ describe('BalleRewardDistribution', () => {
     })
 
     it('should revert if duration < min duration', async () => {
-      await expect(rewardDistribution.connect(deployer).distributeReward(100, 0, 0)).to.be.revertedWith('!min duration')
+      await expect(rewardDistribution.connect(deployer).distributeReward(100, 0, 0, 0)).to.be.revertedWith(
+        '!min duration',
+      )
     })
 
     it('should revert if duration > max duration', async () => {
       await expect(
-        rewardDistribution.connect(deployer).distributeReward(7 * 24 * 60 * 60 + 1, 0, 0),
+        rewardDistribution.connect(deployer).distributeReward(7 * 24 * 60 * 60 + 1, 0, 0, 0),
       ).to.be.revertedWith('!max duration')
     })
 
     it('should revert if zero base reward amount', async () => {
       await expect(
-        rewardDistribution.connect(deployer).distributeReward(7 * 24 * 60 * 60, expandTo18Decimals(0), 0),
+        rewardDistribution.connect(deployer).distributeReward(7 * 24 * 60 * 60, expandTo18Decimals(0), 0, 0),
       ).to.be.revertedWith('!baseRewardAmount')
     })
 
-    it('should revert if zero multiplier', async () => {
+    it('should revert if low multiplier', async () => {
       await expect(
-        rewardDistribution.connect(deployer).distributeReward(7 * 24 * 60 * 60, expandTo18Decimals(10), 10),
+        rewardDistribution.connect(deployer).distributeReward(7 * 24 * 60 * 60, expandTo18Decimals(10), 10, 0),
       ).to.be.revertedWith('!multiplier')
     })
 
     it('should revert if stakingPool address not set', async () => {
       await expect(
-        rewardDistribution.connect(deployer).distributeReward(7 * 24 * 60 * 60, expandTo18Decimals(1), 1000),
+        rewardDistribution.connect(deployer).distributeReward(7 * 24 * 60 * 60, expandTo18Decimals(1), 1000, 0),
       ).to.be.revertedWith('!stakingPool')
     })
 
@@ -231,7 +233,7 @@ describe('BalleRewardDistribution', () => {
       expect(await rewardDistribution.stakingPool()).to.be.equal(stakingPool.address)
 
       await expect(
-        rewardDistribution.connect(deployer).distributeReward(7 * 24 * 60 * 60, expandTo18Decimals(1), 1000),
+        rewardDistribution.connect(deployer).distributeReward(7 * 24 * 60 * 60, expandTo18Decimals(1), 1000, 0),
       ).to.be.revertedWith('!rewarder')
     })
 
@@ -240,12 +242,14 @@ describe('BalleRewardDistribution', () => {
       expect(await rewardDistribution.rewarder()).to.be.equal(rewarder.address)
 
       await expect(
-        rewardDistribution.connect(deployer).distributeReward(7 * 24 * 60 * 60, expandTo18Decimals(100), 1000),
+        rewardDistribution.connect(deployer).distributeReward(7 * 24 * 60 * 60, expandTo18Decimals(100), 1000, 9999),
       ).to.be.revertedWith('!rewardFundBalance')
     })
 
     it('should distributeReward', async () => {
-      await expect(rewardDistribution.connect(deployer).distributeReward(7 * 24 * 60 * 60, expandTo18Decimals(1), 1000))
+      await expect(
+        rewardDistribution.connect(deployer).distributeReward(7 * 24 * 60 * 60, expandTo18Decimals(1), 1000, 9999),
+      )
         .to.emit(rewardDistribution, 'BalleRewardDistributed')
         .withArgs(
           stakingPool.address,
@@ -257,6 +261,8 @@ describe('BalleRewardDistribution', () => {
         )
 
       // check values
+      expect(await stakingPool.rewardStartBlock()).to.be.equal(9999)
+      expect(await stakingPool.extraRewardMultiplier()).to.be.equal(1000)
       expect(await balle.balanceOf(rewardFund.address)).to.be.equal(expandTo18Decimals(4))
       expect(await balle.balanceOf(rewarder.address)).to.be.equal(expandTo18Decimals(10))
     })

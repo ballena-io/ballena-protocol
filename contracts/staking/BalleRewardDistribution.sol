@@ -104,7 +104,8 @@ contract BalleRewardDistribution is Ownable {
     function distributeReward(
         uint256 _duration,
         uint256 _baseRewardAmount,
-        uint256 _multiplier
+        uint256 _multiplier,
+        uint256 _rewardStartBlock
     ) external onlyOwner {
         require(_duration >= 24 hours, "!min duration");
         require(_duration <= 7 days, "!max duration");
@@ -146,7 +147,8 @@ contract BalleRewardDistribution is Ownable {
         IBalleStakingPool(stakingPool).addReward(
             _baseRewardAmount + extraRewardAmount - extraRewardFee,
             _duration / 3,
-            _multiplier
+            _multiplier,
+            _rewardStartBlock
         );
 
         emit BalleRewardDistributed(
