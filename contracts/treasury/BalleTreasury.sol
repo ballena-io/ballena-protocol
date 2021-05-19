@@ -6,6 +6,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+/**
+ * @dev Implementation of the Treasury for BALLE.
+ * This contract will hold all treasury tokens.
+ * The owner of the contract is the Governance Gnosis Safe multisig.
+ */
 contract BalleTreasury is Ownable {
     using SafeERC20 for IERC20;
 

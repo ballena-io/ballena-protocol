@@ -6,6 +6,12 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+/**
+ * @dev Implementation of the BALLE Rewarder for the staking pool.
+ * This contract will send BALLE rewards to users.
+ * It stores the BALLE being distributed in the current period from the staking pool.
+ * The owner of the contract is the Governance Gnosis Safe multisig.
+ */
 contract BalleRewarder is Ownable {
     using SafeERC20 for IERC20;
 
@@ -14,9 +20,6 @@ contract BalleRewarder is Ownable {
     // The staking pool contract.
     address public stakingPool;
 
-    /**
-     * @dev Stores BALLE funds for the current period and sends them to users.
-     */
     constructor(address _balle, address _stakingPool) {
         require(_balle != address(0), "!balle");
         require(_stakingPool != address(0), "!stakingPool");
@@ -59,17 +62,17 @@ contract BalleRewarder is Ownable {
     }
 
     /**
-     * @dev Function to use from Governance GNOSIS Safe only in case tokens get stuck. EMERGENCY ONLY.
+     * @dev Function to use from Governance Gnosis Safe multisig only in case tokens get stuck.
+     * This is to be used if someone, for example, sends tokens to the contract by mistake.
+     * There is no guarantee governance will vote to return these.
      */
     function inCaseTokensGetStuck(
         address _token,
         uint256 _amount,
         address _to
-    ) external onlyOwner {
-        require(_token != address(0), "zero token address");
-        require(_to != address(0), "zero to address");
-        require(_amount > 0, "!amount");
-        require(_token != balle, "!safe");
+    ) public onlyOwner {
+        require(_to != address(0), "zero address");
+        require(_token != address(balle), "!safe");
 
         IERC20(_token).safeTransfer(_to, _amount);
     }

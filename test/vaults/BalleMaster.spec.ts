@@ -929,13 +929,19 @@ describe('BalleMaster', () => {
 
     it('should revert if anyone (not owner) try to transfer stuck tokens', async () => {
       await expect(
-        balleMaster.connect(test).inCaseTokensGetStuck(testLP.address, expandTo18Decimals(100)),
+        balleMaster.connect(test).inCaseTokensGetStuck(testLP.address, expandTo18Decimals(100), ZERO_ADDRESS),
       ).to.be.revertedWith('Ownable: caller is not the owner')
     })
 
-    it('should revert if try to transfer stuck BALLE tokens', async () => {
+    it('should revert if try to transfer with no to address', async () => {
       await expect(
-        balleMaster.connect(deployer).inCaseTokensGetStuck(balle.address, expandTo18Decimals(100)),
+        balleMaster.connect(deployer).inCaseTokensGetStuck(testLP.address, expandTo18Decimals(100), ZERO_ADDRESS),
+      ).to.be.revertedWith('zero address')
+    })
+
+    it('should revert if try to transfer BALLE tokens', async () => {
+      await expect(
+        balleMaster.connect(deployer).inCaseTokensGetStuck(balle.address, expandTo18Decimals(100), test.address),
       ).to.be.revertedWith('!safe')
     })
 
@@ -943,12 +949,12 @@ describe('BalleMaster', () => {
       // Send tokens to contract.
       await testLP.connect(deployer).transfer(balleMaster.address, expandTo18Decimals(100))
       expect(await testLP.balanceOf(balleMaster.address)).to.be.equal(expandTo18Decimals(100))
-      expect(await testLP.balanceOf(deployer.address)).to.be.equal(expandTo18Decimals(400))
+      expect(await testLP.balanceOf(test.address)).to.be.equal(expandTo18Decimals(200))
 
       // Recover stuck tokens.
-      await balleMaster.connect(deployer).inCaseTokensGetStuck(testLP.address, expandTo18Decimals(100))
+      await balleMaster.connect(deployer).inCaseTokensGetStuck(testLP.address, expandTo18Decimals(100), test.address)
       expect(await testLP.balanceOf(balleMaster.address)).to.be.equal(expandTo18Decimals(0))
-      expect(await testLP.balanceOf(deployer.address)).to.be.equal(expandTo18Decimals(500))
+      expect(await testLP.balanceOf(test.address)).to.be.equal(expandTo18Decimals(300))
     })
   })
 
@@ -959,33 +965,33 @@ describe('BalleMaster', () => {
     })
 
     it('should revert if anyone (not owner) try to change operations wallet', async () => {
-      await expect(balleMaster.connect(test).setOperationsWallet(ZERO_ADDRESS)).to.be.revertedWith(
+      await expect(balleMaster.connect(test).setOperations(ZERO_ADDRESS)).to.be.revertedWith(
         'Ownable: caller is not the owner',
       )
     })
 
     it('should revert if try to change operations wallet to zero address', async () => {
-      await expect(balleMaster.connect(deployer).setOperationsWallet(ZERO_ADDRESS)).to.be.revertedWith('zero address')
+      await expect(balleMaster.connect(deployer).setOperations(ZERO_ADDRESS)).to.be.revertedWith('zero address')
     })
 
     it('should set operations wallet', async () => {
-      await balleMaster.connect(deployer).setOperationsWallet(test.address)
-      expect(await balleMaster.operationsWallet()).to.be.equal(test.address)
+      await balleMaster.connect(deployer).setOperations(test.address)
+      expect(await balleMaster.operations()).to.be.equal(test.address)
     })
 
     it('should revert if anyone (not owner) try to change security wallet', async () => {
-      await expect(balleMaster.connect(test).setSecurityWallet(ZERO_ADDRESS)).to.be.revertedWith(
+      await expect(balleMaster.connect(test).setSecurity(ZERO_ADDRESS)).to.be.revertedWith(
         'Ownable: caller is not the owner',
       )
     })
 
     it('should revert if try to change security wallet to zero address', async () => {
-      await expect(balleMaster.connect(deployer).setSecurityWallet(ZERO_ADDRESS)).to.be.revertedWith('zero address')
+      await expect(balleMaster.connect(deployer).setSecurity(ZERO_ADDRESS)).to.be.revertedWith('zero address')
     })
 
     it('should set security wallet', async () => {
-      await balleMaster.connect(deployer).setSecurityWallet(test.address)
-      expect(await balleMaster.securityWallet()).to.be.equal(test.address)
+      await balleMaster.connect(deployer).setSecurity(test.address)
+      expect(await balleMaster.security()).to.be.equal(test.address)
     })
   })
 })

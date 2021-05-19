@@ -13,16 +13,21 @@ describe('BALLE Migration', () => {
   let balleMigration: Contract
   let deployer: SignerWithAddress, test: SignerWithAddress
 
-  before('Load contract factory and deploy contracts', async () => {
+  before('Load contract factory', async () => {
     await deployments.fixture()
-    balle = await ethers.getContract('BALLE')
-    balleV2 = await ethers.getContract('BALLEv2')
 
     BalleMigration = await ethers.getContractFactory('BalleMigration')
     ;({ deployer, test } = await ethers.getNamedSigners())
   })
 
   describe('Test constructor', () => {
+    before('Deploy contracts', async () => {
+      await deployments.fixture()
+      balle = await ethers.getContract('BALLE')
+      balleV2 = await ethers.getContract('BALLEv2')
+      balleMigration = await ethers.getContract('BalleMigration')
+    })
+
     it('should fail on zero BALLE address', async () => {
       await expect(BalleMigration.deploy(ZERO_ADDRESS, balleV2.address)).to.be.revertedWith('BALLE address not valid')
     })
@@ -90,6 +95,72 @@ describe('BALLE Migration', () => {
         mineBlock()
       }
       await expect(balleMigration.connect(test).migrate()).to.be.revertedWith('too late')
+    })
+  })
+
+  describe('Contract governance', () => {
+    before('Deploy contracts', async () => {
+      await deployments.fixture()
+      balleMigration = await ethers.getContract('BalleMigration')
+    })
+
+    it('should set initial governance to contract creator', async () => {
+      expect(await balleMigration.governance()).to.be.equal(deployer.address)
+    })
+
+    it('should not allow non governance address to set new governance', async () => {
+      await expect(balleMigration.connect(test).setGovernance(test.address)).to.be.revertedWith('!governance')
+    })
+
+    it('should allow governance to set new governance', async () => {
+      await expect(balleMigration.setGovernance(test.address))
+        .to.emit(balleMigration, 'SetGovernance')
+        .withArgs(test.address)
+    })
+
+    it('should not allow zero address to be set as governance', async () => {
+      await expect(balleMigration.connect(test).setGovernance(ZERO_ADDRESS)).to.be.revertedWith('zero address')
+    })
+  })
+
+  describe('Contract special functions', () => {
+    before('Deploy contracts', async () => {
+      await deployments.fixture()
+      balle = await ethers.getContract('BALLE')
+      balleV2 = await ethers.getContract('BALLEv2')
+      balleMigration = await ethers.getContract('BalleMigration')
+    })
+
+    it('should only allow governance address recover stuck tokens', async () => {
+      await expect(
+        balleMigration.connect(test).inCaseTokensGetStuck(balleV2.address, expandTo18Decimals(50), test.address),
+      ).to.be.revertedWith('!governance')
+    })
+
+    it('should fail if send to address zero', async () => {
+      await expect(
+        balleMigration.inCaseTokensGetStuck(balleV2.address, expandTo18Decimals(50), ZERO_ADDRESS),
+      ).to.be.revertedWith('zero address')
+    })
+
+    it('should fail if try to send out BALLE tokens', async () => {
+      await expect(
+        balleMigration.inCaseTokensGetStuck(balle.address, expandTo18Decimals(50), test.address),
+      ).to.be.revertedWith('!safe')
+    })
+
+    it('should allow recover stuck tokens', async () => {
+      // setup
+      await expect(balleV2.mint(balleMigration.address, expandTo18Decimals(50)))
+        .to.emit(balleV2, 'Transfer')
+        .withArgs(ZERO_ADDRESS, balleMigration.address, expandTo18Decimals(50))
+      expect(await balleV2.balanceOf(balleMigration.address)).to.be.equal(expandTo18Decimals(50))
+
+      await expect(balleMigration.inCaseTokensGetStuck(balleV2.address, expandTo18Decimals(50), test.address))
+        .to.emit(balleV2, 'Transfer')
+        .withArgs(balleMigration.address, test.address, expandTo18Decimals(50))
+      expect(await balleV2.balanceOf(balleMigration.address)).to.be.equal(0)
+      expect(await balleV2.balanceOf(test.address)).to.be.equal(expandTo18Decimals(50))
     })
   })
 })

@@ -102,9 +102,7 @@ describe('BALLEv2 Token', () => {
     })
 
     it('should not allow mint tokens after minter removed', async () => {
-      await expect(balle.connect(test).mint(test2.address, expandTo18Decimals(100))).to.be.revertedWith(
-        '!governance && !minter',
-      )
+      await expect(balle.connect(test).mint(test2.address, expandTo18Decimals(100))).to.be.revertedWith('!minter')
     })
   })
 
@@ -155,26 +153,26 @@ describe('BALLEv2 Token', () => {
       tokenA = await ethers.getContract('TokenA')
     })
 
-    it('should only allow governance address recover unsupported tokens', async () => {
+    it('should only allow governance address recover stuck tokens', async () => {
       await expect(
-        balle.connect(test).governanceRecoverUnsupported(tokenA.address, test.address, expandTo18Decimals(50)),
+        balle.connect(test).inCaseTokensGetStuck(tokenA.address, expandTo18Decimals(50), test.address),
       ).to.be.revertedWith('!governance')
     })
 
     it('should fail if send to address zero', async () => {
-      await expect(
-        balle.governanceRecoverUnsupported(tokenA.address, ZERO_ADDRESS, expandTo18Decimals(50)),
-      ).to.be.revertedWith('zero address')
+      await expect(balle.inCaseTokensGetStuck(tokenA.address, expandTo18Decimals(50), ZERO_ADDRESS)).to.be.revertedWith(
+        'zero address',
+      )
     })
 
-    it('should allow recover unsupported tokens', async () => {
+    it('should allow recover stuck tokens', async () => {
       // setup
       await expect(tokenA.mint(balle.address, expandTo18Decimals(50)))
         .to.emit(tokenA, 'Transfer')
         .withArgs(ZERO_ADDRESS, balle.address, expandTo18Decimals(50))
       expect(await tokenA.balanceOf(balle.address)).to.be.equal(expandTo18Decimals(50))
 
-      await expect(balle.governanceRecoverUnsupported(tokenA.address, test.address, expandTo18Decimals(50)))
+      await expect(balle.inCaseTokensGetStuck(tokenA.address, expandTo18Decimals(50), test.address))
         .to.emit(tokenA, 'Transfer')
         .withArgs(balle.address, test.address, expandTo18Decimals(50))
       expect(await tokenA.balanceOf(balle.address)).to.be.equal(0)

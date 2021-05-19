@@ -6,6 +6,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+/**
+ * @dev Implementation of the BALLE Reward Fund for the staking pool.
+ * This contract will store BALLE from fees to be rewarded to BALLE holders via the staking pool.
+ * The owner of the contract is the Governance Gnosis Safe multisig.
+ */
 contract BalleRewardFund is Ownable {
     using SafeERC20 for IERC20;
 
@@ -14,9 +19,6 @@ contract BalleRewardFund is Ownable {
     // The reward distribution contract.
     address public rewardDistribution;
 
-    /**
-     * @dev Store of funds to be rewarded by BALLE staking pool.
-     */
     constructor(address _balle) {
         require(_balle != address(0), "!balle");
 
@@ -24,7 +26,7 @@ contract BalleRewardFund is Ownable {
     }
 
     /**
-     * @dev Modifier to check the caller is the owner address or the rewardDistribution.
+     * @dev Modifier to check the caller is the Governance Gnosis Safe multisig or the rewardDistribution address.
      */
     modifier onlyRewardDistribution() {
         require(msg.sender == owner() || msg.sender == rewardDistribution, "!rewardDistribution");
@@ -57,17 +59,17 @@ contract BalleRewardFund is Ownable {
     }
 
     /**
-     * @dev Function to use from Governance GNOSIS Safe only in case tokens get stuck. EMERGENCY ONLY.
+     * @dev Function to use from Governance Gnosis Safe multisig only in case tokens get stuck.
+     * This is to be used if someone, for example, sends tokens to the contract by mistake.
+     * There is no guarantee governance will vote to return these.
      */
     function inCaseTokensGetStuck(
         address _token,
         uint256 _amount,
         address _to
-    ) external onlyOwner {
-        require(_token != address(0), "zero token address");
-        require(_to != address(0), "zero to address");
-        require(_amount > 0, "!amount");
-        require(_token != balle, "!safe");
+    ) public onlyOwner {
+        require(_to != address(0), "zero address");
+        require(_token != address(balle), "!safe");
 
         IERC20(_token).safeTransfer(_to, _amount);
     }

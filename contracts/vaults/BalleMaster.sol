@@ -11,9 +11,8 @@ import "../interfaces/IStrategy.sol";
 
 /**
  * @dev Implementation of the Master of BALLE.
- * This contract will take care of all rewards calculations and distribution of BALLE tokens in vaults.
- * It's ownable and the owner is the only who can manage the active vaults and it's parameters for rewards distribution.
- * The ownership will be transferred to the Governance GNOSIS Safe.
+ * This contract will take care of all reward calculations and distribution of BALLE tokens in vaults.
+ * The owner of the contract is the Governance Gnosis Safe multisig.
  */
 contract BalleMaster is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -66,10 +65,10 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     uint256 public balleToMint = 0;
     // The minimum time it has to pass before a strat candidate can be approved.
     uint256 public immutable approvalDelay;
-    // Operations multisig wallet.
-    address public operationsWallet;
-    // Security multisig wallet.
-    address public securityWallet;
+    // Operations Gnosis Safe multisig.
+    address public operations;
+    // Security Gnosis Safe multisig.
+    address public security;
 
     // Info of each vault.
     VaultInfo[] public vaultInfo;
@@ -103,34 +102,34 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Function to change the operations multisig wallet. Can only be changed from DAO multisig.
+     * @dev Function to change the Operations Gnosis Safe multisig.
      */
-    function setOperationsWallet(address _operationsWallet) external onlyOwner {
-        require(_operationsWallet != address(0), "zero address");
-        operationsWallet = _operationsWallet;
+    function setOperations(address _operations) external onlyOwner {
+        require(_operations != address(0), "zero address");
+        operations = _operations;
     }
 
     /**
-     * @dev Function to change the security multisig wallet. Can only be changed from DAO multisig.
+     * @dev Function to change the Security Gnosis Safe multisig.
      */
-    function setSecurityWallet(address _securityWallet) external onlyOwner {
-        require(_securityWallet != address(0), "zero address");
-        securityWallet = _securityWallet;
+    function setSecurity(address _security) external onlyOwner {
+        require(_security != address(0), "zero address");
+        security = _security;
     }
 
     /**
-     * @dev Modifier to check the caller is the owner address or the operationsWallet multisig.
+     * @dev Modifier to check the caller is the Governance or Operations Gnosis Safe multisig.
      */
     modifier onlyOperations() {
-        require(msg.sender == operationsWallet || msg.sender == owner(), "!operations");
+        require(msg.sender == operations || msg.sender == owner(), "!operations");
         _;
     }
 
     /**
-     * @dev Modifier to check the caller is the owner address, the operationsWallet or the securityWallet multisig.
+     * @dev Modifier to check the caller is the Governance, Operations or Security Gnosis Safe multisig.
      */
     modifier onlySecurity() {
-        require(msg.sender == operationsWallet || msg.sender == owner() || msg.sender == securityWallet, "!security");
+        require(msg.sender == operations || msg.sender == owner() || msg.sender == security, "!security");
         _;
     }
 
@@ -150,7 +149,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Function to add a new vault configuration. Can only be called by the owner.
+     * @dev Function to add a new vault configuration.
      */
     function addVault(address _depositToken, address _strat) public onlyOperations {
         require(_strat != address(0), "!strat");
@@ -172,7 +171,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Function to activate vault rewards. Can only be called by the owner.
+     * @dev Function to activate vault rewards.
      */
     function activateVaultRewards(uint256 _vid, uint256 _allocPoint) public onlyOperations vaultExists(_vid) {
         VaultInfo storage vault = vaultInfo[_vid];
@@ -197,7 +196,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Function to modify vault rewards. Can only be called by the owner.
+     * @dev Function to modify vault rewards.
      */
     function modifyVaultRewards(uint256 _vid, uint256 _allocPoint) public onlyOperations vaultExists(_vid) {
         VaultInfo storage vault = vaultInfo[_vid];
@@ -213,7 +212,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Function to deactivate vault rewards. Can only be called by the owner.
+     * @dev Function to deactivate vault rewards.
      */
     function deactivateVaultRewards(uint256 _vid) public onlyOperations vaultExists(_vid) {
         VaultInfo storage vault = vaultInfo[_vid];
@@ -229,7 +228,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Function to propose a strategy upgrade. Can only be called by the owner.
+     * @dev Function to propose a strategy upgrade.
      */
     function proposeStratUpgrade(uint256 _vid, address _strat) public onlyOwner vaultExists(_vid) {
         require(_strat != address(0), "!strat");
@@ -265,7 +264,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Function to pause vault strategy. Can only be called by the owner.
+     * @dev Function to pause vault strategy.
      */
     function pauseVault(uint256 _vid) public onlySecurity vaultExists(_vid) {
         VaultInfo storage vault = vaultInfo[_vid];
@@ -278,7 +277,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Function to unpause vault strategy. Can only be called by the owner.
+     * @dev Function to unpause vault strategy.
      */
     function unpauseVault(uint256 _vid) public onlyOperations vaultExists(_vid) {
         VaultInfo storage vault = vaultInfo[_vid];
@@ -291,7 +290,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Function to panic vault strategy. Can only be called by the owner.
+     * @dev Function to panic vault strategy.
      */
     function panicVault(uint256 _vid) public onlySecurity vaultExists(_vid) {
         VaultInfo storage vault = vaultInfo[_vid];
@@ -304,7 +303,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Function to retire vault strategy. Can only be called by the owner.
+     * @dev Function to retire vault strategy.
      */
     function retireVault(uint256 _vid) public onlyOperations vaultExists(_vid) {
         VaultInfo storage vault = vaultInfo[_vid];
@@ -574,10 +573,18 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Function to use from Governance GNOSIS Safe only in case tokens get stuck. EMERGENCY ONLY.
+     * @dev Function to use from Governance Gnosis Safe multisig only in case tokens get stuck.
+     * This is to be used if someone, for example, sends tokens to the contract by mistake.
+     * There is no guarantee governance will vote to return these.
      */
-    function inCaseTokensGetStuck(address _token, uint256 _amount) public onlyOwner {
+    function inCaseTokensGetStuck(
+        address _token,
+        uint256 _amount,
+        address _to
+    ) public onlyOwner {
+        require(_to != address(0), "zero address");
         require(_token != address(balle), "!safe");
-        IERC20(_token).safeTransfer(msg.sender, _amount);
+
+        IERC20(_token).safeTransfer(_to, _amount);
     }
 }

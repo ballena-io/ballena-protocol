@@ -8,8 +8,11 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 contract BALLEv2 is ERC20 {
     using SafeERC20 for IERC20;
 
+    // Governance Gnosis Safe multisig address
     address public governance;
+    // Authorized minters
     mapping(address => bool) public minters;
+    // Max cap (40,000 BALLE)
     uint256 public immutable cap;
 
     event SetGovernance(address indexed addr);
@@ -27,7 +30,7 @@ contract BALLEv2 is ERC20 {
     }
 
     /**
-     * @dev Modifier to check the caller is the governance address
+     * @dev Modifier to check the caller is the Governance Gnosis Safe multisig address
      */
     modifier onlyGovernance() {
         require(msg.sender == governance, "!governance");
@@ -35,15 +38,15 @@ contract BALLEv2 is ERC20 {
     }
 
     /**
-     * @dev Modifier to check the caller is the governance address or an authorized minter
+     * @dev Modifier to check the caller is the Governance Gnosis Safe multisig address or an authorized minter
      */
     modifier onlyMinter() {
-        require(msg.sender == governance || minters[msg.sender], "!governance && !minter");
+        require(minters[msg.sender] || msg.sender == governance, "!minter");
         _;
     }
 
     /**
-     * @dev Set the new governance address
+     * @dev Set the new Governance Gnosis Safe multisig address
      */
     function setGovernance(address _governance) external onlyGovernance {
         require(_governance != address(0), "zero address");
@@ -79,15 +82,18 @@ contract BALLEv2 is ERC20 {
     }
 
     /**
-     * @dev Allows governance to take unsupported tokens out of the contract. This is just in case someone seriously messed up.
+     * @dev Function to use from Governance Gnosis Safe multisig only in case tokens get stuck.
+     * This is to be used if someone, for example, sends tokens to the contract by mistake.
      * There is no guarantee governance will vote to return these.
+     * No tokens are stored in this contract, so, it's safe to transfer any token.
      */
-    function governanceRecoverUnsupported(
-        IERC20 _token,
-        address _to,
-        uint256 _amount
-    ) external onlyGovernance {
+    function inCaseTokensGetStuck(
+        address _token,
+        uint256 _amount,
+        address _to
+    ) public onlyGovernance {
         require(_to != address(0), "zero address");
-        _token.safeTransfer(_to, _amount);
+
+        IERC20(_token).safeTransfer(_to, _amount);
     }
 }

@@ -10,6 +10,11 @@ import "../interfaces/IBalleMaster.sol";
 import "../interfaces/IBalleRewardFund.sol";
 import "../interfaces/IBalleStakingPool.sol";
 
+/**
+ * @dev Implementation of the BALLE Reward Distribution for the staking pool.
+ * This contract will distribute the rewards from Reward Fund to the Rewarder of the Staking.
+ * The owner of the contract is the Governance Gnosis Safe multisig.
+ */
 contract BalleRewardDistribution is Ownable {
     using SafeERC20 for IERC20;
 
@@ -41,9 +46,6 @@ contract BalleRewardDistribution is Ownable {
         uint256 multiplier
     );
 
-    /**
-     * @dev Distributes rewards to BALLE staking pool.
-     */
     constructor(
         address _balle,
         address _balleMaster,
@@ -158,17 +160,17 @@ contract BalleRewardDistribution is Ownable {
     }
 
     /**
-     * @dev Function to use from Governance GNOSIS Safe only in case tokens get stuck. EMERGENCY ONLY.
-     * This contract will not store tokens, so, is safe to take out any token sent by mistake.
+     * @dev Function to use from Governance Gnosis Safe multisig only in case tokens get stuck.
+     * This is to be used if someone, for example, sends tokens to the contract by mistake.
+     * There is no guarantee governance will vote to return these.
+     * No tokens are stored in this contract, so, it's safe to transfer any token.
      */
     function inCaseTokensGetStuck(
         address _token,
         uint256 _amount,
         address _to
-    ) external onlyOwner {
-        require(_token != address(0), "zero token address");
-        require(_to != address(0), "zero to address");
-        require(_amount > 0, "!amount");
+    ) public onlyOwner {
+        require(_to != address(0), "zero address");
 
         IERC20(_token).safeTransfer(_to, _amount);
     }
