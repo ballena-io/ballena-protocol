@@ -68,7 +68,8 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
     event Withdraw(address indexed user, uint256 amount, uint256 reward);
     event EmergencyWithdraw(address indexed user, uint256 amount);
     event RewardAdded(uint256 amount, uint256 numberOfBlocks, uint256 multiplier);
-    event RewardsStop(uint256 blockNumber);
+    event RewardsStop();
+    event PoolFinish();
 
     /**
      * @dev BALLE Rewards staking pool.
@@ -364,6 +365,8 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
      */
     function stopRewards() external onlySecurity {
         rewardEndBlock = block.number;
+
+        emit RewardsStop();
     }
 
     /**
@@ -376,6 +379,8 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
             rewardEndBlock = block.number;
         }
         finished = true;
+
+        emit PoolFinish();
     }
 
     /**
