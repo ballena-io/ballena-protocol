@@ -10,7 +10,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   await deploy('BalleStakingPoolV1', {
     from: deployer,
-    args: [BalleV2.address, BalleV2.address, BalleRewardDistribution.address, deployer],
+    args: [BalleV2.address, BalleV2.address, BalleRewardDistribution.address],
     log: true,
     deterministicDeployment: false,
   })
