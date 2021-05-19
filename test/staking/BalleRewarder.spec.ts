@@ -130,22 +130,10 @@ describe('BalleRewarder', () => {
       expect(await tokenA.balanceOf(balleRewarder.address)).to.be.equal(expandTo18Decimals(100))
     })
 
-    it('should revert if no token address', async () => {
-      await expect(
-        balleRewarder.connect(deployer).inCaseTokensGetStuck(ZERO_ADDRESS, expandTo18Decimals(0), ZERO_ADDRESS),
-      ).to.be.revertedWith('zero token address')
-    })
-
     it('should revert if no to address', async () => {
       await expect(
         balleRewarder.connect(deployer).inCaseTokensGetStuck(tokenA.address, expandTo18Decimals(0), ZERO_ADDRESS),
-      ).to.be.revertedWith('zero to address')
-    })
-
-    it('should revert if no amount', async () => {
-      await expect(
-        balleRewarder.connect(deployer).inCaseTokensGetStuck(tokenA.address, expandTo18Decimals(0), deployer.address),
-      ).to.be.revertedWith('!amount')
+      ).to.be.revertedWith('zero address')
     })
 
     it('should revert if try to transfer BALLE', async () => {
