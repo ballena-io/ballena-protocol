@@ -8,8 +8,30 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../interfaces/IBalleRewarder.sol";
 
+/**
+ * @dev Implementation of the BALLE Staking Pool.
+ * This pool distributes platform performance fee.
+ * The owner of the contract is the Governance Gnosis Safe multisig.
+ */
 contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
+
+    // Info of each user
+    struct UserInfo {
+        uint256 amount; // How many staked tokens the user has provided.
+        uint256 rewardDebt; // Reward debt.
+        //
+        // We do some fancy math here. Basically, any point in time, the amount of BALLEs
+        // entitled to a user but is pending to be distributed is:
+        //
+        //   pending reward = (user.amount * accTokenPerShare) / 1e12 - user.rewardDebt
+        //
+        // Whenever a user stakes or withdraws tokens to the pool. Here's what happens:
+        //   1. The pool's `accTokenPerShare` and `lastRewardBlock` gets updated.
+        //   2. User receives the pending reward sent to his address.
+        //   3. User's `amount` gets updated.
+        //   4. User's `rewardDebt` gets updated.
+    }
 
     // The staked token.
     address public immutable stakedToken;
@@ -19,6 +41,8 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
     address public rewarder;
     // The reward distribution contract.
     address public rewardDistribution;
+    // Security Gnosis Safe multisig.
+    address public security;
     // Accrued token per share.
     uint256 public accTokenPerShare;
     // The block number when rewards start.
@@ -37,11 +61,6 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
     // Info of each user that stakes tokens (stakedToken).
     mapping(address => UserInfo) public userInfo;
 
-    struct UserInfo {
-        uint256 amount; // How many staked tokens the user has provided.
-        uint256 rewardDebt; // Reward debt.
-    }
-
     // The pool is finished, no staking can be made and no more rewards will be distributed.
     bool public finished;
 
@@ -49,32 +68,27 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
     event Withdraw(address indexed user, uint256 amount, uint256 reward);
     event EmergencyWithdraw(address indexed user, uint256 amount);
     event RewardAdded(uint256 amount, uint256 numberOfBlocks, uint256 multiplier);
-    event RewardsStop(uint256 blockNumber);
+    event RewardsStop();
+    event PoolFinish();
 
     /**
      * @dev BALLE Rewards staking pool.
      * @param _stakedToken: staked token address.
      * @param _rewardToken: reward token address.
      * @param _rewardDistribution: reward distribution contract address.
-     * @param _governance: governance address with ownership.
      */
     constructor(
         address _stakedToken,
         address _rewardToken,
-        address _rewardDistribution,
-        address _governance
+        address _rewardDistribution
     ) {
         require(_stakedToken != address(0), "!stakedToken");
         require(_rewardToken != address(0), "!rewardToken");
         require(_rewardDistribution != address(0), "!rewardDistribution");
-        require(_governance != address(0), "!governance");
 
         stakedToken = _stakedToken;
         rewardToken = _rewardToken;
         rewardDistribution = _rewardDistribution;
-
-        // Transfer ownership to the governance address who becomes owner of the contract.
-        transferOwnership(_governance);
     }
 
     /**
@@ -86,15 +100,7 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Modifier to check the caller is the owner address or the rewardDistribution.
-     */
-    modifier onlyRewardDistribution() {
-        require(msg.sender == owner() || msg.sender == rewardDistribution, "!rewardDistribution");
-        _;
-    }
-
-    /**
-     * @dev Set the new rewardDistribution address.
+     * @dev Function to change the rewardDistribution address.
      */
     function setRewardDistribution(address _rewardDistribution) external onlyOwner {
         require(_rewardDistribution != address(0), "zero address");
@@ -102,10 +108,35 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Deposit staked tokens and collect reward tokens (if any).
-     * @param _amount: amount to deposit (in stakedToken).
+     * @dev Function to change the Security Gnosis Safe multisig.
      */
-    function deposit(uint256 _amount) external nonReentrant {
+    function setSecurity(address _security) external onlyOwner {
+        require(_security != address(0), "zero address");
+        security = _security;
+    }
+
+    /**
+     * @dev Modifier to check the caller is the Governance Gnosis Safe multisig address or the rewardDistribution.
+     */
+    modifier onlyRewardDistribution() {
+        require(msg.sender == rewardDistribution || msg.sender == owner(), "!rewardDistribution");
+        _;
+    }
+
+    /**
+     * @dev Modifier to check the caller is the Governance or Security Gnosis Safe multisig.
+     */
+    modifier onlySecurity() {
+        require(msg.sender == owner() || msg.sender == security, "!security");
+        _;
+    }
+
+    /**
+     * @dev Internal stake function.
+     * @param _amount: amount to stake (in stakedToken).
+     */
+    function _stake(uint256 _amount) internal {
+        require(_amount > 0, "!amount");
         require(rewarder != address(0), "!rewarder");
         require(!finished, "finished");
         UserInfo storage user = userInfo[msg.sender];
@@ -120,11 +151,9 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
             }
         }
 
-        if (_amount > 0) {
-            user.amount = user.amount + _amount;
-            totalSupply = totalSupply + _amount;
-            IERC20(stakedToken).safeTransferFrom(address(msg.sender), address(this), _amount);
-        }
+        user.amount = user.amount + _amount;
+        totalSupply = totalSupply + _amount;
+        IERC20(stakedToken).safeTransferFrom(address(msg.sender), address(this), _amount);
 
         user.rewardDebt = (user.amount * accTokenPerShare) / 1e12;
 
@@ -132,10 +161,25 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Withdraw staked tokens and collect reward tokens (if any).
+     * @dev Stake tokens to the pool and collect reward tokens (if any).
+     * @param _amount: amount to stake (in stakedToken).
+     */
+    function stake(uint256 _amount) external nonReentrant {
+        _stake(_amount);
+    }
+
+    /**
+     * @dev Stake all stakedToken balance on user wallet to the pool and collect reward tokens (if any).
+     */
+    function stakeAll() external nonReentrant {
+        _stake(IERC20(stakedToken).balanceOf(msg.sender));
+    }
+
+    /**
+     * @dev Internal withdraw
      * @param _amount: amount to withdraw (in stakedToken).
      */
-    function withdraw(uint256 _amount) external nonReentrant {
+    function _withdraw(uint256 _amount) internal {
         UserInfo storage user = userInfo[msg.sender];
         if (_amount > user.amount) {
             _amount = user.amount;
@@ -169,6 +213,21 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
     }
 
     /**
+     * @dev Withdraw staked tokens and collect reward tokens (if any).
+     * @param _amount: amount to withdraw (in stakedToken).
+     */
+    function withdraw(uint256 _amount) external nonReentrant {
+        _withdraw(_amount);
+    }
+
+    /**
+     * @dev Withdraw all user's staked tokens and collect reward (if any).
+     */
+    function withdrawAll() external nonReentrant {
+        _withdraw(type(uint256).max);
+    }
+
+    /**
      * @dev Withdraw all staked tokens without caring about rewards. EMERGENCY ONLY.
      */
     function emergencyWithdraw() external nonReentrant {
@@ -190,23 +249,6 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Function to use from Governance GNOSIS Safe only.
-     * It allows to recover wrong tokens sent to the contract.
-     */
-    function inCaseTokensGetStuck(
-        address _token,
-        uint256 _amount,
-        address _to
-    ) external onlyOwner {
-        require(_token != address(0), "zero token address");
-        require(_to != address(0), "zero to address");
-        require(_amount > 0, "!amount");
-        require(_token != stakedToken, "!safe");
-
-        IERC20(_token).safeTransfer(_to, _amount);
-    }
-
-    /**
      * @dev View function to see total staked value on frontend.
      * @param _user: user address.
      * @return Total staked for a given user.
@@ -222,11 +264,10 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
      */
     function pendingReward(address _user) external view returns (uint256) {
         UserInfo storage user = userInfo[_user];
-        uint256 stakedTokenSupply = IERC20(stakedToken).balanceOf(address(this));
-        if (block.number > lastRewardBlock && stakedTokenSupply != 0) {
+        if (block.number > lastRewardBlock && totalSupply != 0) {
             uint256 multiplier = getBlockMultiplier(lastRewardBlock, block.number);
             uint256 reward = multiplier * rewardPerBlock;
-            uint256 adjustedTokenPerShare = accTokenPerShare + (reward * 1e12) / stakedTokenSupply;
+            uint256 adjustedTokenPerShare = accTokenPerShare + (reward * 1e12) / totalSupply;
             return (user.amount * adjustedTokenPerShare) / 1e12 - user.rewardDebt;
         } else {
             return (user.amount * accTokenPerShare) / 1e12 - user.rewardDebt;
@@ -260,6 +301,13 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
      * @param _to: block to finish.
      */
     function getBlockMultiplier(uint256 _from, uint256 _to) internal view returns (uint256) {
+        if (_from <= rewardStartBlock) {
+            if (_to > rewardStartBlock) {
+                _from = rewardStartBlock;
+            } else {
+                _from = _to;
+            }
+        }
         if (_to <= rewardEndBlock) {
             return _to - _from;
         } else if (_from >= rewardEndBlock) {
@@ -270,16 +318,18 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Add reward to distribute. Only callable from Governance GNOSIS Safe or RewardDistribution contract.
+     * @dev Add reward to distribute.
      * The funds should be transferred to the Rewarder contract.
      * @param _amount: the reward amount to distribute.
      * @param _numberOfBlocks: the num of blocks for the period of distribution.
      * @param _multiplier: extra reward multiplier (100 = 1).
+     * @param _rewardStartBlock: only for the first distribution, start block of rewards.
      */
     function addReward(
         uint256 _amount,
         uint256 _numberOfBlocks,
-        uint256 _multiplier
+        uint256 _multiplier,
+        uint256 _rewardStartBlock
     ) external onlyRewardDistribution {
         require(_amount > 0, "!amount");
         require(_numberOfBlocks >= (24 * 60 * 20), "!numberOfBlocks");
@@ -292,7 +342,11 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
             // Previous reward period already finished.
             rewardPerBlock = _amount / _numberOfBlocks;
             if (rewardStartBlock == 0) {
-                rewardStartBlock = block.number;
+                if (_rewardStartBlock == 0) {
+                    rewardStartBlock = block.number;
+                } else {
+                    rewardStartBlock = _rewardStartBlock;
+                }
             }
         } else {
             // Previous reward period still not finished, add leftover.
@@ -307,21 +361,41 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Stop rewards. Only callable from Governance GNOSIS Safe.
+     * @dev Stop rewards.
      */
-    function stopRewards() external onlyOwner {
+    function stopRewards() external onlySecurity {
         rewardEndBlock = block.number;
+
+        emit RewardsStop();
     }
 
     /**
-     * @dev Finish pool. Only callable from Governance GNOSIS Safe.
+     * @dev Finish pool.
      */
-    function finish() external onlyOwner {
+    function finish() external onlySecurity {
         require(!finished, "finished");
 
         if (rewardEndBlock > block.number) {
             rewardEndBlock = block.number;
         }
         finished = true;
+
+        emit PoolFinish();
+    }
+
+    /**
+     * @dev Function to use from Governance Gnosis Safe multisig only in case tokens get stuck.
+     * This is to be used if someone, for example, sends tokens to the contract by mistake.
+     * There is no guarantee governance will vote to return these.
+     */
+    function inCaseTokensGetStuck(
+        address _token,
+        uint256 _amount,
+        address _to
+    ) public onlyOwner {
+        require(_to != address(0), "zero address");
+        require(_token != stakedToken, "!safe");
+
+        IERC20(_token).safeTransfer(_to, _amount);
     }
 }

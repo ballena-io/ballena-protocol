@@ -7,6 +7,7 @@ interface IBalleStakingPool {
     function addReward(
         uint256 _amount,
         uint256 _numberOfBlocks,
-        uint256 _multiplier
+        uint256 _multiplier,
+        uint256 _rewardStartBlock
     ) external;
 }

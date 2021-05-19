@@ -26,36 +26,21 @@ describe('BalleStakingPoolV1', () => {
     })
 
     it('should fail on zero staked token address', async () => {
-      await expect(StakingPool.deploy(ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS)).to.be.revertedWith(
-        '!stakedToken',
-      )
+      await expect(StakingPool.deploy(ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS)).to.be.revertedWith('!stakedToken')
     })
 
     it('should fail on zero reward token address', async () => {
-      await expect(StakingPool.deploy(balle.address, ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS)).to.be.revertedWith(
-        '!rewardToken',
-      )
+      await expect(StakingPool.deploy(balle.address, ZERO_ADDRESS, ZERO_ADDRESS)).to.be.revertedWith('!rewardToken')
     })
 
     it('should fail on zero rewardDistribution address', async () => {
-      await expect(StakingPool.deploy(balle.address, balle.address, ZERO_ADDRESS, ZERO_ADDRESS)).to.be.revertedWith(
+      await expect(StakingPool.deploy(balle.address, balle.address, ZERO_ADDRESS)).to.be.revertedWith(
         '!rewardDistribution',
       )
     })
 
-    it('should fail on zero governance address', async () => {
-      await expect(
-        StakingPool.deploy(balle.address, balle.address, rewardDistribution.address, ZERO_ADDRESS),
-      ).to.be.revertedWith('!governance')
-    })
-
     it('should build a valid StakingPool', async () => {
-      const stakingPool = await StakingPool.deploy(
-        balle.address,
-        balle.address,
-        rewardDistribution.address,
-        deployer.address,
-      )
+      const stakingPool = await StakingPool.deploy(balle.address, balle.address, rewardDistribution.address)
       await stakingPool.deployed()
 
       expect(await stakingPool.stakedToken()).to.be.equal(balle.address)
@@ -83,16 +68,22 @@ describe('BalleStakingPoolV1', () => {
       )
     })
 
+    it('should revert if not owner address calls setSecurity()', async () => {
+      await expect(stakingPool.connect(test).setSecurity(ZERO_ADDRESS)).to.be.revertedWith(
+        'Ownable: caller is not the owner',
+      )
+    })
+
     it('should revert if not owner address calls addReward()', async () => {
-      await expect(stakingPool.connect(test).addReward(0, 0, 0)).to.be.revertedWith('!rewardDistribution')
+      await expect(stakingPool.connect(test).addReward(0, 0, 0, 0)).to.be.revertedWith('!rewardDistribution')
     })
 
     it('should revert if not owner address calls stopRewards()', async () => {
-      await expect(stakingPool.connect(test).stopRewards()).to.be.revertedWith('Ownable: caller is not the owner')
+      await expect(stakingPool.connect(test).stopRewards()).to.be.revertedWith('!security')
     })
 
     it('should revert if not owner address calls finish()', async () => {
-      await expect(stakingPool.connect(test).finish()).to.be.revertedWith('Ownable: caller is not the owner')
+      await expect(stakingPool.connect(test).finish()).to.be.revertedWith('!security')
     })
 
     it('should revert if not owner address calls inCaseTokensGetStuck()', async () => {
@@ -134,6 +125,22 @@ describe('BalleStakingPoolV1', () => {
     })
   })
 
+  describe('Test setSecurity()', () => {
+    before('Deploy contracts', async () => {
+      await deployments.fixture()
+      stakingPool = await ethers.getContract('BalleStakingPoolV1')
+    })
+
+    it('should revert if zero address', async () => {
+      await expect(stakingPool.connect(deployer).setSecurity(ZERO_ADDRESS)).to.be.revertedWith('zero address')
+    })
+
+    it('should set new Security address', async () => {
+      await stakingPool.connect(deployer).setSecurity(test.address)
+      expect(await stakingPool.security()).to.be.equal(test.address)
+    })
+  })
+
   describe('Test inCaseTokensGetStuck()', () => {
     before('Deploy contracts', async () => {
       await deployments.fixture()
@@ -144,22 +151,10 @@ describe('BalleStakingPoolV1', () => {
       expect(await tokenA.balanceOf(stakingPool.address)).to.be.equal(expandTo18Decimals(100))
     })
 
-    it('should revert if no token address', async () => {
-      await expect(
-        stakingPool.connect(deployer).inCaseTokensGetStuck(ZERO_ADDRESS, expandTo18Decimals(0), ZERO_ADDRESS),
-      ).to.be.revertedWith('zero token address')
-    })
-
     it('should revert if no to address', async () => {
       await expect(
         stakingPool.connect(deployer).inCaseTokensGetStuck(tokenA.address, expandTo18Decimals(0), ZERO_ADDRESS),
-      ).to.be.revertedWith('zero to address')
-    })
-
-    it('should revert if no amount', async () => {
-      await expect(
-        stakingPool.connect(deployer).inCaseTokensGetStuck(tokenA.address, expandTo18Decimals(0), deployer.address),
-      ).to.be.revertedWith('!amount')
+      ).to.be.revertedWith('zero address')
     })
 
     it('should revert if try to transfer staked tokens (BALLE)', async () => {

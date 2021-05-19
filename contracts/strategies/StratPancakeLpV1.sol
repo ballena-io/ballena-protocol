@@ -183,7 +183,7 @@ contract StratPancakeLpV1 is Ownable {
      */
     function deposit(address _user, uint256 _amount) public onlyOwner whenNotPaused returns (uint256) {
         require(_user != address(0), "!user");
-        IERC20(depositToken).safeTransferFrom(address(msg.sender), address(this), _amount);
+        IERC20(depositToken).safeTransferFrom(msg.sender, address(this), _amount);
 
         uint256 sharesAdded = _amount;
         if (depositTotal > 0 && sharesTotal > 0) {
@@ -239,7 +239,7 @@ contract StratPancakeLpV1 is Ownable {
 
         depositTotal = depositTotal - _amount;
 
-        IERC20(depositToken).safeTransfer(address(msg.sender), _amount);
+        IERC20(depositToken).safeTransfer(msg.sender, _amount);
 
         return (sharesRemoved, _amount);
     }
@@ -253,7 +253,7 @@ contract StratPancakeLpV1 is Ownable {
 
     /**
      * @dev Internal function to harvest earnings and reinvest.
-     * If called with _amount > 0 will withdraw the LP indicated with the earned CAKE.
+     * If called with _amount > 0 will withdraw the LP indicated with the earned CAKE and not reinvest.
      */
     function _harvest(uint256 _amount) internal {
         // Harvest farm tokens
@@ -312,7 +312,9 @@ contract StratPancakeLpV1 is Ownable {
             );
         }
 
-        farm();
+        if (_amount == 0) {
+            farm();
+        }
     }
 
     /**
