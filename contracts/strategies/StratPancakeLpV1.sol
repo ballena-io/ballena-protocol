@@ -8,6 +8,11 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/IPancakeswapFarm.sol";
 import "../interfaces/IPancakeRouter01.sol";
 
+/**
+ * @dev Implementation of the PancakeSwap LP Strategy.
+ * This contract will compound LP tokens.
+ * The owner of the contract is the BalleMaster contract.
+ */
 contract StratPancakeLpV1 is Ownable {
     using SafeERC20 for IERC20;
 
@@ -22,7 +27,7 @@ contract StratPancakeLpV1 is Ownable {
     // Second token of LP address.
     address public immutable token1;
     // Earned token (CAKE) address.
-    address public immutable cake;
+    address public immutable earnedtoken;
     // PancakeSwap router address.
     address public immutable router;
 
@@ -31,9 +36,9 @@ contract StratPancakeLpV1 is Ownable {
     // Address to send treasury fee.
     address public treasury;
 
-    // Governance multisig address
+    // Governance Gnosis Safe multisig.
     address public governance;
-    // Operations multisig address
+    // Operations Gnosis Safe multisig.
     address public operations;
     // Harvest addresses
     mapping(address => bool) public harvesters;
@@ -74,9 +79,9 @@ contract StratPancakeLpV1 is Ownable {
     uint256 public constant MIN_EARNED_TO_REINVEST_UL = 20000000000000000000;
 
     // Swap routes
-    address[] public cakeToBallePath;
-    address[] public cakeToToken0Path;
-    address[] public cakeToToken1Path;
+    address[] public earnedtokenToBallePath;
+    address[] public earnedtokenToToken0Path;
+    address[] public earnedtokenToToken1Path;
 
     // Paused state activated
     bool public paused = false;
@@ -99,16 +104,16 @@ contract StratPancakeLpV1 is Ownable {
     constructor(
         address[] memory _addresses,
         uint256 _pid,
-        address[] memory _cakeToBallePath,
-        address[] memory _cakeToToken0Path,
-        address[] memory _cakeToToken1Path
+        address[] memory _earnedtokenToBallePath,
+        address[] memory _earnedtokenToToken0Path,
+        address[] memory _earnedtokenToToken1Path
     ) {
         require(_pid > 0, "!pid");
 
         depositToken = _addresses[0];
         token0 = _addresses[1];
         token1 = _addresses[2];
-        cake = _addresses[3];
+        earnedtoken = _addresses[3];
         router = _addresses[4];
         masterChef = _addresses[5];
         pid = _pid;
@@ -118,16 +123,16 @@ contract StratPancakeLpV1 is Ownable {
         rewards = _addresses[8];
         treasury = _addresses[9];
 
-        cakeToBallePath = _cakeToBallePath;
-        cakeToToken0Path = _cakeToToken0Path;
-        cakeToToken1Path = _cakeToToken1Path;
+        earnedtokenToBallePath = _earnedtokenToBallePath;
+        earnedtokenToToken0Path = _earnedtokenToToken0Path;
+        earnedtokenToToken1Path = _earnedtokenToToken1Path;
 
         // The owner of the strategy contract is the BalleMaster contract
         transferOwnership(_addresses[6]);
     }
 
     /**
-     * @dev Modifier to check the caller is the governance address.
+     * @dev Modifier to check the caller is the Governance Gnosis Safe multisig.
      */
     modifier onlyGovernance() {
         require(msg.sender == governance, "!governance");
@@ -135,7 +140,7 @@ contract StratPancakeLpV1 is Ownable {
     }
 
     /**
-     * @dev Modifier to check the caller is the governance or the operations address.
+     * @dev Modifier to check the caller is the Governance or Operations Gnosis Safe multisig.
      */
     modifier onlyOperations() {
         require(msg.sender == operations || msg.sender == governance, "!operations");
@@ -143,7 +148,7 @@ contract StratPancakeLpV1 is Ownable {
     }
 
     /**
-     * @dev Modifier to check the caller is the governance or operations address or an authorized harvester.
+     * @dev Modifier to check the caller is the Governance or Operations Gnosis Safe multisig or an authorized harvester.
      */
     modifier onlyHarvester() {
         require(harvesters[msg.sender] || msg.sender == operations || msg.sender == governance, "!harvester");
@@ -169,7 +174,7 @@ contract StratPancakeLpV1 is Ownable {
     /**
      * @dev View function to see pending CAKEs on farm.
      */
-    function pendingCake() external view returns (uint256) {
+    function pendingEarnedToken() external view returns (uint256) {
         return IPancakeswapFarm(masterChef).pendingCake(pid, address(this));
     }
 
@@ -253,7 +258,7 @@ contract StratPancakeLpV1 is Ownable {
     function _harvest(uint256 _amount) internal {
         // Harvest farm tokens
         IPancakeswapFarm(masterChef).withdraw(pid, _amount);
-        uint256 earnedAmt = IERC20(cake).balanceOf(address(this));
+        uint256 earnedAmt = IERC20(earnedtoken).balanceOf(address(this));
         if (earnedAmt < minEarnedToReinvest) {
             return;
         }
@@ -264,26 +269,26 @@ contract StratPancakeLpV1 is Ownable {
         earnedAmt = distributeFees(earnedAmt);
 
         // Converts farm tokens into want tokens
-        if (cake != token0) {
+        if (earnedtoken != token0) {
             // Swap half earned to token0
             safeSwap(
                 router,
                 earnedAmt / 2,
                 slippage,
-                cakeToToken0Path,
+                earnedtokenToToken0Path,
                 address(this),
                 // solhint-disable-next-line not-rely-on-time
                 block.timestamp + 600
             );
         }
 
-        if (cake != token1) {
+        if (earnedtoken != token1) {
             // Swap half earned to token1
             safeSwap(
                 router,
                 earnedAmt / 2,
                 slippage,
-                cakeToToken1Path,
+                earnedtokenToToken1Path,
                 address(this),
                 // solhint-disable-next-line not-rely-on-time
                 block.timestamp + 600
@@ -325,7 +330,7 @@ contract StratPancakeLpV1 is Ownable {
                     router,
                     treasuryFee,
                     slippage,
-                    cakeToBallePath,
+                    earnedtokenToBallePath,
                     treasury,
                     // solhint-disable-next-line not-rely-on-time
                     block.timestamp + 600
@@ -336,7 +341,7 @@ contract StratPancakeLpV1 is Ownable {
                     router,
                     rewardsFee,
                     slippage,
-                    cakeToBallePath,
+                    earnedtokenToBallePath,
                     rewards,
                     // solhint-disable-next-line not-rely-on-time
                     block.timestamp + 600
@@ -391,7 +396,7 @@ contract StratPancakeLpV1 is Ownable {
     }
 
     /**
-     * @dev Function to change the governance address.
+     * @dev Function to change the Governance Gnosis Safe multisig.
      */
     function setGovernance(address _governance) public onlyGovernance {
         require(_governance != address(0), "zero address");
@@ -400,7 +405,7 @@ contract StratPancakeLpV1 is Ownable {
     }
 
     /**
-     * @dev Function to change the operations address.
+     * @dev Function to change the Operations Gnosis Safe multisig.
      */
     function setOperations(address _operations) public onlyGovernance {
         require(_operations != address(0), "zero address");
@@ -424,7 +429,7 @@ contract StratPancakeLpV1 is Ownable {
     }
 
     /**
-     * @dev Add a harvester address from Operations GNOSIS Safe.
+     * @dev Add a harvester address.
      */
     function addHarvester(address _harvester) external onlyOperations {
         require(_harvester != address(0), "zero address");
@@ -432,27 +437,11 @@ contract StratPancakeLpV1 is Ownable {
     }
 
     /**
-     * @dev Remove a harvester address from Operations GNOSIS Safe.
+     * @dev Remove a harvester address.
      */
     function removeHarvester(address _harvester) external onlyOperations {
         require(_harvester != address(0), "zero address");
         harvesters[_harvester] = false;
-    }
-
-    /**
-     * @dev Function to use from Governance GNOSIS Safe only in case tokens get stuck. EMERGENCY ONLY.
-     */
-    function inCaseTokensGetStuck(
-        address _token,
-        uint256 _amount,
-        address _to
-    ) public onlyGovernance {
-        require(_token != address(0), "zero token address");
-        require(_to != address(0), "zero to address");
-        require(_amount > 0, "!amount");
-        require(_token != cake, "!safe");
-        require(_token != depositToken, "!safe");
-        IERC20(_token).safeTransfer(_to, _amount);
     }
 
     /**
@@ -461,7 +450,7 @@ contract StratPancakeLpV1 is Ownable {
     function setAllowances() internal {
         // Approve token transfers
         IERC20(depositToken).safeApprove(masterChef, type(uint256).max);
-        IERC20(cake).safeApprove(router, type(uint256).max);
+        IERC20(earnedtoken).safeApprove(router, type(uint256).max);
         IERC20(token0).safeApprove(router, type(uint256).max);
         IERC20(token1).safeApprove(router, type(uint256).max);
     }
@@ -472,7 +461,7 @@ contract StratPancakeLpV1 is Ownable {
     function clearAllowances() internal {
         // Disapprove token transfers
         IERC20(depositToken).safeApprove(masterChef, 0);
-        IERC20(cake).safeApprove(router, 0);
+        IERC20(earnedtoken).safeApprove(router, 0);
         IERC20(token0).safeApprove(router, 0);
         IERC20(token1).safeApprove(router, 0);
     }
@@ -519,11 +508,11 @@ contract StratPancakeLpV1 is Ownable {
 
         // Set allowance for new strat contract.
         uint256 depositAmt = IERC20(depositToken).balanceOf(address(this));
-        uint256 earnedAmt = IERC20(cake).balanceOf(address(this));
+        uint256 earnedAmt = IERC20(earnedtoken).balanceOf(address(this));
         IERC20(depositToken).safeApprove(_strat, 0);
         IERC20(depositToken).safeIncreaseAllowance(_strat, depositAmt);
-        IERC20(cake).safeApprove(_strat, 0);
-        IERC20(cake).safeIncreaseAllowance(_strat, earnedAmt);
+        IERC20(earnedtoken).safeApprove(_strat, 0);
+        IERC20(earnedtoken).safeIncreaseAllowance(_strat, earnedAmt);
 
         return (sharesTotal, depositAmt, earnedAmt);
     }
@@ -543,7 +532,7 @@ contract StratPancakeLpV1 is Ownable {
             IERC20(depositToken).safeTransferFrom(_strat, address(this), _depositAmt);
         }
         if (_earnedAmt > 0) {
-            IERC20(cake).safeTransferFrom(_strat, address(this), _earnedAmt);
+            IERC20(earnedtoken).safeTransferFrom(_strat, address(this), _earnedAmt);
         }
         sharesTotal = _sharesTotal;
 
@@ -604,9 +593,26 @@ contract StratPancakeLpV1 is Ownable {
         _pause();
 
         // Send remaining earningTokens to treasury (if not converted on last harvest because not reach minimun).
-        uint256 earnedAmt = IERC20(cake).balanceOf(address(this));
+        uint256 earnedAmt = IERC20(earnedtoken).balanceOf(address(this));
         if (earnedAmt > 0) {
-            IERC20(cake).safeTransfer(treasury, earnedAmt);
+            IERC20(earnedtoken).safeTransfer(treasury, earnedAmt);
         }
+    }
+
+    /**
+     * @dev Function to use from Governance Gnosis Safe multisig only in case tokens get stuck.
+     * This is to be used if someone, for example, sends tokens to the contract by mistake.
+     * There is no guarantee governance will vote to return these.
+     */
+    function inCaseTokensGetStuck(
+        address _token,
+        uint256 _amount,
+        address _to
+    ) public onlyGovernance {
+        require(_to != address(0), "zero address");
+        require(_token != earnedtoken, "!safe");
+        require(_token != depositToken, "!safe");
+
+        IERC20(_token).safeTransfer(_to, _amount);
     }
 }

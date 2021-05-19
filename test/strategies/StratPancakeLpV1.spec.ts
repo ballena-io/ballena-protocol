@@ -451,7 +451,7 @@ describe('StratPancakeLpV1', () => {
       mineBlock()
 
       // check pending CAKE
-      expect(await stratPancakeLpV1.pendingCake()).to.be.equal(expandTo18Decimals(8))
+      expect(await stratPancakeLpV1.pendingEarnedToken()).to.be.equal(expandTo18Decimals(8))
 
       // make harvest
       await expect(stratPancakeLpV1.connect(deployer).harvest())
@@ -490,7 +490,7 @@ describe('StratPancakeLpV1', () => {
       mineBlock()
 
       // check pending CAKE
-      expect(await stratPancakeLpV1.pendingCake()).to.be.equal(expandTo18Decimals(14))
+      expect(await stratPancakeLpV1.pendingEarnedToken()).to.be.equal(expandTo18Decimals(14))
 
       // make harvest
       await expect(stratPancakeLpV1.connect(deployer).harvest())
@@ -606,24 +606,10 @@ describe('StratPancakeLpV1', () => {
       expect(await tokenA.balanceOf(stratPancakeLpV1.address)).to.be.equal(expandTo18Decimals(100))
     })
 
-    it('should revert if no token address', async () => {
-      await expect(
-        stratPancakeLpV1.connect(deployer).inCaseTokensGetStuck(ZERO_ADDRESS, expandTo18Decimals(0), ZERO_ADDRESS),
-      ).to.be.revertedWith('zero token address')
-    })
-
     it('should revert if no to address', async () => {
       await expect(
         stratPancakeLpV1.connect(deployer).inCaseTokensGetStuck(tokenA.address, expandTo18Decimals(0), ZERO_ADDRESS),
-      ).to.be.revertedWith('zero to address')
-    })
-
-    it('should revert if no amount', async () => {
-      await expect(
-        stratPancakeLpV1
-          .connect(deployer)
-          .inCaseTokensGetStuck(tokenA.address, expandTo18Decimals(0), deployer.address),
-      ).to.be.revertedWith('!amount')
+      ).to.be.revertedWith('zero address')
     })
 
     it('should revert if try to transfer CAKE', async () => {
@@ -723,7 +709,7 @@ describe('StratPancakeLpV1', () => {
       mineBlock()
 
       // check pending CAKE
-      expect(await stratPancakeLpV1.pendingCake()).to.be.equal(expandTo18Decimals(9))
+      expect(await stratPancakeLpV1.pendingEarnedToken()).to.be.equal(expandTo18Decimals(9))
 
       // make harvest
       await expect(stratPancakeLpV1.connect(deployer).harvest())
