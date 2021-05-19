@@ -5,7 +5,7 @@ import { expect } from '../shared/expect'
 import { ZERO_ADDRESS } from '../../src/utils/constants'
 import { expandTo18Decimals } from '../../src/utils'
 
-describe.only('BalleStakingPoolV1', () => {
+describe('BalleStakingPoolV1', () => {
   let StakingPool: ContractFactory
   let stakingPool: Contract
   let balle: Contract
