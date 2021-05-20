@@ -32,10 +32,10 @@ contract BalleRewardDistribution is Ownable {
     // The staking pool rewarder contract.
     address public rewarder;
 
-    // 10% fee on extra reward.
-    uint256 public constant EXTRA_REWARD_FEE = 1000;
+    // 10% fee on reward.
+    uint256 public constant REWARD_FEE = 1000;
     // Factor to calculate fee 100 = 1%.
-    uint256 public constant EXTRA_REWARD_FEE_MAX = 10000;
+    uint256 public constant REWARD_FEE_MAX = 10000;
 
     event BalleRewardDistributed(
         address indexed pool,
@@ -133,19 +133,23 @@ contract BalleRewardDistribution is Ownable {
             _multiplier = (extraRewardAmount * 100) / _baseRewardAmount;
         }
 
-        // Extra Reward fee.
-        uint256 extraRewardFee = (extraRewardAmount * EXTRA_REWARD_FEE) / EXTRA_REWARD_FEE_MAX;
-
         // Send BALLE from RewardFund.
         IBalleRewardFund(rewardFund).sendRewardAmount(rewarder, _baseRewardAmount);
 
-        // Mint BALLE.
-        balle.mint(treasury, extraRewardFee);
-        balle.mint(rewarder, extraRewardAmount - extraRewardFee);
+        // Reward fee, the fee will allways come from extra reward.
+        uint256 rewardFee = ((_baseRewardAmount + extraRewardAmount) * REWARD_FEE) / REWARD_FEE_MAX;
+        if (extraRewardAmount < rewardFee) {
+            rewardFee = extraRewardAmount;
+        } else {
+            balle.mint(rewarder, extraRewardAmount - rewardFee);
+        }
+        if (rewardFee > 0) {
+            balle.mint(treasury, rewardFee);
+        }
 
         // Add reward to staking pool.
         IBalleStakingPool(stakingPool).addReward(
-            _baseRewardAmount + extraRewardAmount - extraRewardFee,
+            _baseRewardAmount + extraRewardAmount - rewardFee,
             _duration / 3,
             _multiplier,
             _rewardStartBlock
@@ -154,8 +158,8 @@ contract BalleRewardDistribution is Ownable {
         emit BalleRewardDistributed(
             stakingPool,
             _baseRewardAmount,
-            extraRewardAmount - extraRewardFee,
-            extraRewardFee,
+            extraRewardAmount - rewardFee,
+            rewardFee,
             _duration / 3,
             _multiplier
         );
