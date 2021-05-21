@@ -99,7 +99,7 @@ contract BalleRewardDistribution is Ownable {
      * @dev Function to distribute reward.
      * @param _duration: Period for the reward distribution. From 24h to 7 days.
      * @param _baseRewardAmount: Reward amount from performance fees to take from BalleRewardFund.
-     * @param _multiplier: Extra reward amount to add from new minted BALLE, while there is free supply (100 = 1).
+     * @param _multiplier: Multiplier to add Extra reward from new minted BALLE, while there is free supply (100 = 1).
      */
     function distributeReward(
         uint256 _duration,
@@ -119,7 +119,7 @@ contract BalleRewardDistribution is Ownable {
         require(rewardFundBalance >= _baseRewardAmount, "!rewardFundBalance");
 
         // Extra Reward amount.
-        uint256 extraRewardAmount = (_baseRewardAmount * _multiplier) / 100;
+        uint256 extraRewardAmount = ((_baseRewardAmount * _multiplier) / 100) - _baseRewardAmount;
         // Check if we can mint extraRewardAmount new BALLE.
         uint256 toBeMintedOnVaults = 0;
         if (block.number < balleMaster.endBlock()) {
@@ -130,7 +130,7 @@ contract BalleRewardDistribution is Ownable {
         if (extraRewardAmount > freeSupply) {
             // recalculate to fit BALLE cap.
             extraRewardAmount = freeSupply;
-            _multiplier = (extraRewardAmount * 100) / _baseRewardAmount;
+            _multiplier = ((extraRewardAmount + _baseRewardAmount) * 100) / _baseRewardAmount;
         }
 
         // Send BALLE from RewardFund.
@@ -158,7 +158,7 @@ contract BalleRewardDistribution is Ownable {
         emit BalleRewardDistributed(
             stakingPool,
             _baseRewardAmount,
-            extraRewardAmount - rewardFee,
+            extraRewardAmount,
             rewardFee,
             _duration / 3,
             _multiplier
