@@ -450,6 +450,8 @@ contract StratPancakeLpV1 is Ownable {
      * @dev Utility function for setting allowances with third party contracts.
      */
     function setAllowances() internal {
+        // Clear first, just in case they were set before (safeApprove will not allow to set from no zero)
+        clearAllowances();
         // Approve token transfers
         IERC20(depositToken).safeApprove(masterChef, type(uint256).max);
         IERC20(earnedtoken).safeApprove(router, type(uint256).max);
