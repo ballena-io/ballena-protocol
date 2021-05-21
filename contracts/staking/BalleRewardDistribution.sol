@@ -32,10 +32,10 @@ contract BalleRewardDistribution is Ownable {
     // The staking pool rewarder contract.
     address public rewarder;
 
-    // 10% fee on extra reward.
-    uint256 public constant EXTRA_REWARD_FEE = 1000;
+    // 10% fee on reward.
+    uint256 public constant REWARD_FEE = 1000;
     // Factor to calculate fee 100 = 1%.
-    uint256 public constant EXTRA_REWARD_FEE_MAX = 10000;
+    uint256 public constant REWARD_FEE_MAX = 10000;
 
     event BalleRewardDistributed(
         address indexed pool,
@@ -99,7 +99,7 @@ contract BalleRewardDistribution is Ownable {
      * @dev Function to distribute reward.
      * @param _duration: Period for the reward distribution. From 24h to 7 days.
      * @param _baseRewardAmount: Reward amount from performance fees to take from BalleRewardFund.
-     * @param _multiplier: Extra reward amount to add from new minted BALLE, while there is free supply (100 = 1).
+     * @param _multiplier: Multiplier to add Extra reward from new minted BALLE, while there is free supply (100 = 1).
      */
     function distributeReward(
         uint256 _duration,
@@ -119,7 +119,7 @@ contract BalleRewardDistribution is Ownable {
         require(rewardFundBalance >= _baseRewardAmount, "!rewardFundBalance");
 
         // Extra Reward amount.
-        uint256 extraRewardAmount = (_baseRewardAmount * _multiplier) / 100;
+        uint256 extraRewardAmount = ((_baseRewardAmount * _multiplier) / 100) - _baseRewardAmount;
         // Check if we can mint extraRewardAmount new BALLE.
         uint256 toBeMintedOnVaults = 0;
         if (block.number < balleMaster.endBlock()) {
@@ -130,22 +130,26 @@ contract BalleRewardDistribution is Ownable {
         if (extraRewardAmount > freeSupply) {
             // recalculate to fit BALLE cap.
             extraRewardAmount = freeSupply;
-            _multiplier = (extraRewardAmount * 100) / _baseRewardAmount;
+            _multiplier = ((extraRewardAmount + _baseRewardAmount) * 100) / _baseRewardAmount;
         }
-
-        // Extra Reward fee.
-        uint256 extraRewardFee = (extraRewardAmount * EXTRA_REWARD_FEE) / EXTRA_REWARD_FEE_MAX;
 
         // Send BALLE from RewardFund.
         IBalleRewardFund(rewardFund).sendRewardAmount(rewarder, _baseRewardAmount);
 
-        // Mint BALLE.
-        balle.mint(treasury, extraRewardFee);
-        balle.mint(rewarder, extraRewardAmount - extraRewardFee);
+        // Reward fee, the fee will allways come from extra reward.
+        uint256 rewardFee = ((_baseRewardAmount + extraRewardAmount) * REWARD_FEE) / REWARD_FEE_MAX;
+        if (extraRewardAmount < rewardFee) {
+            rewardFee = extraRewardAmount;
+        } else {
+            balle.mint(rewarder, extraRewardAmount - rewardFee);
+        }
+        if (rewardFee > 0) {
+            balle.mint(treasury, rewardFee);
+        }
 
         // Add reward to staking pool.
         IBalleStakingPool(stakingPool).addReward(
-            _baseRewardAmount + extraRewardAmount - extraRewardFee,
+            _baseRewardAmount + extraRewardAmount - rewardFee,
             _duration / 3,
             _multiplier,
             _rewardStartBlock
@@ -154,8 +158,8 @@ contract BalleRewardDistribution is Ownable {
         emit BalleRewardDistributed(
             stakingPool,
             _baseRewardAmount,
-            extraRewardAmount - extraRewardFee,
-            extraRewardFee,
+            extraRewardAmount,
+            rewardFee,
             _duration / 3,
             _multiplier
         );

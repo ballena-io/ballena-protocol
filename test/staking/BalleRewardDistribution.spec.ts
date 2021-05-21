@@ -264,7 +264,7 @@ describe('BalleRewardDistribution', () => {
       expect(await stakingPool.rewardStartBlock()).to.be.equal(9999)
       expect(await stakingPool.extraRewardMultiplier()).to.be.equal(1000)
       expect(await balle.balanceOf(rewardFund.address)).to.be.equal(expandTo18Decimals(4))
-      expect(await balle.balanceOf(rewarder.address)).to.be.equal(expandTo18Decimals(10))
+      expect(await balle.balanceOf(rewarder.address)).to.be.equal(expandTo18Decimals(9))
     })
   })
 
