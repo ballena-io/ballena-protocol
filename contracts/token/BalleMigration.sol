@@ -33,7 +33,7 @@ contract BalleMigration is ReentrancyGuard {
      * @dev Transfer BALLE from wallet, and mint new BALLEv2 to wallet
      */
     function migrate() external nonReentrant {
-        require(block.number < 9508744, "too late"); // TODO: update with real end block! 8160345
+        require(block.number < 8160345, "too late");
         uint256 amount = balle.balanceOf(msg.sender);
         require(amount > 0, "!amount");
         balle.transferFrom(msg.sender, address(this), amount);

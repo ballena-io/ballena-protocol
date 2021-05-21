@@ -15,6 +15,5 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   })
 }
 
-deploy.dependencies = ['TokenA']
 deploy.tags = ['BALLEv2']
 export default deploy
