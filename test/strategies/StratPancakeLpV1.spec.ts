@@ -17,7 +17,6 @@ describe('StratPancakeLpV1', () => {
   let balle: Contract
   let StratPancakeLpV1: ContractFactory
   let stratPancakeLpV1: Contract
-  let stratPancakeLpV1Upgrade: Contract
   let deployer: SignerWithAddress, test: SignerWithAddress
   let addresses: string[]
   let cakeToBallePath: string[]
@@ -115,18 +114,6 @@ describe('StratPancakeLpV1', () => {
       await expect(
         stratPancakeLpV1.connect(test).inCaseTokensGetStuck(ZERO_ADDRESS, 0, ZERO_ADDRESS),
       ).to.be.revertedWith('!governance')
-    })
-
-    it('should revert if not owner address calls upgradeTo()', async () => {
-      await expect(stratPancakeLpV1.connect(test).upgradeTo(ZERO_ADDRESS)).to.be.revertedWith(
-        'Ownable: caller is not the owner',
-      )
-    })
-
-    it('should revert if not owner address calls upgradeFrom()', async () => {
-      await expect(stratPancakeLpV1.connect(test).upgradeFrom(ZERO_ADDRESS, 0, 0, 0)).to.be.revertedWith(
-        'Ownable: caller is not the owner',
-      )
     })
 
     it('should revert if not owner address calls pause()', async () => {
@@ -632,145 +619,6 @@ describe('StratPancakeLpV1', () => {
         .inCaseTokensGetStuck(tokenA.address, expandTo18Decimals(50), deployer.address)
       expect(await tokenA.balanceOf(stratPancakeLpV1.address)).to.be.equal(expandTo18Decimals(50))
       expect(await tokenA.balanceOf(deployer.address)).to.be.equal(expandTo18Decimals(50))
-    })
-  })
-
-  describe('Test upgrade procedure', () => {
-    before('Deploy contracts', async () => {
-      await deployments.fixture()
-      testLP = await ethers.getContract('TestLP')
-      cake = await ethers.getContract('CAKE')
-      masterChef = await ethers.getContract('MockMasterChef')
-      stratPancakeLpV1 = await ethers.getContract('StratPancakeLpV1')
-      rewardPot = await ethers.getContract('BalleRewardFund')
-      treasury = await ethers.getContract('BalleTreasury')
-      // Our special mockRouter needs to mint BALLE
-      router = await ethers.getContract('MockRouter')
-      balle = await ethers.getContract('BALLEv2')
-      await balle.addMinter(router.address)
-      // Deploy Upgrade strategy contract
-      const wbnb = await ethers.getContract('WBNB')
-      tokenA = await ethers.getContract('TokenA')
-
-      addresses = [
-        testLP.address,
-        wbnb.address,
-        tokenA.address,
-        cake.address,
-        router.address,
-        masterChef.address,
-        deployer.address,
-        deployer.address,
-        rewardPot.address,
-        treasury.address,
-      ]
-      cakeToBallePath = [cake.address, wbnb.address, balle.address]
-      cakeToToken0Path = [cake.address, wbnb.address]
-      cakeToToken1Path = [cake.address, wbnb.address, tokenA.address]
-
-      stratPancakeLpV1Upgrade = await StratPancakeLpV1.deploy(
-        addresses,
-        1,
-        cakeToBallePath,
-        cakeToToken0Path,
-        cakeToToken1Path,
-      )
-      await stratPancakeLpV1Upgrade.deployed()
-    })
-
-    it('should revert if no strat address', async () => {
-      await expect(stratPancakeLpV1.connect(deployer).upgradeTo(ZERO_ADDRESS)).to.be.revertedWith('!strat')
-    })
-
-    it('should prepare strategy', async () => {
-      // setup TEST_LP balance
-      await testLP.mint(deployer.address, expandTo18Decimals(500))
-      expect(await testLP.balanceOf(deployer.address)).to.be.equal(expandTo18Decimals(500))
-      // approve TEST_LP transfer to TestStrategy contract
-      testLP.connect(deployer).approve(stratPancakeLpV1.address, MaxUint256)
-      // make deposit
-      await stratPancakeLpV1.connect(deployer).deposit(deployer.address, expandTo18Decimals(500))
-      // check values
-      expect(await testLP.balanceOf(masterChef.address)).to.be.equal(expandTo18Decimals(500))
-      expect(await stratPancakeLpV1.depositTotal()).to.be.equal(expandTo18Decimals(500))
-      expect(await stratPancakeLpV1.sharesTotal()).to.be.equal(expandTo18Decimals(500))
-    })
-
-    it('should make a harvest', async () => {
-      // Wait 9 more block, to earn 10 CAKE
-      mineBlock()
-      mineBlock()
-      mineBlock()
-      mineBlock()
-      mineBlock()
-      mineBlock()
-      mineBlock()
-      mineBlock()
-      mineBlock()
-
-      // check pending CAKE
-      expect(await stratPancakeLpV1.pendingEarnedToken()).to.be.equal(expandTo18Decimals(9))
-
-      // make harvest
-      await expect(stratPancakeLpV1.connect(deployer).harvest())
-        .to.emit(stratPancakeLpV1, 'Harvest')
-        .withArgs(expandTo18Decimals(10))
-        .emit(stratPancakeLpV1, 'DistributeFees')
-        .withArgs('300000000000000000', '100000000000000000')
-
-      // Check values
-      expect(await cake.balanceOf(stratPancakeLpV1.address)).to.be.equal(0)
-      // We earned 10 CAKE, so 0.3 BALLE (change is 1:1 on test) to reward holders
-      expect(await balle.balanceOf(rewardPot.address)).to.be.equal('300000000000000000')
-      // We earned 10 CAKE, so 0.1 BALLE (change is 1:1 on test) to treasury
-      expect(await balle.balanceOf(treasury.address)).to.be.equal('100000000000000000')
-      // We earned 10 CAKE, so 4.8 liquidity increase in test
-      expect(await testLP.balanceOf(masterChef.address)).to.be.equal('504800000000000000000')
-      expect(await stratPancakeLpV1.depositTotal()).to.be.equal('504800000000000000000')
-      expect(await stratPancakeLpV1.sharesTotal()).to.be.equal(expandTo18Decimals(500))
-    })
-
-    it('should start upgrade process', async () => {
-      // Wait 3 blocks, to earn 3 CAKE
-      mineBlock()
-      mineBlock()
-      mineBlock()
-
-      // use callStatic to check return value of solidity function
-      const [shares, deposit, earned] = await stratPancakeLpV1
-        .connect(deployer)
-        .callStatic.upgradeTo(stratPancakeLpV1Upgrade.address)
-      expect(shares).to.be.equal(expandTo18Decimals(500))
-      expect(deposit).to.be.equal('504800000000000000000')
-      expect(earned).to.be.equal(expandTo18Decimals(3))
-
-      // prepare upgrade
-      await stratPancakeLpV1.connect(deployer).upgradeTo(stratPancakeLpV1Upgrade.address)
-
-      // Check values
-      expect(await stratPancakeLpV1.paused()).to.be.equal(true)
-      // we get one more CAKE, because of a new block mining
-      expect(await cake.balanceOf(stratPancakeLpV1.address)).to.be.equal(expandTo18Decimals(4))
-      expect(await testLP.balanceOf(masterChef.address)).to.be.equal(0)
-      expect(await testLP.balanceOf(stratPancakeLpV1.address)).to.be.equal('504800000000000000000')
-      expect(await stratPancakeLpV1.depositTotal()).to.be.equal('504800000000000000000')
-      expect(await stratPancakeLpV1.sharesTotal()).to.be.equal(expandTo18Decimals(500))
-    })
-
-    it('should complete upgrade process', async () => {
-      // complete upgrade
-      await stratPancakeLpV1Upgrade
-        .connect(deployer)
-        .upgradeFrom(stratPancakeLpV1.address, expandTo18Decimals(500), '504800000000000000000', expandTo18Decimals(4))
-
-      // Check values
-      expect(await cake.balanceOf(stratPancakeLpV1.address)).to.be.equal(0)
-      expect(await cake.balanceOf(stratPancakeLpV1Upgrade.address)).to.be.equal(expandTo18Decimals(4))
-      expect(await testLP.balanceOf(masterChef.address)).to.be.equal('504800000000000000000')
-      expect(await testLP.balanceOf(stratPancakeLpV1.address)).to.be.equal(0)
-      expect(await testLP.balanceOf(stratPancakeLpV1Upgrade.address)).to.be.equal(0)
-      expect(await stratPancakeLpV1Upgrade.depositTotal()).to.be.equal('504800000000000000000')
-      expect(await stratPancakeLpV1Upgrade.sharesTotal()).to.be.equal(expandTo18Decimals(500))
     })
   })
 })
