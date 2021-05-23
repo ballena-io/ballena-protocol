@@ -10,7 +10,6 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const BalleV2 = await deployments.get('BALLEv2')
   let ballePerBlock = BigNumber.from('228310502283105')
   let balleTotalRewards = expandTo18Decimals(24000)
-  const approvalDelay = 86400
 
   // If tests network (hardhat), use testing reward params
   if (network.name == 'hardhat') {
@@ -20,7 +19,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   await deploy('BalleMaster', {
     from: deployer,
-    args: [BalleV2.address, ballePerBlock, balleTotalRewards, approvalDelay],
+    args: [BalleV2.address, ballePerBlock, balleTotalRewards],
     log: true,
     deterministicDeployment: false,
   })

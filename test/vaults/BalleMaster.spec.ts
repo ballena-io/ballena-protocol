@@ -36,111 +36,12 @@ describe('BalleMaster', () => {
         balle.address,
         BigNumber.from('228310502283105'),
         expandTo18Decimals(24000),
-        86400,
       )
       await balleMaster.deployed()
 
       expect(await balleMaster.balle()).to.be.equal(balle.address)
       expect(await balleMaster.ballePerBlock()).to.be.equal(BigNumber.from('228310502283105'))
       expect(await balleMaster.balleTotalRewards()).to.be.equal(expandTo18Decimals(24000))
-      expect(await balleMaster.approvalDelay()).to.be.equal(86400)
-    })
-  })
-
-  describe('Test strategy upgrade timelock', () => {
-    before('Deploy contracts', async () => {
-      await deployments.fixture()
-      balleMaster = await ethers.getContract('BalleMaster')
-      testStrategy = await ethers.getContract('TestStrategy')
-      testLP = await ethers.getContract('TestLP')
-      localStrategy1 = await LocalStrategy.deploy(balleMaster.address, testLP.address)
-      await localStrategy1.deployed()
-    })
-
-    it('should revert if anyone (not owner) try to propose strategy upgrade', async () => {
-      await expect(balleMaster.connect(test).proposeStratUpgrade(0, localStrategy1.address)).to.be.revertedWith(
-        'Ownable: caller is not the owner',
-      )
-    })
-
-    it('should revert if try to propose strategy upgrade non existent vault', async () => {
-      await expect(balleMaster.connect(deployer).proposeStratUpgrade(0, localStrategy1.address)).to.be.revertedWith(
-        '!vault',
-      )
-    })
-
-    it('should revert if anyone (not operations wallet or owner) try to strategy upgrade', async () => {
-      await expect(balleMaster.connect(test).stratUpgrade(0, localStrategy1.address)).to.be.revertedWith('!operations')
-    })
-
-    it('should revert if try to strategy upgrade non existent vault', async () => {
-      await expect(balleMaster.connect(deployer).stratUpgrade(0, localStrategy1.address)).to.be.revertedWith('!vault')
-    })
-
-    it('should add new vault #0', async () => {
-      await balleMaster.connect(deployer).addVault(testLP.address, testStrategy.address)
-    })
-
-    it('should revert if try to propose strategy upgrade with zero address', async () => {
-      await expect(balleMaster.connect(deployer).proposeStratUpgrade(0, ZERO_ADDRESS)).to.be.revertedWith('!strat')
-    })
-
-    it('should propose strat upgrade', async () => {
-      await expect(balleMaster.connect(deployer).proposeStratUpgrade(0, localStrategy1.address))
-        .to.emit(balleMaster, 'ProposeStratUpgrade')
-        .withArgs(0, localStrategy1.address)
-    })
-
-    it('should revert if try to strategy upgrade with zero address', async () => {
-      await expect(balleMaster.connect(deployer).stratUpgrade(0, ZERO_ADDRESS)).to.be.revertedWith('!strat')
-    })
-
-    it('should revert if try to strategy upgrade and timelock not expired', async () => {
-      await expect(balleMaster.connect(deployer).stratUpgrade(0, localStrategy1.address)).to.be.revertedWith(
-        '!timelock',
-      )
-    })
-
-    it('should revert if try to strategy upgrade with a different strat', async () => {
-      await expect(balleMaster.connect(deployer).stratUpgrade(0, testStrategy.address)).to.be.revertedWith('!strat')
-    })
-  })
-
-  describe('Test strategy upgrade', () => {
-    before('Deploy contracts', async () => {
-      await deployments.fixture()
-      balleMaster = await BalleMaster.deploy(
-        balle.address,
-        BigNumber.from('228310502283105'),
-        expandTo18Decimals(24000),
-        0,
-      )
-      await balleMaster.deployed()
-      testLP = await ethers.getContract('TestLP')
-      localStrategy1 = await LocalStrategy.deploy(balleMaster.address, testLP.address)
-      await localStrategy1.deployed()
-      localStrategy2 = await LocalStrategy.deploy(balleMaster.address, testLP.address)
-      await localStrategy2.deployed()
-    })
-
-    it('should add new vault #0', async () => {
-      await balleMaster.connect(deployer).addVault(testLP.address, localStrategy1.address)
-    })
-
-    it('should propose strat upgrade', async () => {
-      await expect(balleMaster.connect(deployer).proposeStratUpgrade(0, localStrategy2.address))
-        .to.emit(balleMaster, 'ProposeStratUpgrade')
-        .withArgs(0, localStrategy2.address)
-    })
-
-    it('should strat upgrade', async () => {
-      await expect(balleMaster.connect(deployer).stratUpgrade(0, localStrategy2.address))
-        .to.emit(balleMaster, 'StratUpgrade')
-        .withArgs(0, localStrategy2.address)
-    })
-
-    it('should revert if try to strategy upgrade again', async () => {
-      await expect(balleMaster.connect(deployer).stratUpgrade(0, localStrategy2.address)).to.be.revertedWith('!strat')
     })
   })
 

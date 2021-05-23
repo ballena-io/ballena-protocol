@@ -494,56 +494,6 @@ contract StratPancakeLpV1 is Ownable {
     }
 
     /**
-     * @dev Prepare to upgrade strategy to the new one indicated.
-     */
-    function upgradeTo(address _strat)
-        external
-        onlyOwner
-        returns (
-            uint256,
-            uint256,
-            uint256
-        )
-    {
-        require(_strat != address(0), "!strat");
-
-        // Stop vault.
-        _pause();
-
-        // Set allowance for new strat contract.
-        uint256 depositAmt = IERC20(depositToken).balanceOf(address(this));
-        uint256 earnedAmt = IERC20(earnedtoken).balanceOf(address(this));
-        IERC20(depositToken).safeApprove(_strat, 0);
-        IERC20(depositToken).safeIncreaseAllowance(_strat, depositAmt);
-        IERC20(earnedtoken).safeApprove(_strat, 0);
-        IERC20(earnedtoken).safeIncreaseAllowance(_strat, earnedAmt);
-
-        return (sharesTotal, depositAmt, earnedAmt);
-    }
-
-    /**
-     * @dev Complete upgrade from the old strategy.
-     */
-    function upgradeFrom(
-        address _strat,
-        uint256 _sharesTotal,
-        uint256 _depositAmt,
-        uint256 _earnedAmt
-    ) external onlyOwner {
-        require(_strat != address(0), "!strat");
-
-        if (_depositAmt > 0) {
-            IERC20(depositToken).safeTransferFrom(_strat, address(this), _depositAmt);
-        }
-        if (_earnedAmt > 0) {
-            IERC20(earnedtoken).safeTransferFrom(_strat, address(this), _earnedAmt);
-        }
-        sharesTotal = _sharesTotal;
-
-        farm();
-    }
-
-    /**
      * @dev Stop the vault.
      */
     function pause() external onlyOwner whenNotPaused {
