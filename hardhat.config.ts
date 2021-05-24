@@ -131,8 +131,12 @@ const config: HardhatUserConfig = {
     test2: 2,
     balle: {
       default: '0x9f0D5f45CE8573f43E0BA17876329784be0fd700', // use mainnet address, because we use fork
-      56: '0x9f0D5f45CE8573f43E0BA17876329784be0fd700',
-      97: '0x8bD237e94CE369F6D78c7bb08B90efc5c6f27A4f',
+      56: '0x9f0D5f45CE8573f43E0BA17876329784be0fd700', // BSC mainnet
+      97: '0x8bD237e94CE369F6D78c7bb08B90efc5c6f27A4f', // BSC testnet
+    },
+    wbnb: {
+      56: '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c',
+      97: '0xae13d989dac2f0debff460ac112a837c89baa7cd',
     },
     harvester: {
       default: '0xb25D37892305FE1b44c06F035139a0ED11EcA82d',
