@@ -24,10 +24,12 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     deterministicDeployment: false,
   })
 
-  // Add BalleMaster as BALLE minter
-  const BalleMaster = await deployments.get('BalleMaster')
-  const balle = await ethers.getContractAt('BALLEv2', BalleV2.address)
-  await balle.addMinter(BalleMaster.address)
+  if (network.name == 'hardhat') {
+    // Add BalleMaster as BALLE minter
+    const BalleMaster = await deployments.get('BalleMaster')
+    const balle = await ethers.getContractAt('BALLEv2', BalleV2.address)
+    await balle.addMinter(BalleMaster.address)
+  }
 }
 
 deploy.tags = ['BalleMaster']
