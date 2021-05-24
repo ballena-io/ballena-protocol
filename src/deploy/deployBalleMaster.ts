@@ -4,7 +4,7 @@ import { BigNumber } from 'ethers'
 import { expandTo18Decimals } from '../utils'
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  const { deployments, getNamedAccounts, network } = hre
+  const { deployments, getNamedAccounts, network, ethers } = hre
   const { deploy } = deployments
   const { deployer } = await getNamedAccounts()
   const BalleV2 = await deployments.get('BALLEv2')
@@ -22,8 +22,14 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     args: [BalleV2.address, ballePerBlock, balleTotalRewards],
     log: true,
     deterministicDeployment: false,
-    gasLimit: 3750000,
   })
+
+  if (network.name == 'hardhat') {
+    // Add BalleMaster as BALLE minter
+    const BalleMaster = await deployments.get('BalleMaster')
+    const balle = await ethers.getContractAt('BALLEv2', BalleV2.address)
+    await balle.addMinter(BalleMaster.address)
+  }
 }
 
 deploy.tags = ['BalleMaster']
