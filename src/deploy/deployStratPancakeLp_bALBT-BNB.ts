@@ -34,6 +34,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     args: [addresses, pid, cakeToBallePath, cakeToToken0Path, cakeToToken1Path],
     log: true,
     deterministicDeployment: false,
+    gasLimit: 3750000,
   })
 }
 
