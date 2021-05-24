@@ -355,6 +355,8 @@ describe('BalleMaster', () => {
       await localStrategy1.deployed()
       localStrategy2 = await LocalStrategy.deploy(balleMaster.address, testLP.address)
       await localStrategy2.deployed()
+      // Add BalleMaster as minter
+      await balle.addMinter(balleMaster.address)
 
       // setup TEST_LP balance
       await testLP.mint(deployer.address, expandTo18Decimals(500))
