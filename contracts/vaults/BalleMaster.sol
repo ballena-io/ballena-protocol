@@ -143,7 +143,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     /**
      * @dev Function to add a new vault configuration.
      */
-    function addVault(address _depositToken, address _strat) public onlyOperations {
+    function addVault(address _depositToken, address _strat) external onlyOperations {
         require(_strat != address(0), "!strat");
         require(_depositToken == IStrategy(_strat).depositToken(), "!depositToken");
         vaultInfo.push(
@@ -163,7 +163,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     /**
      * @dev Function to activate vault rewards.
      */
-    function activateVaultRewards(uint256 _vid, uint256 _allocPoint) public onlyOperations vaultExists(_vid) {
+    function activateVaultRewards(uint256 _vid, uint256 _allocPoint) external onlyOperations vaultExists(_vid) {
         VaultInfo storage vault = vaultInfo[_vid];
         require(!vault.rewardsActive, "active");
         require(_allocPoint > 0, "!allocpoint");
@@ -188,7 +188,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     /**
      * @dev Function to modify vault rewards.
      */
-    function modifyVaultRewards(uint256 _vid, uint256 _allocPoint) public onlyOperations vaultExists(_vid) {
+    function modifyVaultRewards(uint256 _vid, uint256 _allocPoint) external onlyOperations vaultExists(_vid) {
         VaultInfo storage vault = vaultInfo[_vid];
         require(vault.rewardsActive, "!active");
         require(_allocPoint > 0, "!allocpoint");
@@ -220,12 +220,12 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     /**
      * @dev Function to pause vault strategy.
      */
-    function pauseVault(uint256 _vid) public onlySecurity vaultExists(_vid) {
+    function pauseVault(uint256 _vid) external onlySecurity vaultExists(_vid) {
         VaultInfo storage vault = vaultInfo[_vid];
         require(!vault.paused, "!active");
 
-        IStrategy(vault.strat).pause();
         vault.paused = true;
+        IStrategy(vault.strat).pause();
 
         emit PauseVault(_vid);
     }
@@ -233,12 +233,12 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     /**
      * @dev Function to unpause vault strategy.
      */
-    function unpauseVault(uint256 _vid) public onlyOperations vaultExists(_vid) {
+    function unpauseVault(uint256 _vid) external onlyOperations vaultExists(_vid) {
         VaultInfo storage vault = vaultInfo[_vid];
         require(vault.paused, "!paused");
 
-        IStrategy(vault.strat).unpause();
         vault.paused = false;
+        IStrategy(vault.strat).unpause();
 
         emit UnpauseVault(_vid);
     }
@@ -246,12 +246,12 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     /**
      * @dev Function to panic vault strategy.
      */
-    function panicVault(uint256 _vid) public onlySecurity vaultExists(_vid) {
+    function panicVault(uint256 _vid) external onlySecurity vaultExists(_vid) {
         VaultInfo storage vault = vaultInfo[_vid];
         require(!vault.paused, "!active");
 
-        IStrategy(vault.strat).panic();
         vault.paused = true;
+        IStrategy(vault.strat).panic();
 
         emit PanicVault(_vid);
     }
@@ -259,17 +259,17 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     /**
      * @dev Function to retire vault strategy.
      */
-    function retireVault(uint256 _vid) public onlyOperations vaultExists(_vid) {
+    function retireVault(uint256 _vid) external onlyOperations vaultExists(_vid) {
         VaultInfo storage vault = vaultInfo[_vid];
         require(!vault.retired, "!active");
-
-        IStrategy(vault.strat).retire();
-        vault.retired = true;
 
         // Make sure rewards are deactivated
         if (vault.rewardsActive) {
             deactivateVaultRewards(_vid);
         }
+
+        vault.retired = true;
+        IStrategy(vault.strat).retire();
 
         emit RetireVault(_vid);
     }
@@ -379,7 +379,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         VaultInfo storage vault = vaultInfo[_vid];
         UserInfo storage user = userInfo[_vid][msg.sender];
 
-        uint256 pending;
+        uint256 pending = 0;
         if (user.shares > 0) {
             pending = (user.shares * vault.accBallePerShare) / 1e12 - user.rewardDebt;
             if (pending > 0) {
@@ -535,7 +535,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         address _token,
         uint256 _amount,
         address _to
-    ) public onlyOwner {
+    ) external onlyOwner {
         require(_to != address(0), "zero address");
         require(_token != address(balle), "!safe");
 
