@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../interfaces/IPancakeswapFarm.sol";
 import "../interfaces/IPancakeRouter01.sol";
 
@@ -13,7 +14,7 @@ import "../interfaces/IPancakeRouter01.sol";
  * This contract will compound LP tokens.
  * The owner of the contract is the BalleMaster contract.
  */
-contract StratPancakeLpV1 is Ownable {
+contract StratPancakeLpV1 is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     // PancakeSwap's MasterChef address.
@@ -200,13 +201,14 @@ contract StratPancakeLpV1 is Ownable {
      * @dev Function to send depositToken to farm.
      */
     function farm() internal {
-        if (depositTotal == 0) {
-            // On first farming, set allowances
-            setAllowances();
-        }
+        bool first = (depositTotal == 0);
         uint256 amount = IERC20(depositToken).balanceOf(address(this));
         depositTotal = depositTotal + amount;
 
+        if (first) {
+            // On first farming, set allowances
+            setAllowances();
+        }
         IPancakeswapFarm(masterChef).deposit(pid, amount);
     }
 
@@ -247,7 +249,7 @@ contract StratPancakeLpV1 is Ownable {
     /**
      * @dev Function to harvest earnings and reinvest.
      */
-    function harvest() public onlyHarvester whenNotPaused {
+    function harvest() public onlyHarvester whenNotPaused nonReentrant {
         _harvest(0);
     }
 
@@ -505,15 +507,13 @@ contract StratPancakeLpV1 is Ownable {
      */
     function _pause() internal {
         if (!paused) {
+            paused = true;
             // Harvest with withdrawall.
             if (depositTotal > 0) {
                 _harvest(depositTotal);
             }
-
             // Clear allowances of third party contracts.
             clearAllowances();
-
-            paused = true;
         }
     }
 
@@ -522,21 +522,22 @@ contract StratPancakeLpV1 is Ownable {
      */
     function unpause() external onlyOwner whenPaused {
         depositTotal = 0; // It will be set back on farm().
-        farm();
         paused = false;
+
+        farm();
     }
 
     /**
      * @dev Stop the vault with emergencyWithdraw from farm.
      */
     function panic() external onlyOwner whenNotPaused {
+        paused = true;
+
         // Emergency withdraw.
         IPancakeswapFarm(masterChef).emergencyWithdraw(pid);
 
         // Clear allowances of third party contracts.
         clearAllowances();
-
-        paused = true;
     }
 
     /**
@@ -562,7 +563,7 @@ contract StratPancakeLpV1 is Ownable {
         address _token,
         uint256 _amount,
         address _to
-    ) public onlyGovernance {
+    ) external onlyGovernance {
         require(_to != address(0), "zero address");
         require(_token != earnedtoken, "!safe");
         require(_token != depositToken, "!safe");
