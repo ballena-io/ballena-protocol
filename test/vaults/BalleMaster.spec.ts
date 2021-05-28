@@ -34,14 +34,16 @@ describe('BalleMaster', () => {
     it('should create contract', async () => {
       balleMaster = await BalleMaster.deploy(
         balle.address,
-        BigNumber.from('228310502283105'),
+        BigNumber.from('2283105022831050'),
         expandTo18Decimals(24000),
+        7779016,
       )
       await balleMaster.deployed()
 
       expect(await balleMaster.balle()).to.be.equal(balle.address)
-      expect(await balleMaster.ballePerBlock()).to.be.equal(BigNumber.from('228310502283105'))
+      expect(await balleMaster.ballePerBlock()).to.be.equal(BigNumber.from('2283105022831050'))
       expect(await balleMaster.balleTotalRewards()).to.be.equal(expandTo18Decimals(24000))
+      expect(await balleMaster.startBlock()).to.be.equal(7779016)
     })
   })
 
