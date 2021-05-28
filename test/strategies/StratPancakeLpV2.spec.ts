@@ -6,7 +6,7 @@ import { MaxUint256, ZERO_ADDRESS } from '../../src/utils/constants'
 import { mineBlock } from '../shared/hardhatNode'
 import { expandTo18Decimals } from '../../src/utils'
 
-describe.only('StratPancakeLpV2', () => {
+describe('StratPancakeLpV2', () => {
   let testLP: Contract
   let cake: Contract
   let tokenA: Contract
