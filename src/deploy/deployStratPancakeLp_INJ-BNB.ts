@@ -29,7 +29,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const cakeToToken1Path = [cake, wbnb, inj]
 
   await deploy('StratPancakeLp_INJ-BNB', {
-    contract: 'StratPancakeLpV1',
+    contract: 'StratPancakeLpV2',
     from: deployer,
     args: [addresses, pid, cakeToBallePath, cakeToToken0Path, cakeToToken1Path],
     log: true,
