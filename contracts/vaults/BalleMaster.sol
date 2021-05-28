@@ -54,6 +54,7 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     // BALLE tokens to distribute: 24000e18.
     uint256 public immutable balleTotalRewards;
     // The block number when BALLE rewards distribution starts.
+    // This is set on constructor, because this contract continues distribution from 0x26FBb0FF7589A43C7d4B2Ff9A68A0519c474156c
     uint256 public startBlock;
     // The block number when BALLE rewards distribution ends.
     uint256 public endBlock;
@@ -86,11 +87,13 @@ contract BalleMaster is Ownable, ReentrancyGuard {
     constructor(
         BALLEv2 _balle,
         uint256 _ballePerBlock,
-        uint256 _balleTotalRewards
+        uint256 _balleTotalRewards,
+        uint256 _startBlock
     ) {
         balle = _balle;
         ballePerBlock = _ballePerBlock;
         balleTotalRewards = _balleTotalRewards;
+        startBlock = _startBlock;
     }
 
     /**
@@ -171,7 +174,10 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         massUpdateVaults();
 
         if (startBlock == 0) {
+            // modified to continue distribution from 0x26FBb0FF7589A43C7d4B2Ff9A68A0519c474156c
             startBlock = block.number;
+        }
+        if (endBlock == 0) {
             endBlock = startBlock + (balleTotalRewards / ballePerBlock);
         }
         uint256 lastRewardBlock = block.number;
@@ -225,9 +231,9 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         require(!vault.paused, "!active");
 
         vault.paused = true;
-        IStrategy(vault.strat).pause();
-
         emit PauseVault(_vid);
+
+        IStrategy(vault.strat).pause();
     }
 
     /**
@@ -238,9 +244,9 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         require(vault.paused, "!paused");
 
         vault.paused = false;
-        IStrategy(vault.strat).unpause();
-
         emit UnpauseVault(_vid);
+
+        IStrategy(vault.strat).unpause();
     }
 
     /**
@@ -251,9 +257,9 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         require(!vault.paused, "!active");
 
         vault.paused = true;
-        IStrategy(vault.strat).panic();
-
         emit PanicVault(_vid);
+
+        IStrategy(vault.strat).panic();
     }
 
     /**
@@ -269,9 +275,9 @@ contract BalleMaster is Ownable, ReentrancyGuard {
         }
 
         vault.retired = true;
-        IStrategy(vault.strat).retire();
-
         emit RetireVault(_vid);
+
+        IStrategy(vault.strat).retire();
     }
 
     /**
