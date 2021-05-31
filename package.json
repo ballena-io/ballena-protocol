@@ -14,7 +14,12 @@
     "lint:ts": "npx eslint -f table .",
     "lint": "yarn lint:sol && yarn lint:ts",
     "prepare": "npx husky install",
-    "pre-commit": "yarn prettier:check && npx commitlint -e"
+    "pre-commit": "yarn prettier:check && npx commitlint -e",
+    "uml:protocol": "sol2uml contracts -i contracts/mocks -o uml/ballena-protocol.svg",
+    "uml:ballemaster": "sol2uml contracts -b BalleMaster -i contracts/mocks -o uml/BalleMaster.svg",
+    "uml:pancakelpstrat": "sol2uml contracts -b StratPancakeLpV2 -i contracts/mocks -o uml/StratPancakeLpV2.svg",
+    "uml:staking": "sol2uml contracts -b BalleStakingPoolV1 -i contracts/mocks -o uml/BalleStakingPoolV1.svg",
+    "build:uml": "hardhat compile && yarn uml:protocol && yarn uml:ballemaster && yarn uml:pancakelpstrat && yarn uml:staking"
   },
   "repository": {
     "type": "git",
@@ -55,6 +60,7 @@
     "prettier": "^2.2.1",
     "prettier-plugin-solidity": "^1.0.0-beta.6",
     "rimraf": "^3.0.2",
+    "sol2uml": "^1.1.25",
     "solhint": "^3.3.4",
     "solhint-plugin-prettier": "^0.0.5",
     "solidity-coverage": "^0.7.16",
