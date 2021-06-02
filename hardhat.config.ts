@@ -138,6 +138,10 @@ const config: HardhatUserConfig = {
       56: '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c',
       97: '0xae13d989dac2f0debff460ac112a837c89baa7cd',
     },
+    busd: {
+      56: '0xe9e7cea3dedca5984780bafc599bd69add087d56',
+      97: '0xed24fc36d5ee211ea25a80239fb8c4cfd80f12ee',
+    },
     harvester: {
       default: '0xb25D37892305FE1b44c06F035139a0ED11EcA82d',
     },
