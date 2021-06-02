@@ -104,9 +104,9 @@
 <path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M744.6427,-360.5102C800.3592,-488.2895 871.8605,-652.2695 910.4588,-740.79"/>
 <polygon fill="#000000" stroke="#000000" points="907.3393,-742.3928 914.5446,-750.1604 913.7559,-739.5949 907.3393,-742.3928"/>
 </g>
-<!-- 28 -->
+<!-- 26 -->
 <g id="node10" class="node">
-<title>28</title>
+<title>26</title>
 <polygon fill="#f2f2f2" stroke="#000000" points="1280.8334,-641.1 1280.8334,-967.5 1719.4696,-967.5 1719.4696,-641.1 1280.8334,-641.1"/>
 <text text-anchor="middle" x="1500.1515" y="-950.9" font-family="Times,serif" font-size="14.00" fill="#000000">BALLEv2</text>
 <polyline fill="none" stroke="#000000" points="1280.8334,-942.7 1719.4696,-942.7 "/>
@@ -129,9 +129,9 @@
 <text text-anchor="start" x="1288.8334" y="-666.1" font-family="Times,serif" font-size="14.00" fill="#000000"> &#160;&#160;&#160;constructor(_name: string, _symbol: string, _cap: uint256)</text>
 <text text-anchor="start" x="1288.8334" y="-649.3" font-family="Times,serif" font-size="14.00" fill="#000000"> &#160;&#160;&#160;inCaseTokensGetStuck(_token: address, _amount: uint256, _to: address)</text>
 </g>
-<!-- 20&#45;&gt;28 -->
+<!-- 20&#45;&gt;26 -->
 <g id="edge2" class="edge">
-<title>20&#45;&gt;28</title>
+<title>20&#45;&gt;26</title>
 <path fill="none" stroke="#000000" d="M1146.5127,-314.8671C1191.1586,-338.161 1233.6447,-365.3361 1271.1515,-397 1344.6401,-459.0405 1399.1759,-550.9716 1436.5522,-631.8023"/>
 <polygon fill="#000000" stroke="#000000" points="1433.4588,-633.4541 1440.7972,-641.096 1439.826,-630.5458 1433.4588,-633.4541"/>
 </g>
