@@ -15,10 +15,10 @@
     "lint": "yarn lint:sol && yarn lint:ts",
     "prepare": "npx husky install",
     "pre-commit": "yarn prettier:check && npx commitlint -e",
-    "uml:protocol": "npx sol2uml contracts -c -b BalleMigration,BalleMaster,StratPancakeLpV3,BalleStakingPoolV1,BalleRewardDistribution,BalleRewarder,BalleRewardFund -o uml/ballena-protocol.svg",
-    "uml:ballemaster": "npx sol2uml contracts -b BalleMaster -o uml/BalleMaster.svg",
-    "uml:pancakelpstrat": "npx sol2uml contracts -b StratPancakeLpV3 -o uml/StratPancakeLp.svg",
-    "uml:staking": "npx sol2uml contracts -b BalleStakingPoolV1,BalleRewardDistribution,BalleRewarder,BalleRewardFund -o uml/BalleStakingPool.svg",
+    "uml:protocol": "npx sol2uml contracts -c -b BalleMigration,BalleMaster,StratPancakeLpV3,BalleStakingPoolV1,BalleRewardDistribution,BalleRewarder,BalleRewardFund -o docs/img/ballena-protocol.svg",
+    "uml:ballemaster": "npx sol2uml contracts -b BalleMaster -o docs/img/BalleMaster.svg",
+    "uml:pancakelpstrat": "npx sol2uml contracts -b StratPancakeLpV3 -o docs/img/StratPancakeLp.svg",
+    "uml:staking": "npx sol2uml contracts -b BalleStakingPoolV1,BalleRewardDistribution,BalleRewarder,BalleRewardFund -o docs/img/BalleStakingPool.svg",
     "build:uml": "hardhat compile && yarn uml:protocol && yarn uml:ballemaster && yarn uml:pancakelpstrat && yarn uml:staking"
   },
   "repository": {

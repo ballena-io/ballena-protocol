@@ -59,9 +59,9 @@
 <text text-anchor="start" x="1477.4966" y="-1279.3" font-family="Times,serif" font-size="14.00" fill="#000000"> &#160;&#160;&#160;&#160;leaveStaking(_amount: uint256)</text>
 <text text-anchor="start" x="1477.4966" y="-1262.5" font-family="Times,serif" font-size="14.00" fill="#000000"> &#160;&#160;&#160;&#160;emergencyWithdraw(_pid: uint256)</text>
 </g>
-<!-- 26 -->
+<!-- 24 -->
 <g id="node3" class="node">
-<title>26</title>
+<title>24</title>
 <polygon fill="#f2f2f2" stroke="#000000" points="698.1082,-.5 698.1082,-1133.3 1661.5008,-1133.3 1661.5008,-.5 698.1082,-.5"/>
 <text text-anchor="middle" x="1179.8045" y="-1116.7" font-family="Times,serif" font-size="14.00" fill="#000000">StratPancakeLpV3</text>
 <polyline fill="none" stroke="#000000" points="698.1082,-1108.5 1661.5008,-1108.5 "/>
@@ -132,15 +132,15 @@
 <text text-anchor="start" x="706.1082" y="-25.5" font-family="Times,serif" font-size="14.00" fill="#000000"> &#160;&#160;&#160;setRewards(_rewards: address)</text>
 <text text-anchor="start" x="706.1082" y="-8.7" font-family="Times,serif" font-size="14.00" fill="#000000"> &#160;&#160;&#160;setTreasury(_treasury: address)</text>
 </g>
-<!-- 26&#45;&gt;6 -->
+<!-- 24&#45;&gt;6 -->
 <g id="edge2" class="edge">
-<title>26&#45;&gt;6</title>
+<title>24&#45;&gt;6</title>
 <path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M861.7119,-1133.4411C856.469,-1142.7791 851.3038,-1151.9786 846.2305,-1161.0145"/>
 <polygon fill="#000000" stroke="#000000" points="843.0322,-1159.5617 841.1883,-1169.9949 849.136,-1162.9888 843.0322,-1159.5617"/>
 </g>
-<!-- 26&#45;&gt;7 -->
+<!-- 24&#45;&gt;7 -->
 <g id="edge1" class="edge">
-<title>26&#45;&gt;7</title>
+<title>24&#45;&gt;7</title>
 <path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M1497.8971,-1133.4411C1520.6983,-1174.0515 1542.0295,-1212.0436 1560.7269,-1245.3446"/>
 <polygon fill="#000000" stroke="#000000" points="1557.7278,-1247.1522 1565.6754,-1254.1583 1563.8315,-1243.7251 1557.7278,-1247.1522"/>
 </g>
