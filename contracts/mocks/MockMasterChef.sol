@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "../interfaces/IMintableERC20.sol";
+import "./interfaces/IMMintableERC20.sol";
 
 /**
  * @dev Mock contract used for unit tests.
@@ -97,6 +97,6 @@ contract MockMasterChef {
     // Safe cake transfer function, just in case if rounding error causes pool to not have enough CAKEs.
     // MODIFIED TO MINT HERE
     function safeCakeTransfer(address _to, uint256 _amount) internal {
-        IMintableERC20(cake).mint(_to, _amount);
+        IMMintableERC20(cake).mint(_to, _amount);
     }
 }

@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "../interfaces/IMintableERC20.sol";
+import "./interfaces/IMMintableERC20.sol";
 
 contract MasterChef is Ownable {
     using SafeERC20 for IERC20;
@@ -268,6 +268,6 @@ contract MasterChef is Ownable {
     // Safe cake transfer function, just in case if rounding error causes pool to not have enough CAKEs.
     // MODIFIED TO MINT HERE
     function safeCakeTransfer(address _to, uint256 _amount) internal {
-        IMintableERC20(cake).mint(_to, _amount);
+        IMMintableERC20(cake).mint(_to, _amount);
     }
 }

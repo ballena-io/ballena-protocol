@@ -31,9 +31,9 @@
 <text text-anchor="start" x="8" y="-1290.3" font-family="Times,serif" font-size="14.00" fill="#000000"> &#160;&#160;&#160;&#160;panic()</text>
 <text text-anchor="start" x="8" y="-1273.5" font-family="Times,serif" font-size="14.00" fill="#000000"> &#160;&#160;&#160;&#160;retire()</text>
 </g>
-<!-- 27 -->
+<!-- 28 -->
 <g id="node2" class="node">
-<title>27</title>
+<title>28</title>
 <polygon fill="#f2f2f2" stroke="#000000" points="459.75,-1240.1 459.75,-1566.5 898.3862,-1566.5 898.3862,-1240.1 459.75,-1240.1"/>
 <text text-anchor="middle" x="679.0681" y="-1549.9" font-family="Times,serif" font-size="14.00" fill="#000000">BALLEv2</text>
 <polyline fill="none" stroke="#000000" points="459.75,-1541.7 898.3862,-1541.7 "/>
@@ -56,9 +56,9 @@
 <text text-anchor="start" x="467.75" y="-1265.1" font-family="Times,serif" font-size="14.00" fill="#000000"> &#160;&#160;&#160;constructor(_name: string, _symbol: string, _cap: uint256)</text>
 <text text-anchor="start" x="467.75" y="-1248.3" font-family="Times,serif" font-size="14.00" fill="#000000"> &#160;&#160;&#160;inCaseTokensGetStuck(_token: address, _amount: uint256, _to: address)</text>
 </g>
-<!-- 31 -->
+<!-- 32 -->
 <g id="node3" class="node">
-<title>31</title>
+<title>32</title>
 <polygon fill="#f2f2f2" stroke="#000000" points="131.0161,-221.5 131.0161,-1203.1 769.1201,-1203.1 769.1201,-221.5 131.0161,-221.5"/>
 <text text-anchor="middle" x="450.0681" y="-1186.5" font-family="Times,serif" font-size="14.00" fill="#000000">BalleMaster</text>
 <polyline fill="none" stroke="#000000" points="131.0161,-1178.3 769.1201,-1178.3 "/>
@@ -120,21 +120,21 @@
 <text text-anchor="start" x="139.0161" y="-246.5" font-family="Times,serif" font-size="14.00" fill="#000000"> &#160;&#160;&#160;withdrawAll(_vid: uint256)</text>
 <text text-anchor="start" x="139.0161" y="-229.7" font-family="Times,serif" font-size="14.00" fill="#000000"> &#160;&#160;&#160;emergencyWithdraw(_vid: uint256)</text>
 </g>
-<!-- 31&#45;&gt;8 -->
+<!-- 32&#45;&gt;8 -->
 <g id="edge4" class="edge">
-<title>31&#45;&gt;8</title>
+<title>32&#45;&gt;8</title>
 <path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M287.3044,-1203.4342C281.3058,-1221.5349 275.5234,-1238.9828 270.043,-1255.5198"/>
 <polygon fill="#000000" stroke="#000000" points="266.6753,-1254.5559 266.8518,-1265.1493 273.3199,-1256.758 266.6753,-1254.5559"/>
 </g>
-<!-- 31&#45;&gt;27 -->
+<!-- 32&#45;&gt;28 -->
 <g id="edge3" class="edge">
-<title>31&#45;&gt;27</title>
+<title>32&#45;&gt;28</title>
 <path fill="none" stroke="#000000" d="M612.8318,-1203.4342C615.8814,-1212.6361 618.875,-1221.6693 621.8015,-1230.4999"/>
 <polygon fill="#000000" stroke="#000000" points="618.482,-1231.6096 624.9501,-1240.0008 625.1266,-1229.4075 618.482,-1231.6096"/>
 </g>
-<!-- 31struct0 -->
+<!-- 32struct0 -->
 <g id="node4" class="node">
-<title>31struct0</title>
+<title>32struct0</title>
 <polygon fill="#f2f2f2" stroke="#000000" points="284.6217,-.5 284.6217,-184.5 449.5145,-184.5 449.5145,-.5 284.6217,-.5"/>
 <text text-anchor="middle" x="367.0681" y="-167.9" font-family="Times,serif" font-size="14.00" fill="#000000">&lt;&lt;struct&gt;&gt;</text>
 <text text-anchor="middle" x="367.0681" y="-151.1" font-family="Times,serif" font-size="14.00" fill="#000000">VaultInfo</text>
@@ -148,15 +148,15 @@
 <text text-anchor="start" x="292.6217" y="-25.5" font-family="Times,serif" font-size="14.00" fill="#000000">paused: bool</text>
 <text text-anchor="start" x="292.6217" y="-8.7" font-family="Times,serif" font-size="14.00" fill="#000000">retired: bool</text>
 </g>
-<!-- 31struct0&#45;&gt;31 -->
+<!-- 32struct0&#45;&gt;32 -->
 <g id="edge1" class="edge">
-<title>31struct0&#45;&gt;31</title>
+<title>32struct0&#45;&gt;32</title>
 <path fill="none" stroke="#000000" d="M379.4044,-184.6211C380.46,-192.5036 381.5665,-200.7662 382.717,-209.3579"/>
 <polygon fill="#000000" stroke="#000000" points="382.7198,-209.379 387.4808,-214.7949 384.3126,-221.2728 379.5516,-215.8568 382.7198,-209.379"/>
 </g>
-<!-- 31struct1 -->
+<!-- 32struct1 -->
 <g id="node5" class="node">
-<title>31struct1</title>
+<title>32struct1</title>
 <polygon fill="#f2f2f2" stroke="#000000" points="467.9478,-42.5 467.9478,-142.5 600.1884,-142.5 600.1884,-42.5 467.9478,-42.5"/>
 <text text-anchor="middle" x="534.0681" y="-125.9" font-family="Times,serif" font-size="14.00" fill="#000000">&lt;&lt;struct&gt;&gt;</text>
 <text text-anchor="middle" x="534.0681" y="-109.1" font-family="Times,serif" font-size="14.00" fill="#000000">UserInfo</text>
@@ -165,9 +165,9 @@
 <text text-anchor="start" x="475.9478" y="-67.5" font-family="Times,serif" font-size="14.00" fill="#000000">shares: uint256</text>
 <text text-anchor="start" x="475.9478" y="-50.7" font-family="Times,serif" font-size="14.00" fill="#000000">rewardDebt: uint256</text>
 </g>
-<!-- 31struct1&#45;&gt;31 -->
+<!-- 32struct1&#45;&gt;32 -->
 <g id="edge2" class="edge">
-<title>31struct1&#45;&gt;31</title>
+<title>32struct1&#45;&gt;32</title>
 <path fill="none" stroke="#000000" d="M527.2652,-142.6958C524.7672,-161.127 521.6888,-183.8412 518.214,-209.4808"/>
 <polygon fill="#000000" stroke="#000000" points="518.2019,-209.5709 521.3598,-216.0538 516.5902,-221.4622 513.4322,-214.9793 518.2019,-209.5709"/>
 </g>

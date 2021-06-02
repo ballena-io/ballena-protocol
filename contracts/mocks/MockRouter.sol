@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "../interfaces/IMintableERC20.sol";
+import "./interfaces/IMMintableERC20.sol";
 
 /**
  * @dev Mock contract used for unit tests.
@@ -46,7 +46,7 @@ contract MockRouter {
         IERC20(tokenB).safeTransferFrom(address(msg.sender), address(this), amountBDesired);
         // Mint LP
         uint256 amount = (amountADesired + amountBDesired) / 2;
-        IMintableERC20(lpToken).mint(to, amount);
+        IMMintableERC20(lpToken).mint(to, amount);
 
         return (amountADesired, amountBDesired, amount);
     }
@@ -79,7 +79,7 @@ contract MockRouter {
         require(deadline >= block.timestamp + 100, "!deadline");
         // Transfer tokens.
         IERC20(path[0]).safeTransferFrom(address(msg.sender), address(this), amountIn);
-        IMintableERC20(path[path.length - 1]).mint(to, amountIn);
+        IMMintableERC20(path[path.length - 1]).mint(to, amountIn);
         // Return value.
         amounts = new uint256[](path.length);
         amounts[0] = amountIn;
