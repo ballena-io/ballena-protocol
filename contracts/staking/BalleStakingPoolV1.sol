@@ -67,7 +67,7 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
     event Deposit(address indexed user, uint256 amount, uint256 reward);
     event Withdraw(address indexed user, uint256 amount, uint256 reward);
     event EmergencyWithdraw(address indexed user, uint256 amount);
-    event RewardAdded(uint256 amount, uint256 numberOfBlocks, uint256 multiplier);
+    event RewardAdded(uint256 amount, uint256 startBlock, uint256 numberOfBlocks, uint256 multiplier);
     event RewardsStop();
     event PoolFinish();
 
@@ -332,21 +332,21 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
         uint256 _rewardStartBlock
     ) external onlyRewardDistribution {
         require(_amount > 0, "!amount");
-        require(_numberOfBlocks >= (24 * 60 * 20), "!numberOfBlocks");
+        require(_numberOfBlocks > 0, "!numberOfBlocks");
         require(_multiplier >= 100, "!multiplier");
         require(!finished, "finished");
 
         updatePool();
 
+        uint256 effectiveRewardStart = block.number;
         if (block.number >= rewardEndBlock) {
             // Previous reward period already finished.
             rewardPerBlock = _amount / _numberOfBlocks;
-            if (rewardStartBlock == 0) {
-                if (_rewardStartBlock == 0) {
-                    rewardStartBlock = block.number;
-                } else {
-                    rewardStartBlock = _rewardStartBlock;
-                }
+            if (_rewardStartBlock == 0) {
+                rewardStartBlock = block.number;
+            } else {
+                rewardStartBlock = _rewardStartBlock;
+                effectiveRewardStart = _rewardStartBlock;
             }
         } else {
             // Previous reward period still not finished, add leftover.
@@ -354,10 +354,10 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
             uint256 leftover = remaining * rewardPerBlock;
             rewardPerBlock = (_amount + leftover) / _numberOfBlocks;
         }
-        rewardEndBlock = block.number + _numberOfBlocks;
+        rewardEndBlock = effectiveRewardStart + _numberOfBlocks;
         extraRewardMultiplier = _multiplier;
 
-        emit RewardAdded(_amount, _numberOfBlocks, _multiplier);
+        emit RewardAdded(_amount, effectiveRewardStart, _numberOfBlocks, _multiplier);
     }
 
     /**
