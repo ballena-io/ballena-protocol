@@ -200,14 +200,13 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
                 user.amount = user.amount - _amount;
                 totalSupply = totalSupply - _amount;
             }
-            user.rewardDebt = (user.amount * accTokenPerShare) / 1e12;
-
             IERC20(stakedToken).safeTransfer(address(msg.sender), _amount);
         }
 
         if (pending > 0) {
             IBalleRewarder(rewarder).sendReward(address(msg.sender), rewardToken, pending);
         }
+        user.rewardDebt = (user.amount * accTokenPerShare) / 1e12;
 
         emit Withdraw(msg.sender, _amount, pending);
     }
