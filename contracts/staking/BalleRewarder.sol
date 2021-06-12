@@ -47,8 +47,13 @@ contract BalleRewarder is Ownable {
     /**
      * @dev Function to send tokens to the user.
      */
-    function sendReward(address _user, uint256 _amount) external onlyStakingPool returns (uint256) {
+    function sendReward(
+        address _user,
+        address _token,
+        uint256 _amount
+    ) external onlyStakingPool returns (uint256) {
         require(_user != address(0), "!user");
+        require(_token == balle, "!token");
         require(_amount > 0, "!amount");
 
         uint256 balance = IERC20(balle).balanceOf(address(this));
