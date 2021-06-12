@@ -97,7 +97,7 @@ contract BalleRewardDistribution is Ownable {
 
     /**
      * @dev Function to distribute reward.
-     * @param _duration: Period for the reward distribution. From 24h to 7 days.
+     * @param _duration: Period for the reward distribution.
      * @param _baseRewardAmount: Reward amount from performance fees to take from BalleRewardFund.
      * @param _multiplier: Multiplier to add Extra reward from new minted BALLE, while there is free supply (100 = 1).
      */
@@ -107,8 +107,7 @@ contract BalleRewardDistribution is Ownable {
         uint256 _multiplier,
         uint256 _rewardStartBlock
     ) external onlyOwner {
-        require(_duration >= 24 hours, "!min duration");
-        require(_duration <= 7 days, "!max duration");
+        require(_duration > 0, "!duration");
         require(_baseRewardAmount > 0, "!baseRewardAmount");
         require(_multiplier >= 100, "!multiplier");
         require(stakingPool != address(0), "!stakingPool");

@@ -198,16 +198,8 @@ describe('BalleRewardDistribution', () => {
       await rewardFund.setRewardDistribution(rewardDistribution.address)
     })
 
-    it('should revert if duration < min duration', async () => {
-      await expect(rewardDistribution.connect(deployer).distributeReward(100, 0, 0, 0)).to.be.revertedWith(
-        '!min duration',
-      )
-    })
-
-    it('should revert if duration > max duration', async () => {
-      await expect(
-        rewardDistribution.connect(deployer).distributeReward(7 * 24 * 60 * 60 + 1, 0, 0, 0),
-      ).to.be.revertedWith('!max duration')
+    it('should revert if zero duration', async () => {
+      await expect(rewardDistribution.connect(deployer).distributeReward(0, 0, 0, 0)).to.be.revertedWith('!duration')
     })
 
     it('should revert if zero base reward amount', async () => {
