@@ -332,7 +332,7 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
         uint256 _rewardStartBlock
     ) external onlyRewardDistribution {
         require(_amount > 0, "!amount");
-        require(_numberOfBlocks >= (24 * 60 * 20), "!numberOfBlocks");
+        require(_numberOfBlocks >= 0, "!numberOfBlocks");
         require(_multiplier >= 100, "!multiplier");
         require(!finished, "finished");
 
