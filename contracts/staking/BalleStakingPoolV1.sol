@@ -56,7 +56,7 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
     // The extra reward multiplier applied over the amount from fees (100 = 1).
     uint256 public extraRewardMultiplier;
     // Total staked tokens amount.
-    uint256 private totalSupply;
+    uint256 public totalSupply;
 
     // Info of each user that stakes tokens (stakedToken).
     mapping(address => UserInfo) public userInfo;
@@ -146,16 +146,16 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
         uint256 pending = 0;
         if (user.amount > 0) {
             pending = (user.amount * accTokenPerShare) / 1e12 - user.rewardDebt;
-            if (pending > 0) {
-                IBalleRewarder(rewarder).sendReward(address(msg.sender), rewardToken, pending);
-            }
         }
 
         user.amount = user.amount + _amount;
         totalSupply = totalSupply + _amount;
-        IERC20(stakedToken).safeTransferFrom(address(msg.sender), address(this), _amount);
-
         user.rewardDebt = (user.amount * accTokenPerShare) / 1e12;
+
+        if (pending > 0) {
+            IBalleRewarder(rewarder).sendReward(address(msg.sender), rewardToken, pending);
+        }
+        IERC20(stakedToken).safeTransferFrom(address(msg.sender), address(this), _amount);
 
         emit Deposit(msg.sender, _amount, pending);
     }
@@ -200,14 +200,14 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
                 user.amount = user.amount - _amount;
                 totalSupply = totalSupply - _amount;
             }
+            user.rewardDebt = (user.amount * accTokenPerShare) / 1e12;
+
             IERC20(stakedToken).safeTransfer(address(msg.sender), _amount);
         }
 
         if (pending > 0) {
             IBalleRewarder(rewarder).sendReward(address(msg.sender), rewardToken, pending);
         }
-
-        user.rewardDebt = (user.amount * accTokenPerShare) / 1e12;
 
         emit Withdraw(msg.sender, _amount, pending);
     }
@@ -242,10 +242,11 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
             if (bal < amountToTransfer) {
                 amountToTransfer = bal;
             }
+            totalSupply = totalSupply - amountToTransfer;
             IERC20(stakedToken).safeTransfer(address(msg.sender), amountToTransfer);
         }
 
-        emit EmergencyWithdraw(msg.sender, user.amount);
+        emit EmergencyWithdraw(msg.sender, amountToTransfer);
     }
 
     /**
@@ -300,7 +301,7 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
      * @param _from: block to start.
      * @param _to: block to finish.
      */
-    function getBlockMultiplier(uint256 _from, uint256 _to) internal view returns (uint256) {
+    function getBlockMultiplier(uint256 _from, uint256 _to) public view returns (uint256) {
         if (_from <= rewardStartBlock) {
             if (_to > rewardStartBlock) {
                 _from = rewardStartBlock;
@@ -392,7 +393,7 @@ contract BalleStakingPoolV1 is Ownable, ReentrancyGuard {
         address _token,
         uint256 _amount,
         address _to
-    ) public onlyOwner {
+    ) external onlyOwner {
         require(_to != address(0), "zero address");
         require(_token != stakedToken, "!safe");
 
