@@ -53,9 +53,9 @@ describe('BalleRewarder', () => {
     })
 
     it('should revert if not stakingPool address calls sendReward()', async () => {
-      await expect(balleRewarder.connect(test).sendReward(ZERO_ADDRESS, expandTo18Decimals(0))).to.be.revertedWith(
-        '!stakingPool',
-      )
+      await expect(
+        balleRewarder.connect(test).sendReward(ZERO_ADDRESS, ZERO_ADDRESS, expandTo18Decimals(0)),
+      ).to.be.revertedWith('!stakingPool')
     })
 
     it('should revert if not owner address calls inCaseTokensGetStuck()', async () => {
@@ -81,9 +81,9 @@ describe('BalleRewarder', () => {
     })
 
     it('should allow to call sendReward', async () => {
-      await expect(balleRewarder.connect(test).sendReward(ZERO_ADDRESS, expandTo18Decimals(0))).to.be.revertedWith(
-        '!user',
-      )
+      await expect(
+        balleRewarder.connect(test).sendReward(ZERO_ADDRESS, ZERO_ADDRESS, expandTo18Decimals(0)),
+      ).to.be.revertedWith('!user')
     })
   })
 
@@ -99,19 +99,25 @@ describe('BalleRewarder', () => {
     })
 
     it('should revert if zero address', async () => {
-      await expect(balleRewarder.connect(deployer).sendReward(ZERO_ADDRESS, expandTo18Decimals(0))).to.be.revertedWith(
-        '!user',
-      )
+      await expect(
+        balleRewarder.connect(deployer).sendReward(ZERO_ADDRESS, ZERO_ADDRESS, expandTo18Decimals(0)),
+      ).to.be.revertedWith('!user')
+    })
+
+    it('should revert if no BALLE token', async () => {
+      await expect(
+        balleRewarder.connect(deployer).sendReward(test.address, ZERO_ADDRESS, expandTo18Decimals(0)),
+      ).to.be.revertedWith('!token')
     })
 
     it('should revert if zero amount', async () => {
-      await expect(balleRewarder.connect(deployer).sendReward(test.address, expandTo18Decimals(0))).to.be.revertedWith(
-        '!amount',
-      )
+      await expect(
+        balleRewarder.connect(deployer).sendReward(test.address, balle.address, expandTo18Decimals(0)),
+      ).to.be.revertedWith('!amount')
     })
 
     it('should sendReward', async () => {
-      await balleRewarder.connect(deployer).sendReward(test.address, expandTo18Decimals(100))
+      await balleRewarder.connect(deployer).sendReward(test.address, balle.address, expandTo18Decimals(100))
 
       // check values
       expect(await balle.balanceOf(balleRewarder.address)).to.be.equal(expandTo18Decimals(400))
