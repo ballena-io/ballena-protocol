@@ -23,7 +23,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   ]
   const cakeToBallePath = [CAKE.address, WBNB.address, BALLE.address]
 
-  await deploy('StratPancakeCakeV1', {
+  await deploy('StratPancakeCakeV2', {
     from: deployer,
     args: [addresses, cakeToBallePath],
     log: true,
@@ -40,6 +40,6 @@ deploy.skip = async (hre: HardhatRuntimeEnvironment) => {
   }
   return true
 }
-deploy.tags = ['StratPancakeCakeV1']
+deploy.tags = ['StratPancakeCakeV2']
 deploy.dependencies = ['WBNB', 'CAKE', 'MockRouter', 'MockMasterChef', 'BalleRewardFund', 'BalleTreasury', 'BALLEv2']
 export default deploy
