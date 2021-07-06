@@ -2,7 +2,7 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { DeployFunction } from 'hardhat-deploy/types'
 
 // Pancake CAKE Strategy data
-const stratName = 'TestPlanStratPancakeCAKE'
+const stratName = 'TestPlanStratPancakeCAKE2'
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts } = hre
@@ -26,7 +26,7 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const cakeToBallePath = [CAKE.address, wbnb, BALLE.address]
 
   await deploy(stratName, {
-    contract: 'StratPancakeCakeV1',
+    contract: 'StratPancakeCakeV2',
     from: deployer,
     args: [addresses, cakeToBallePath],
     log: true,
