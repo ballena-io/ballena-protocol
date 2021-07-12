@@ -20,8 +20,6 @@ contract StratBalleLpV1 is Ownable, ReentrancyGuard {
 
     // Governance Gnosis Safe multisig.
     address public governance;
-    // Operations Gnosis Safe multisig.
-    address public operations;
 
     uint256 public depositTotal = 0;
     uint256 public sharesTotal = 0;
@@ -71,7 +69,7 @@ contract StratBalleLpV1 is Ownable, ReentrancyGuard {
     /**
      * @dev Function to transfer tokens BalleMaster -> strategy.
      */
-    function deposit(address _user, uint256 _amount) public onlyOwner whenNotPaused returns (uint256) {
+    function deposit(address _user, uint256 _amount) external onlyOwner whenNotPaused returns (uint256) {
         require(_user != address(0), "!user");
 
         uint256 sharesAdded = _amount;
@@ -89,7 +87,7 @@ contract StratBalleLpV1 is Ownable, ReentrancyGuard {
     /**
      * @dev Function to transfer tokens strategy -> BalleMaster.
      */
-    function withdraw(address _user, uint256 _amount) public onlyOwner returns (uint256, uint256) {
+    function withdraw(address _user, uint256 _amount) external onlyOwner returns (uint256, uint256) {
         require(_user != address(0), "!user");
         require(_amount > 0, "!amount");
 
